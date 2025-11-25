@@ -1,0 +1,79 @@
+Solver:
+  var_pts:
+    x_n: 5  # negative electrode
+    x_s: 5  # separator
+    x_p: 5  # positive electrode
+    r_n: 30  # negative particle
+    r_p: 30  # positive particle
+  mode: 'safe'
+
+Model:
+  SEI: "ec reaction limited"
+  SEI porosity change: "true"
+  lithium plating: "irreversible"
+  lithium plating porosity change: "true"  # alias for "SEI porosity change"
+  particle mechanics: [ "swelling and cracking", "swelling only" ]
+  SEI on cracks: "true"
+#  loss of active material: "stress-driven"
+  calculate discharge energy: "true"  # for compatibility with older PyBaMM versions
+  contact resistance: "true"
+
+Battery:
+  name: 'Reliability' # 可靠性电芯数据
+  params: ['aging', 'diffT', 'stripping']
+
+Condition:
+  run_condition:
+    condition_type: 0 # 充放电条件
+    nominal: 280
+    period: 0.2
+    idle_time: 10
+    rate: ${rate}
+    rate_type: 'P'
+    cycle_num: 5 # 每一次跑多少循环
+    temperature: ${temperature}
+
+Do:
+  run_type: 'run' # 'run/optimize/scan'
+  type: 'aging' # 'base/aging_fast'
+  output: 'Output.pkl'
+  t_factor: 50 # 加速因子
+  accelerate_num: # 共跑多少次
+    run_condition: ${accelerate_num}
+  ref_step: False # 参考层
+  initial_step: True # 初始循环
+  input_params: # 优化时候不会改变的参数
+    user:
+      "socmin_neg": 0.014138590528608774
+      "socmax_pos": 0.9760034190591188
+      "csmax_neg": 1.0255725668281699
+      "csmax_pos": 1.0491017547082442
+      "R": 0.0001
+      #      "Bruggeman": 1.5276007904633744
+      "Qx": 0.9969884790124246
+      "Dpos": 1.9669441824935805e-16
+      "Dneg": 2.595610304283685e-14
+      "Kneg": 3.6433291055447767e-9
+      "Kpos": 6.144854725337603e-11
+      "E_D_p": 66985.68646042362
+      "E_D_n": 32039.43057839836
+      "E_K_p": 60639.5640737767
+      "E_K_n": 53147.70620731065
+      beta: ${beta}
+      Bruggeman: ${Bruggeman}
+    model:
+      Positive electrode cracking rate: 0
+      Positive electrode initial crack length [m]: 0
+      Positive electrode initial crack width [m]: 0
+      SEI resistivity [Ohm.m]: 2.0e+5
+      Ratio of lithium moles to SEI moles: 1.5
+      Lithium metal partial molar volume [m3.mol-1]: ${Li_partial_molar_volume}
+      Outer SEI partial molar volume [m3.mol-1]: ${Sei_molar_volume}
+      SEI kinetic rate constant [m.s-1]: ${K_sei}
+      EC diffusivity [m2.s-1]: ${D_Ec}
+      Negative electrode cracking rate: ${K_cr}
+      Lithium plating kinetic rate constant [m.s-1]: ${K_plate}
+  db:
+    barcode: 'Condition Run V1'
+    batch: ${job_id}
+    describe: '给定工况仿真'

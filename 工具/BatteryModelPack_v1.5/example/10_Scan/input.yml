@@ -1,0 +1,73 @@
+# 使用aging_fast跑循环
+Solver:
+  var_pts:
+    x_n: 5  # negative electrode
+    x_s: 5  # separator
+    x_p: 5  # positive electrode
+    r_n: 30  # negative particle
+    r_p: 30  # positive particle
+  mode: 'safe'
+
+Model:
+  #  SEI: "solvent-diffusion limited"
+  #  SEI porosity change: "true"
+  #  lithium plating: "irreversible"
+  #  lithium plating porosity change: "true"  # alias for "SEI porosity change"
+  particle mechanics: [ "swelling only", "swelling only" ]
+  # SEI on cracks: "true"
+  loss of active material: "stress-driven"
+  calculate discharge energy: "true"  # for compatibility with older PyBaMM versions
+  contact resistance: "true"
+
+Battery:
+  name: 'Reliability'
+  params: 'base'
+
+Condition:
+  25°C0.5P:
+    condition_type: 0 # 充放电条件
+    nominal: 280
+    period: 0.5
+    idle_time: 10
+    rate: 0.5
+    rate_type: 'P'
+    cycle_num: 5
+    temperature: 298.15
+
+Do:
+  run_type: 'scan' # 'run/optimize/scan'
+  type: 'aging' # 'base/aging'
+  t_factor: 50
+  cycle_num: 12
+  ref_step: FALSE
+  pool: 4 # 并行数量
+  input_params: # 优化时候不会改变的参数
+    user:
+      Dpos: 7.972372332315902e-16
+      Dneg: 1.0599999999999983e-13
+      Kneg: 5.921696192851298e-9
+      Kpos: 6.815599122930984e-11
+      socmin_neg: 0.014138590528608774
+      socmax_pos: 0.9760034190591188
+      csmax_neg: 1.0255725668281699
+      csmax_pos: 1.0491017547082442
+      R: 0.0001
+      Qx: 1
+      Bruggeman: 1.5
+    model:
+      Positive electrode cracking rate: 0
+      Positive electrode initial crack length [m]: 0
+      Positive electrode initial crack width [m]: 0
+      Positive electrode LAM constant proportional term [s-1]: 0
+      Negative electrode LAM constant proportional term [s-1]: 6.0e-7
+  change_params: # 优化的时候会改变的参数
+    Negative electrode LAM constant exponential term: [ "model", 'line' ,2, 3, 8 ]
+  scan_value:
+    base:
+      - "Loss of lithium due to loss of active material in negative electrode [mol]"
+      - "Loss of lithium due to loss of active material in positive electrode [mol]"
+  save:
+    db: True
+    barcode: '0IJCBA05011131B9G0000171'
+    batch: 'test_scan'
+  output: 'scan_negative_exponential_result.pkl'

@@ -1,0 +1,15 @@
+def update_electrolyte_concentration(Para, Sol):
+    # 获取当前电解液浓度和体积
+    current_concentration = Para["Current electrolyte concentration in the reservoir [mol.m-3]"]
+    current_volume = Para["Current total electrolyte volume in whole cell [m3]"]
+    
+    # 计算电解液消耗量（根据模型的具体逻辑）
+    electrolyte_consumed = calculate_electrolyte_consumption(Sol)
+    
+    # 更新电解液浓度
+    new_volume = current_volume - electrolyte_consumed['volume']
+    new_concentration = (current_concentration * current_volume) / new_volume if new_volume > 0 else 0
+    
+    # 更新参数
+    Para["Current total electrolyte volume in whole cell [m3]"] = new_volume
+    Para["Current electrolyte concentration in the reservoir [mol.m-3]"] = new_concentration

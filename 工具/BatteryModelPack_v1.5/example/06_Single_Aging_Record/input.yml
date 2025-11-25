@@ -1,0 +1,108 @@
+# 使用aging_fast跑循环
+Solver:
+  var_pts:
+    x_n: 5  # negative electrode
+    x_s: 5  # separator
+    x_p: 5  # positive electrode
+    r_n: 25  # negative particle
+    r_p: 25  # positive particle
+  mode: 'safe'
+
+Model:
+  SEI: "ec reaction limited"
+  SEI porosity change: "true"
+  #  lithium plating: "irreversible"
+  #  lithium plating porosity change: "true"  # alias for "SEI porosity change"
+  particle mechanics: [ "swelling and cracking", "swelling only" ]
+  SEI on cracks: "true"
+  #  loss of active material: "stress-driven"
+  calculate discharge energy: "true"  # for compatibility with older PyBaMM versions
+  contact resistance: "true"
+
+Battery:
+  name: 'Reliability' # 可靠性电芯数据
+  params: [ 'aging', 'diffT', 'sei' ]
+
+Condition:
+  0:
+    condition_type: 0 # 充放电条件
+    nominal: 280
+    period: 0.2
+    idle_time: 10
+    rate: 0.25
+    rate_type: P
+    cycle_num: 5
+    temperature: 318.15
+
+Do:
+  run_type: 'optimize' # 'run/optimize/scan'
+  type: 'aging' # 'base/aging'
+  # 损失函数，可以写成一个列表，计算所有损失函数的和，aging可以选择cycle_line_v2, cycle_line, record三种，base只能够使用默认的损失函数
+  loss: [ 'cycle_line_v2', 'record' ]
+  exp_data: # 读取数据
+    0:
+      cycle_line_v2: '../data/Age_record/cycle_layer.hithium' # 针对
+      record: '../data/Age_record/record_layer.dat'
+  t_factor: 50 # 加速因子
+  accelerate_num: # 共跑多少次
+    0: 10
+  ref_step: False # 参考层
+  initial_step: True # 初始循环
+  method: 'BH'
+  method_params:
+    stepsize: 0.5 # 迭代次数
+    niter: 20 # 并行数量
+  #    sol_per_pop: 200 # 遗传算法参数
+  #    num_parents_mating: 16 # 遗传算法参数
+  #    keep_parents: -1 # 遗传算法参数
+  init:
+    single:
+      K_sei: 1.0993372946228856e-16
+      D_K_ratio: 2.118148479280436e-06
+      Outer SEI partial molar volume [m3.mol-1]: 2.4886097628298856e-05
+      Negative electrode cracking rate: 1.333577276813245e-21
+      SEI resistivity [Ohm.m]: 2.0e+5
+  input_params: # 优化时候不会改变的参数
+    user:
+      "socmin_neg": 0.014138590528608774
+      "socmax_pos": 0.9760034190591188
+      "csmax_neg": 1.0255725668281699
+      "csmax_pos": 1.0491017547082442
+      "R": 0.0001
+      "Qx": 0.9969884790124246
+      "Dpos": 1.9669441824935805e-16
+      "Dneg": 2.595610304283685e-14
+      "Kneg": 3.6433291055447767e-9
+      "Kpos": 6.144854725337603e-11
+      "E_D_p": 66985.68646042362
+      "E_D_n": 32039.43057839836
+      "E_K_p": 60639.5640737767
+      "E_K_n": 53147.70620731065
+      Bruggeman: 2.0
+    model:
+      Positive electrode cracking rate: 0
+      Positive electrode initial crack length [m]: 0
+      Positive electrode initial crack width [m]: 0
+      Ratio of lithium moles to SEI moles: 1.5
+  #      Outer SEI partial molar volume [m3.mol-1]: 4.645e-5
+  #      Lithium plating kinetic rate constant [m.s-1]: 1.27e-4
+  #      Negative electrode LAM constant proportional term [s-1]: 6.0e-7
+  change_params: # 优化的时候会改变的参数
+    #    Lithium metal partial molar volume [m3.mol-1]: ['model', 1.3e-6, 1.3e-5, 'log']
+    #    beta: [ 'user' , 0.01, 10, 'log' ]
+    #    Bruggeman: [ 'user', 1.5, 2.5, 'line' ]
+    K_sei: [ 'user', 'log', 1.0e-16, 1.0e-13 ]
+    D_K_ratio: [ 'user', 'log', 1.0e-9, 1.0e-5 ]
+    Outer SEI partial molar volume [m3.mol-1]: [ 'model', 'line', 1.645e-5, 4.645e-5 ]
+    #    SEI kinetic rate constant [m.s-1]: [ 'model' ,1.0e-16, 5.0e-14, 'log' ]
+    #    EC diffusivity [m2.s-1]: [ "model" , 1.0e-22, 1.0e-20, 'log' ]
+    Negative electrode cracking rate: [ 'model', 'log' , 1.0e-23, 3.0e-21 ]
+    SEI resistivity [Ohm.m]: [ 'model', 'log', 2.0e+4, 2.0e+5 ]
+  #    Lithium plating kinetic rate constant [m.s-1]: [ 'model', 6.0e-4 , 1.27e-2, 'log' ]
+  save:
+    db: True
+    fileout: False
+    barcode: 'PN8009'
+    batch: '45°C025P_BH_record_loss'
+    describe: '加入record loss 后进行45°C0.25P的拟合'
+  output: 'GO_aging_result.pkl'
