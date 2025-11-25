@@ -1,0 +1,60 @@
+# --- Python 编译垃圾 (必须屏蔽) ---
+__pycache__/
+*.py[cod]
+# 这里的 *.py[cod] 意思是屏蔽 .pyc, .pyo, .pyd
+
+# --- 日志和临时文件 ---
+*.log
+*.tmp
+
+# --- 你的实验数据 (体积大，不适合代码管理) ---
+*.csv
+*.xlsx
+*.xls
+*.dat
+*.txt
+# 注意：如果你有重要的说明文档是txt，就把上面的 *.txt 删掉
+
+# --- VS Code 配置 ---
+.vscode/
+*.json
+# 注意：如果你需要保留 launch.json (调试配置)，就把 *.json 删掉
+
+# --- 操作系统垃圾 ---
+.DS_Store
+Thumbs.db
+
+#/data
+/.idea
+/build
+/dist
+.ipynb_checkpoints/
+__pycache__/
+*.egg-info
+*.log
+/venv
+*.npy
+*.pyc
+*.h5
+*.pth
+*.sqlite3
+*.png
+#*.ipynb
+*.pkl
+*.pickle
+*.pt
+*.json
+*.lock
+cycle_layer_seg*
+record_layer_seg*
+/usage/追溯数据导入/
+~$*
+*.mph
+*.dat
+*.csv
+*.xlsx
+/.vscode
+*.hithium
+/release
+Output/
+*.mat
