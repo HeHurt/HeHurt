@@ -1,0 +1,58 @@
+# ==========================
+# Hithium 推荐 .gitignore（精简版）
+# 说明：
+# 1) 尽量只忽略“可再生”产物和超大原始数据
+# 2) 不再全局忽略 *.json / *.txt，避免误伤配置和文档
+# 3) 如确需纳管某个被忽略文件，可用 git add -f
+# ==========================
+
+# --- Python 缓存 ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# --- Notebook 缓存 ---
+.ipynb_checkpoints/
+
+# --- 虚拟环境与构建 ---
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+
+# --- 日志与临时 ---
+*.log
+*.tmp
+~$*
+
+# --- 二进制模型/中间产物 ---
+*.npy
+*.h5
+*.pth
+*.pt
+*.pkl
+*.pickle
+*.sqlite3
+
+# --- 可重建输出目录（按需保留） ---
+**/output/
+**/csv_output/
+**/processed_curves/
+
+# --- 大规模原始实验数据（建议仓外） ---
+*.dat
+*.csv
+*.xlsx
+*.xls
+*.mat
+*.mph
+
+# --- VS Code / IDE ---
+.vscode/
+.idea/
+
+# --- 系统垃圾 ---
+.DS_Store
+Thumbs.db
