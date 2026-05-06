@@ -48,6 +48,32 @@ Fun_HZ 拆解迁移对照见 [docs/FUN_HZ_MIGRATION.md](docs/FUN_HZ_MIGRATION.md
 from src.easy_imports import *
 ```
 
+## 前端操作界面
+
+项目已提供可点击操作的前端界面（Streamlit）：
+
+1. 安装依赖：
+
+```bash
+pip install -r requirements.txt
+```
+
+2. 启动前端（两种方式任选其一）：
+
+```bash
+python -m streamlit run frontend.py
+```
+
+或在 Windows 中直接双击：
+
+`run_frontend.bat`
+
+3. 打开浏览器后可使用三个页签：
+
+- 实验数据：加载 CSV 文件夹并预览 retention/efficiency
+- 仿真运行：输入倍率、温度、循环数，点击运行仿真
+- Sim-Exp 对比：自动匹配工况并生成对比图
+
 ## Notebook 简化示例（MIC多温度拟合）
 
 已在 docs/API.md 中提供最小替换示例，用于将重复的 Excel 解析与曲线注入逻辑替换为统一 API。

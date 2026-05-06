@@ -5,14 +5,28 @@ __pycache__/
 
 # --- 日志和临时文件 ---
 *.log
+batterymodel.log
 *.tmp
+BatteryProject/.runtime_*/
+BatteryProject/.streamlit_home/
+BatteryProject/.tmp_pycache/
+BatteryProject/pybamm/
 
 # --- 你的实验数据 (体积大，不适合代码管理) ---
 *.csv
 *.xlsx
 *.xls
+*.xlsm
 *.dat
 *.txt
+*.pptx
+*.docx
+*.pdf
+*.jpg
+*.jpeg
+*.ipynb
+!BatteryProject/docs/*.ipynb
+!BatteryProject/examples/*.ipynb
 # 注意：如果你有重要的说明文档是txt，就把上面的 *.txt 删掉
 
 # --- VS Code 配置 ---
