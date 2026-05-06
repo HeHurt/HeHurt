@@ -53,6 +53,20 @@
 
 ---
 
+## Legacy 文件归档状态（2026-05-06 整理）
+
+| 文件 | 状态 | 说明 |
+|---|---|---|
+| `工具/Fun_HZ.py` | ✅ `[LEGACY]` 已归档 | 全量迁入 `BatteryProject/src/`；参考 `docs/FUN_HZ_MIGRATION.md` |
+| `MIC/宫工-徐恒-不同CW/Fun_NC.py` | ⚠️ `[LEGACY-PARTIAL]` | 干涸主链已迁入 `src/electrolyte_dryout.py`；**待迁**清单见 `docs/FUN_NC_TODO.md` |
+| `工具/探索/model.py` | ✅ `[LEGACY]` 已归档 | 早期 280Ah 原型；已由 `params/params280.py` + `src/` 取代 |
+| `工具/探索/model_params.py` | ✅ `[LEGACY]` 已归档 | 同上 |
+| `工具/探索/run_aging.py` | ✅ `[LEGACY]` 已归档 | 概念已由 `src/parameter_identification.py` 取代 |
+
+> **规则**：以上文件禁止添加新功能；新代码一律放在 `BatteryProject/src/` 下对应模块。
+
+---
+
 ## 常用工作流
 1. **OCV 对标**: 0.005C 充放电仿真 vs 实验数据
 2. **峰值电流**: `run_peak_current()` 多温度扫描 → Excel map 导出
