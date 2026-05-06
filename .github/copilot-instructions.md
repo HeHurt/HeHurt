@@ -10,3 +10,14 @@
 - Work through each checklist item systematically.
 - Keep communication concise and focused.
 - Follow development best practices.
+- 在编写任何代码之前，请先描述方案并等待批准。如果需求不明确，在编写任何代码之前务必提出澄清问题。
+- 如果一项任务需要修改超过3个文件，请先停下来，将其分解成更小的任务。
+- 编写代码后，列出可能出现的问题，并建议相应的测试用例来覆盖这些问题。
+- 当发现 bug 时，首先要编写一个能够重现该 bug 的测试，然后不断修复它，直到测试通过为止。
+- 每次我纠正你之后，就在 .github/copilot-instructions.md 文件中添加一条新规则，这样就不会再发生这种情况了。
+- 当 Notebook 重跑后现象未变化时，不要只看单元执行状态，必须核对 Notebook 当前绑定的函数对象是否已经切到最新模块实现，必要时显式 reload 模块并重新绑定符号。
+- 在工作区不同区域工作前，先阅读对应的 AGENTS.md harness 文件（根目录有分域指导表）。
+- 修改 PyBaMM 参数文件中的 OCP 时，必须同时覆盖基准键（`"Negative/Positive electrode OCP [V]"`）和分支键（`lithiation`/`delithiation`），因为 `ElectrodeSOHSolver` 内部只读基准键。
+- 参数函数中不得对 PyBaMM 符号变量（如 T、sto）使用 Python `if/elif/else`，必须用 heaviside 写法；`np.exp` 也应改为 `pybamm.exp`。
+- 反算初始浓度不要用 scipy 手工插值，必须用 `ElectrodeSOHSolver` 二分搜索 Q_Li 让 eSOH 自身给出目标容量。
+- 实验与仿真对标作图时，实验横轴必须使用实验原始循环号，不得用加速等效圈数或按仿真上限截断造成“虚假拉伸”。

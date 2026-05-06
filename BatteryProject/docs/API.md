@@ -36,27 +36,38 @@
 
 - `calc_rrmse(y_true, y_pred)`
   - 返回：`(rmse, rrmse)`。
+- `calculate_rrmse_from_sol(df, x_columns, y_columns, sol_list, labels, charge_or_discharge)`
+  - 作用：纯分析——对比仿真/实验电压曲线，返回每条曲线的 RMSE/RRMSE 及绘图数据。
 - `plot_and_calculate_rrmse(df, x_columns, y_columns, sol_list, labels, colors, charge_or_discharge)`
-  - 作用：实验/仿真曲线对比并输出 RMSE/RRMSE。
+  - 作用：实验/仿真曲线对比并输出 RMSE/RRMSE（向后兼容，内部复用 `calculate_rrmse_from_sol`）。
 - `get_discharge_capacity(sol)`
   - 返回：`{"discharge_capacity": np.array}`，按圈提取放电容量。
-- `get_separated_irreversible_heat(sol)`
-  - 返回：`{"charge_heat": ..., "discharge_heat": ...}`，分离充/放电不可逆热。
 - `get_all_heat_components(sol, label_for_temp=None)`
-  - 返回：每圈不可逆/可逆/总热量分量字典。
-- `calculate_cycle_swelling(sol, params)`
-  - 返回：`(max_forces, min_forces)`，估算每圈膨胀力。
+  - 返回：每圈不可逆/可逆/总热量分量字典（键：`irrev_chg/irrev_dchg/rev_chg/rev_dchg/total_chg/total_dchg`）。
+- `calculate_cycle_swelling(sol, params, return_components=False, omega_n=..., omega_p=0, k_stiffness=1e9, preload_force=0)`
+  - 返回：默认 `(max_forces, min_forces)`；`return_components=True` 时返回 `(max, min, eoc, reversible_amplitudes)`。
+- `compute_cycle_energies(sol)`
+  - 返回：`{"discharge_cap", "e_charge", "e_discharge", "efficiency"}`，计算每圈容量/能量/能效。
+- `extract_all_metrics_from_sol(sol)`
+  - 返回：`(discharge_cap, e_charge, e_discharge, efficiency)` 元组。
+- `export_cycle_metrics_report(sol_list, sim_labels_list, cycle_step=50, output_filename=...)`
+  - 作用：按工况分组导出循环结果到 Excel（含条件格式色阶）。
+- `export_full_metrics_summary(sol_list, sim_labels_list, cycle_step=50, output_filename=...)`
+  - 作用：导出完整指标汇总表到 Excel。
 
 ## src/simulation.py
 
 - `perform_dcr_test(sol, params, model, solver, var_pts, current=1175, C1=0.25, C2=0.5, t=10, charge_time=None)`
-  - 返回：`(dcr_mean, dcr_discharge, dcr_charge, power_discharge, power_charge, test_sol, charge_time)`。
+  - 返回：dict，包含键 `dcr_mean`, `dcr_discharge`, `dcr_charge`, `power_discharge`, `power_charge`, `solution`, `charge_time`。
 - `run_dcr_and_power_test(rate_range, model, solver, var_pts, get_hithium_params, get_discharge_capacity_func, total_cycles=50, cycles_per_block=10, temperature=298.15, nominal_current=1175, nominal_voltage=3.2)`
   - 返回：包含 DCR、功率、充电时间与 `sol_list` 的字典。
-- `peak_current_condition(nominal, temperature, ratio, time=10)`
+- `peak_current_condition(nominal, temperature, ratio, time=10, mode="A")`
   - 返回：`{"charge_peak": Experiment, "discharge_peak": Experiment}`。
-- `run_peak_current(model, param, var_pts, temperature=298.15, nominal=164, t_period=60, x0=1)`
-  - 返回：SOC 与峰值电流序列字典。
+  - `mode="W"` 时，施加功率为 `ratio * nominal * 3.2` W。
+- `run_peak_current(model, param, var_pts, temperature=298.15, nominal=164, t_period=60, x0=1, charge_soc_list=None, discharge_soc_list=None, search_ratios=None, mode="A")`
+  - 返回：dict，包含 SOC 网格、等效峰值电流（3.2V 基准）、峰值功率、首点电压。
+- `run_and_plot_all(rate_range, model, solver, var_pts, get_hithium_params, get_discharge_capacity_func, ...)`
+  - 作用：一键完成 DCR/功率仿真并绘制能效曲线。
 
 ## src/plotting.py
 
@@ -150,3 +161,60 @@ plotter.plot(target_exp="all", target_sim="all")
 
 ### 关联 Notebook
 - MIC 多温度拟合：../MIC/不同温度倍率循环/MIC多温度拟合.ipynb
+
+---
+
+## src/exp_loader.py
+
+- `parse_condition_from_filename(filename)`
+  - 作用：从文件名解析温度和倍率，返回 `{"temperature": "25°C", "rate": "0.5P", "label": "25°C 0.5P"}`。
+- `load_cycling_csv(file_path, channel=0, label=None, encoding="utf-8-sig")`
+  - 作用：加载测试设备导出 CSV，自动识别中英文列名，返回统一 dict。
+- `load_cycling_folder(folder_path, pattern="*.csv", channel=0, ...)`
+  - 作用：批量加载文件夹下所有循环 CSV，返回 `list[dict]`。
+
+## src/compare.py
+
+- `compare_retention(sol_list, sim_labels, exp_data_list, acceleration_factor=50, ...)`
+  - 作用：容量保持率 Sim-vs-Exp 对标图。支持 `filter_conditions` 筛选工况、`sim_bias`/`exp_bias` 偏移修正。
+- `compare_efficiency(sol_list, sim_labels, exp_data_list, ...)`
+  - 作用：能量效率对标图。参数同上。
+- `compare_swelling(sol_list, sim_labels, exp_data_list, params, ...)`
+  - 作用：膨胀力（最大/最小）对标图。支持 `omega_n`/`k_stiffness`/`preload_force` 物理参数。
+- `compare_all(sol_list, sim_labels, exp_folder=None, exp_data_list=None, params=None, ...)`
+  - 作用：一站式自动对标（retention + efficiency + swelling），自动匹配工况。
+
+## src/electrolyte_dryout.py
+
+- `DryoutTracker(params, excess_ratio=1.2)`
+  - 作用：电解液干涸状态追踪器。初始化时注入干涸参数到 params。
+  - 方法：`update(sol, params)` / `plot()` / `summary()` / `get_lam_dryout_pct()`。
+- `apply_dryout_to_initial_conditions(model, sol, params)`
+  - 作用：将干涸浓度修正应用到初始条件，返回新模型。
+- `plot_dryout(history, figsize=...)`
+  - 作用：绘制干涸演化 6 子图面板。
+- `run_aging_with_dryout(model, params, experiment, solver, var_pts, ...)`
+  - 作用：带电解液干涸追踪的循环老化仿真。
+
+## src/experiment_utils.py
+
+- `estimate_power_step_duration_hours(power_w, nominal_capacity_ah, reference_voltage_v=3.2, ...)`
+  - 作用：估算恒功率步保守时长（含安全系数）。
+- `build_power_step(direction, power_w, cutoff_voltage_v, nominal_capacity_ah, ...)`
+  - 作用：生成带显式时长保护的 PyBaMM 恒功率实验字符串。
+
+## src/psd_workflow.py
+
+- `normalize_material_inputs(materials, default_diameters_um=None)`
+  - 作用：校验并归一化材料粒径分布输入。
+- `compute_area_distribution(diameters_um, vol_pct)`
+  - 作用：将激光粒度仪体积百分比转换为面积加权半径分布。
+- `fit_single_lognormal_psd(distribution)` / `fit_bimodal_lognormal_psd(distribution)`
+  - 作用：用对数正态分布拟合面积加权 PSD。
+- `analyze_materials(materials, selected_strategy="bimodal")`
+  - 作用：完整分析流程：归一化 → 面积分布 → 拟合。
+- `build_material_summary_frame(material_analysis)` → `pd.DataFrame`
+- `build_operation_cases(design)` → `list[dict]`：从设计参数生成工况列表。
+- `run_material_comparison_study(analysis, design, get_hithium_params)` → dict
+  - 作用：对多种材料 PSD 运行对比仿真（single vs PSD 模式）。
+- `summarize_study(study_result, cycle_number=2)` → `pd.DataFrame`
