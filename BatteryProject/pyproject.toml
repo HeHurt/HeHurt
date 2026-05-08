@@ -1,0 +1,104 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "hithium-battery-project"
+version = "0.1.0"
+description = "PyBaMM 二次开发：仿真、参数辨识、Sim-Exp 对标、PSD 工作流"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{name = "Hithium / Hez"}]
+
+# 核心依赖（与你当前已装版本对齐）
+# 当前装的版本：
+#   pybamm     26.4.2
+#   numpy      1.26.4
+#   scipy      1.16.3
+#   pandas     2.3.3
+#   matplotlib 3.8.1
+#   openpyxl   3.1.5
+dependencies = [
+  # PyBaMM 是最敏感的，版本绑死到 26.4.x（patch 自由升级，minor 不动）
+  "pybamm==26.4.*",
+
+  # NumPy 2 对 PyBaMM/SciPy 兼容性还在收敛期，先不放上 2.x
+  "numpy>=1.26,<2",
+
+  # SciPy 16 已稳定，但放宽到 17 之前先关
+  "scipy>=1.13,<2",
+
+  # Pandas 2.x 内部 dtype 改动较大，锁住主版本
+  "pandas>=2.2,<3",
+
+  # Matplotlib / openpyxl 影响小，只设下限
+  "matplotlib>=3.8",
+  "openpyxl>=3.1",
+]
+
+
+[project.optional-dependencies]
+# Streamlit 前端（不是所有人都需要）
+# 用法：uv sync --extra ui
+ui = [
+  "streamlit>=1.30,<2",
+]
+
+# 参数辨识用的优化器（BO/GA）
+# 用法：uv sync --extra opt
+opt = [
+  "bayesian-optimization>=1.4,<2",
+  "pygad>=3.0,<4",
+]
+
+# 开发与测试
+# 用法：uv sync --extra dev
+dev = [
+  "pytest>=8",
+  "pytest-regressions>=2.5",   # 数值回归快照（PyBaMM 升级时自动比对）
+  "pytest-cov>=5",
+]
+
+
+[project.urls]
+Homepage = "https://github.com/Hithium/BatteryProject"  # 占位，按需改
+
+
+# 包发现
+# 当前 import 路径是 from src.xxx；为了不破坏现有 notebook，先把 src 作为 package
+# 名留下。未来重构时（rename 成 battery_project）再调整。
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+exclude = [
+  "tests*",
+  "docs*",
+  "examples*",
+  "data*",
+  "output*",
+  "apps*",
+  "runners*",
+  "schemas*",
+  "services*",
+  "repositories*",
+  "pybamm*",   # 防止根 pybamm/ 被打包（步骤 2 会删掉这个目录）
+]
+
+
+# pytest 配置
+[tool.pytest.ini_options]
+testpaths = ["BatteryProject/tests", "tests"]
+addopts = [
+  "-q",
+  "--strict-markers",
+]
+filterwarnings = [
+  # easy_imports legacy 兜底层会 warn，但不让 CI 报错
+  "default::DeprecationWarning",
+]
+
+
+# uv 配置
+[tool.uv]
+package = true
