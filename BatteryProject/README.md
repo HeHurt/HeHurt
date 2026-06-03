@@ -15,12 +15,12 @@
   - data_cleaning.py：实验数据清洗/记录层提取
   - parameter_identification.py：老化参数辨识与优化
   - easy_imports.py：Notebook 快捷导入
-- main.py：轻量入口（只做装配）
 
 ## 核心模块说明
 
 - analysis.py：RRMSE 计算、容量提取、产热分量、膨胀力估算
-- simulation.py：DCR 与峰值电流测试、分块循环仿真
+- simulation.py：
+、
 - plotting.py：BatteryPlotter 与产热/容量注入
 - utils.py：Excel 读取、数据导出、仿真结果注入
 - config.py：路径/默认参数/材料参数与熵系数加载
@@ -42,47 +42,97 @@ Fun_HZ 拆解迁移对照见 [docs/FUN_HZ_MIGRATION.md](docs/FUN_HZ_MIGRATION.md
 
 ## 快速开始
 
+先安装依赖：
+
+```bash
+pip install -r requirements.txt
+```
+
 > 在 Notebook 中推荐使用：
 
 ```python
 from src.easy_imports import *
 ```
 
+`src.easy_imports` 现会默认应用项目统一的 PyBaMM 运行时限制：
+
+- 将 `pybamm.settings.max_y_value` 提高到 `1e7`
+- 将 PyBaMM 日志级别设为 `CRITICAL`
+
+这只会压低日志噪声，不会捕获或吞掉求解异常。若脚本未使用 `easy_imports`，请显式调用：
+
+```python
+from src.runtime import configure_notebook_environment
+
+PROJECT_ROOT, WORKSPACE_ROOT, PARAMS_ROOT = configure_notebook_environment(
+  project_root=r"D:\Users\hez\Desktop\hithium\BatteryProject"
+)
+```
+
+频率调节工况示例 Notebook：
+
+- [examples/调频.ipynb](examples/调频.ipynb)
+  - 直接演示 `prepare_frequency_scenarios`、`run_frequency_scenarios`、`summary_df` 与结果作图。
+  - 默认 `smoke` 模式可快速检查环境；切到 `study` 可复用同一入口跑长周期调频寿命评估。
+
 ## 前端操作界面
 
 项目已提供可点击操作的前端界面（Streamlit）：
 
-1. 安装依赖：
-
-```bash
-pip install -r requirements.txt
-```
-
-2. 启动前端（两种方式任选其一）：
+1. 启动前端（两种方式任选其一）：
 
 ```bash
 python -m streamlit run frontend.py
+```
+
+或：
+
+```bash
+python run_frontend.py --port 8501
 ```
 
 或在 Windows 中直接双击：
 
 `run_frontend.bat`
 
-3. 打开浏览器后可使用三个页签：
+2. 打开浏览器后可使用四个页签：
 
 - 实验数据：加载 CSV 文件夹并预览 retention/efficiency
-- 仿真运行：输入倍率、温度、循环数，点击运行仿真
-- Sim-Exp 对比：自动匹配工况并生成对比图
+- 参数配置：保存循环性能或峰值电流扫描请求
+- 运行仿真：执行已保存的请求
+- 结果分析：查看指标、图表、CSV 导出与 Sim-Exp 对比
+
+## 示例 Notebook 索引
+
+`examples/` 下提供了**最小可运行**的入门示例（synthetic 数据 / 临时 fixture，无需 `data/`）：
+
+| Notebook | 涉及模块 | 是否跑 PyBaMM | 主要演示 |
+| --- | --- | --- | --- |
+| [examples/plotting_demo.ipynb](examples/plotting_demo.ipynb) | `plotting` | × | `BatteryPlotter` 注入实验/仿真数据、关键词筛选、颜色按标签共享 |
+| [examples/exp_loader_demo.ipynb](examples/exp_loader_demo.ipynb) | `exp_loader` + `data_cleaning` | × | `load_cycling_csv` / `load_cycling_folder` / `parse_condition_from_filename` / `clean_xy_curve` |
+| [examples/analysis_demo.ipynb](examples/analysis_demo.ipynb) | `analysis` | √ (2 圈 0.5C) | `calc_rrmse` / `get_discharge_capacity` / `compute_cycle_energies` / `get_all_heat_components` / `calculate_cycle_swelling` |
+| [examples/compare_demo.ipynb](examples/compare_demo.ipynb) | `compare` + `exp_loader` | √ (2 圈 × 2 工况) | `compare_all` 自动匹配、`filter_conditions`、`sim_bias`/`exp_bias`、低阶 `compare_retention` |
+
+> 4 个 notebook 已经通过 `jupyter nbconvert --execute` 端到端验证。
+> 每个 notebook 的第一个 code cell 会自动定位 `BatteryProject` 根，所以可以从 `BatteryProject/` 或 `examples/` 目录启动。
 
 ## Notebook 简化示例（MIC多温度拟合）
 
 已在 docs/API.md 中提供最小替换示例，用于将重复的 Excel 解析与曲线注入逻辑替换为统一 API。
 示例 Notebook：[../MIC/不同温度倍率循环/MIC多温度拟合.ipynb](../MIC/不同温度倍率循环/MIC多温度拟合.ipynb)
 
-> 使用主入口的轻量自检：
+## 测试
 
-```python
-python main.py
+进入 `BatteryProject/` 目录运行（`pyproject.toml` 已把 `testpaths` 指向 `tests`）：
+
+```bash
+python -m pytest -q
+```
+
+若需要覆盖率报告，请确保已安装 `pytest-cov`：
+
+```bash
+python -m pytest --cov=src --cov-report=term-missing -q
 ```
 
 ## 老化参数辨识示例
@@ -98,6 +148,18 @@ python examples/aging_identification_demo.py --cycles 3 --n-iter 2 --init-points
 说明：
 - 默认先用模型生成 synthetic 实验数据，再执行 BO 参数辨识。
 - 你可将 `make_synthetic_experiment_data` 替换为真实数据读取（结合 `src/data_cleaning.py`）。
+
+## 调频工况示例
+
+如果需要把 Notebook 中的调频场景批量运行逻辑直接沉淀到库层，请优先使用：
+
+- `src.simulation.prepare_frequency_scenarios`
+- `src.simulation.run_frequency_scenarios`
+- `src.simulation.summarize_frequency_results`
+
+示例入口：
+
+- [examples/调频.ipynb](examples/调频.ipynb)
 
 ## 备注
 

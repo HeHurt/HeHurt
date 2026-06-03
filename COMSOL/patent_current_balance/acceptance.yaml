@@ -1,0 +1,14 @@
+task_type: qualitative_mechanism_verification
+criteria:
+  - name: baseline_current_bias
+    description: Baseline equal-tab design should show visible inner/outer current difference.
+    type: qualitative
+  - name: patent_current_equalization
+    description: Patent differential-tab design should visibly reduce inner/outer current difference.
+    type: qualitative
+  - name: inner_jr_heat_reduction
+    description: Patent design should reduce inner winding/JR heat caused by current concentration.
+    type: qualitative
+  - name: deliverables
+    description: Java source, COMSOL mph file, CSV results, plots, and docx report are generated.
+    type: qualitative

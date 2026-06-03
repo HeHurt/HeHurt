@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Battery Sim Studio</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell" data-route="simulation">
+    <aside class="side-nav" aria-label="主导航">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" role="img">
+            <path d="M9 2h6v3h2.5A1.5 1.5 0 0 1 19 6.5v14A1.5 1.5 0 0 1 17.5 22h-11A1.5 1.5 0 0 1 5 20.5v-14A1.5 1.5 0 0 1 6.5 5H9V2Z" />
+            <path class="bolt" d="M13.3 7 8.8 14h3l-1.1 4 4.5-7h-3l1.1-4Z" />
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title">Battery Sim Studio</div>
+          <div class="brand-subtitle">基于 PyBaMM · 电池仿真工具</div>
+        </div>
+      </div>
+
+      <nav class="nav-sections">
+        <section>
+          <h2>项目</h2>
+          <a href="#projects" class="nav-item"><span class="icon" data-icon="home"></span>我的项目</a>
+          <a href="#new" class="nav-item"><span class="icon" data-icon="file-plus"></span>新建项目</a>
+          <a href="#open" class="nav-item"><span class="icon" data-icon="folder"></span>打开项目</a>
+          <a href="#import" class="nav-item"><span class="icon" data-icon="upload"></span>导入项目</a>
+        </section>
+        <section>
+          <h2>数据管理</h2>
+          <a href="#data-import" class="nav-item"><span class="icon" data-icon="download"></span>数据导入</a>
+          <a href="#data-browser" class="nav-item"><span class="icon" data-icon="table"></span>数据浏览</a>
+          <a href="#data-clean" class="nav-item"><span class="icon" data-icon="settings"></span>数据处理</a>
+        </section>
+        <section>
+          <a href="#simulation" class="nav-item active"><span class="icon" data-icon="pulse"></span>工况仿真</a>
+          <a href="#results" class="nav-item"><span class="icon" data-icon="bar"></span>结果分析</a>
+          <a href="#identify" class="nav-item"><span class="icon" data-icon="flask"></span>参数识别</a>
+          <a href="#sensitivity" class="nav-item"><span class="icon" data-icon="sliders"></span>敏感性分析</a>
+          <a href="#optimize" class="nav-item"><span class="icon" data-icon="target"></span>优化设计</a>
+        </section>
+        <section>
+          <h2>工具箱</h2>
+          <a href="#equivalent" class="nav-item"><span class="icon" data-icon="network"></span>等效电路模型</a>
+          <a href="#material" class="nav-item"><span class="icon" data-icon="book"></span>材料参数库</a>
+          <a href="#database" class="nav-item"><span class="icon" data-icon="database"></span>电芯数据库</a>
+        </section>
+      </nav>
+
+      <div class="project-card">
+        <div class="muted-label">当前项目</div>
+        <div class="project-name">Demo_Project <button type="button" class="icon-button ghost" aria-label="编辑项目"><span class="icon" data-icon="edit"></span></button></div>
+        <dl>
+          <div><dt>电芯类型</dt><dd>NCM/Graphite</dd></div>
+          <div><dt>创建时间</dt><dd>2024-05-20 14:30</dd></div>
+        </dl>
+      </div>
+      <div class="version">PyBaMM 版本: 23.9</div>
+    </aside>
+
+    <div class="workspace">
+      <header class="top-bar">
+        <button class="mobile-menu icon-button" type="button" aria-label="打开导航" data-action="toggle-menu"><span class="icon" data-icon="menu"></span></button>
+        <div class="module-tabs" role="navigation" aria-label="模块导航">
+          <a href="#projects">项目管理</a>
+          <a href="#data-analysis">数据分析</a>
+          <a href="#simulation" class="active">工况仿真</a>
+          <a href="#results">结果分析</a>
+          <a href="#report">报告导出</a>
+        </div>
+        <div class="top-actions">
+          <button class="text-button" type="button"><span class="icon" data-icon="help"></span>帮助文档</button>
+          <button class="text-button" type="button" data-action="theme"><span class="icon" data-icon="sun"></span>主题切换</button>
+          <span class="divider"></span>
+          <button class="icon-button" type="button" aria-label="通知"><span class="icon" data-icon="bell"></span></button>
+          <button class="avatar" type="button" aria-label="用户"><span class="icon" data-icon="user"></span></button>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <div class="flow-actions">
+          <ol class="stepper" aria-label="仿真流程">
+            <li class="done">
+              <span class="step-icon" data-icon="data"></span>
+              <div><strong>数据准备</strong><small>导入与处理</small></div>
+            </li>
+            <li class="done">
+              <span class="step-icon" data-icon="atom"></span>
+              <div><strong>模型与参数</strong><small>选择模型与参数</small></div>
+            </li>
+            <li>
+              <span class="step-icon" data-icon="wrench"></span>
+              <div><strong>工况设置</strong><small>定义仿真工况</small></div>
+            </li>
+            <li>
+              <span class="step-icon" data-icon="play"></span>
+              <div><strong>运行仿真</strong><small>执行并监控</small></div>
+            </li>
+            <li>
+              <span class="step-icon" data-icon="chart"></span>
+              <div><strong>结果分析</strong><small>后处理与导出</small></div>
+            </li>
+          </ol>
+          <div class="primary-actions">
+            <button class="btn primary" type="button" data-action="run"><span class="icon" data-icon="play"></span>运行仿真</button>
+            <button class="btn secondary" type="button" data-action="stop" disabled><span class="icon" data-icon="stop"></span>停止</button>
+            <button class="btn outline" type="button" data-action="save"><span class="icon" data-icon="save"></span>保存</button>
+            <button class="btn success" type="button" data-action="export"><span class="icon" data-icon="download"></span>导出结果</button>
+          </div>
+        </div>
+
+        <section class="dashboard-grid" aria-label="工况仿真工作台">
+          <article class="panel data-panel">
+            <header class="panel-header"><h2>1. 数据提取与分析</h2></header>
+            <div class="panel-body">
+              <h3>数据源</h3>
+              <div class="input-row">
+                <button class="btn compact primary" type="button">导入数据</button>
+                <select aria-label="数据源">
+                  <option>示例数据</option>
+                  <option>本地实验数据</option>
+                </select>
+              </div>
+              <div class="dataset-card">
+                <div class="dataset-title">
+                  <span>NCM_3Ah_cycle_data.xlsx</span>
+                  <strong>已加载</strong>
+                  <button class="icon-button ghost" type="button" aria-label="更多"><span class="icon" data-icon="more"></span></button>
+                </div>
+                <div class="dataset-meta">循环数据 <span></span> 25°C <span></span> 0.5C充放电</div>
+              </div>
+
+              <h3>数据预览</h3>
+              <div class="table-wrap compact-table">
+                <table>
+                  <thead>
+                    <tr><th>循环序号</th><th>容量<br>(Ah)</th><th>充电能量<br>(Wh)</th><th>放电能量<br>(Wh)</th><th>库仑效率<br>(%)</th></tr>
+                  </thead>
+                  <tbody id="previewRows"></tbody>
+                </table>
+              </div>
+
+              <h3>数据处理</h3>
+              <div class="tool-grid">
+                <button type="button"><span class="icon" data-icon="branch"></span>异常值检测</button>
+                <button type="button"><span class="icon" data-icon="wave"></span>平滑滤波</button>
+                <button type="button"><span class="icon" data-icon="repeat"></span>重采样</button>
+                <button type="button"><span class="icon" data-icon="pin"></span>特征提取</button>
+              </div>
+
+              <h3>特征指标</h3>
+              <dl class="metric-list">
+                <div><dt>初始容量 (Ah)</dt><dd>3.102</dd></div>
+                <div><dt>标称容量 (Ah)</dt><dd>3.000</dd></div>
+                <div><dt>容量衰减至80%循环</dt><dd>782</dd></div>
+                <div><dt>内阻增长率 (500周)</dt><dd>35.21%</dd></div>
+                <div><dt>能量效率均值</dt><dd>94.18%</dd></div>
+              </dl>
+            </div>
+          </article>
+
+          <div class="left-stack">
+            <article class="panel config-panel">
+              <header class="panel-header"><h2>3. 工况设置</h2></header>
+              <div class="panel-body">
+                <div class="segmented" role="tablist" aria-label="工况类型">
+                  <button class="active" type="button">标准工况</button>
+                  <button type="button">自定义工况</button>
+                  <button type="button">工况库</button>
+                </div>
+                <label class="field">
+                  <span>循环工况</span>
+                  <select id="cycleMode"><option value="C">CC-CV 充放电</option><option value="P" selected>恒功率循环</option></select>
+                </label>
+                <div class="form-grid">
+                  <label class="field"><span>充电倍率</span><div class="unit-input"><input id="chargeRate" value="0.5"><em id="chargeRateUnit">C</em></div></label>
+                  <label class="field"><span>放电倍率</span><div class="unit-input"><input id="dischargeRate" value="0.5"><em id="dischargeRateUnit">C</em></div></label>
+                  <label class="field"><span>截止电压上限</span><div class="unit-input"><input id="chargeCutoff" value="3.65"><em>V</em></div></label>
+                  <label class="field"><span>截止电压下限</span><div class="unit-input"><input id="dischargeCutoff" value="2.50"><em>V</em></div></label>
+                  <label class="field"><span>环境温度</span><div class="unit-input"><input id="temperatureC" value="25"><em>°C</em></div></label>
+                  <label class="field"><span>静置时长</span><div class="unit-input"><input id="restMinutes" value="5"><em>min</em></div></label>
+                  <label class="field"><span>循环次数</span><div class="unit-input"><input id="cycleCount" value="500"><em>份</em></div></label>
+                  <label class="field"><span>识别电流</span><div class="unit-input"><input id="currentPreview" value="157.0" readonly><em id="currentPreviewUnit">A</em></div></label>
+                </div>
+                <label class="check-row run-mode-row"><input id="dcrEnabled" type="checkbox">DCR 仿真 <span class="mini-input">内阻</span></label>
+                <div id="dcrOptions" class="form-grid" style="display:none">
+                  <label class="field"><span>DCR 测试 SOC</span><div class="unit-input"><input id="dcrSoc" value="50"><em>%</em></div></label>
+                  <label class="field"><span>DCR 倍率</span><div class="unit-input"><input id="dcrRate" value="0.5"><em>C</em></div></label>
+                  <label class="field"><span>DCR 时长</span><div class="unit-input"><input id="dcrDuration" value="10"><em>s</em></div></label>
+                  <label class="field"><span>DCR 测试间隔</span><div class="unit-input"><input id="dcrEvery" value="100"><em>圈</em></div></label>
+                </div>
+                <label class="check-row"><input type="checkbox">直到容量衰减至 <span class="mini-input">80</span>%</label>
+                <div class="preview-title-row"><h3>工况预览</h3><button class="btn outline compact" type="button" data-action="preview">更新预览</button></div>
+                <div class="spark-card">
+                  <svg id="conditionChart" viewBox="0 0 340 150" aria-label="工况预览图"></svg>
+                </div>
+              </div>
+            </article>
+
+            <article class="panel model-panel">
+              <header class="panel-header"><h2>2. 模型与参数</h2></header>
+              <div class="panel-body">
+                <label class="field"><span>模型选择</span><select id="modelSelect"><option value="dfn">DFN (Doyle-Fuller-Newman)</option><option value="spme">SPMe</option></select></label>
+                <label class="field"><span>参数集</span><select id="parameterSet"><option value="chen2020">Chen2020</option><option value="okane2022">OKane2022</option><option value="hithium587">587Ah 参数</option><option value="mic1175">MIC 1175Ah</option><option value="hithium314" selected>314Ah 默认参数</option><option value="hithium280">280Ah 参数</option></select></label>
+                <label class="field"><span>标称容量</span><div class="unit-input"><input id="nominalCapacity" value="314" readonly><em>Ah</em></div></label>
+                <h3>老化接口</h3>
+                <label class="check-row run-mode-row"><input id="agingEnabled" type="checkbox" checked>启用老化模型 <span class="mini-input">Aging</span></label>
+                <label class="field"><span>SEI</span><select id="agingSei"><option value="none">none</option><option value="constant">constant</option><option value="reaction limited">reaction limited</option><option value="reaction limited (asymmetric)">reaction limited (asymmetric)</option><option value="solvent-diffusion limited">solvent-diffusion limited</option><option value="electron-migration limited">electron-migration limited</option><option value="interstitial-diffusion limited">interstitial-diffusion limited</option><option value="ec reaction limited" selected>ec reaction limited</option><option value="ec reaction limited (asymmetric)">ec reaction limited (asymmetric)</option><option value="VonKolzenberg2020">VonKolzenberg2020</option><option value="tunnelling limited">tunnelling limited</option></select></label>
+                <label class="field"><span>SEI 电阻</span><select id="agingSeiFilm"><option value="none" selected>none</option><option value="distributed">distributed</option><option value="average">average</option></select></label>
+                <label class="field"><span>SEI 孔隙率</span><select id="agingSeiPorosity"><option value="false">false</option><option value="true" selected>true</option></select></label>
+                <label class="field"><span>SEI 裂纹</span><select id="agingSeiCracks"><option value="false">false</option><option value="true" selected>true</option></select></label>
+                <label class="field"><span>锂析出</span><select id="agingPlating"><option value="none">none</option><option value="reversible">reversible</option><option value="partially reversible">partially reversible</option><option value="irreversible" selected>irreversible</option></select></label>
+                <label class="field"><span>析锂孔隙率</span><select id="agingPlatingPorosity"><option value="false">false</option><option value="true" selected>true</option></select></label>
+                <label class="field"><span>颗粒力学</span><select id="agingMechanics"><option value="none">none</option><option value="swelling only">swelling only</option><option value="swelling and cracking" selected>swelling and cracking</option></select></label>
+                <label class="field"><span>应力扩散</span><select id="agingStressDiffusion"><option value="false" selected>false</option><option value="true">true</option></select></label>
+                <label class="field"><span>LAM</span><select id="agingLam"><option value="none">none</option><option value="stress-driven" selected>stress-driven</option><option value="asymmetric stress-driven">asymmetric stress-driven</option><option value="reaction-driven">reaction-driven</option><option value="current-driven">current-driven</option><option value="stress and reaction-driven">stress and reaction-driven</option><option value="asymmetric stress and reaction-driven">asymmetric stress and reaction-driven</option></select></label>
+                <p class="small-note">默认启用完整老化链：SEI(ec) + 不可逆析锂 + SEI裂纹 + 颗粒膨胀开裂 + 应力 LAM（裂纹仅作用于负极，正极仅膨胀）。可逐项调整。</p>
+                <h3>自定义参数</h3>
+                <button class="btn outline compact" type="button"><span class="icon" data-icon="sliders"></span>参数编辑器</button>
+                <p class="small-note">已修改 0 个参数</p>
+              </div>
+            </article>
+          </div>
+
+          <div class="main-stack">
+            <article class="panel monitor-panel">
+              <header class="panel-header">
+                <h2>4. 仿真运行监控</h2>
+                <button class="icon-button ghost" type="button" aria-label="折叠"><span class="icon" data-icon="chevron-up"></span></button>
+              </header>
+              <div class="panel-body">
+                <div class="status-grid">
+                  <div class="status-cell"><span>仿真状态</span><strong><i class="status-dot"></i><em id="runStatus">待运行</em></strong></div>
+                  <div class="status-cell"><span>已用时间</span><strong id="elapsedTime">00:00:00</strong></div>
+                  <div class="status-cell"><span>预计剩余时间</span><strong id="remainingTime">--:--:--</strong></div>
+                  <div class="status-cell progress-cell"><span>进度</span><strong id="progressText">0.0%</strong><div class="progress"><i id="progressBar"></i></div></div>
+                  <div class="status-cell"><span>当前循环</span><strong id="cycleText">0 / 3</strong></div>
+                  <div class="status-cell"><span>当前时间</span><strong id="simTime">0.00 h</strong></div>
+                </div>
+
+                <section class="subsection">
+                  <h3><span class="icon tiny" data-icon="chevron-down"></span>实时曲线</h3>
+                  <div class="chart-row">
+                    <figure><figcaption>电压 (V)</figcaption><svg id="voltageChart" viewBox="0 0 270 190"></svg></figure>
+                    <figure><figcaption>电流 (A)</figcaption><svg id="currentChart" viewBox="0 0 270 190"></svg></figure>
+                    <figure><figcaption>温度 (°C)</figcaption><svg id="temperatureChart" viewBox="0 0 270 190"></svg></figure>
+                    <figure class="wide-chart"><figcaption>端电压 (V)</figcaption><svg id="agingChart" viewBox="0 0 360 190"></svg></figure>
+                  </div>
+                </section>
+
+                <div class="monitor-bottom">
+                  <section class="log-panel">
+                    <div class="mini-tabs"><button class="active" type="button">日志</button><button type="button">事件</button></div>
+                    <div class="table-wrap log-table">
+                      <table>
+                        <thead><tr><th>时间</th><th>级别</th><th>消息</th></tr></thead>
+                        <tbody id="logRows"></tbody>
+                      </table>
+                    </div>
+                  </section>
+                  <section class="solver-panel">
+                    <h3>求解器信息</h3>
+                    <dl>
+                      <div><dt>求解器</dt><dd>IDAKLUSolver</dd></div>
+                      <div><dt>相对容差</dt><dd>1e-6</dd></div>
+                      <div><dt>绝对容差</dt><dd>1e-6</dd></div>
+                      <div><dt>最大步长</dt><dd>自适应</dd></div>
+                    </dl>
+                  </section>
+                </div>
+              </div>
+            </article>
+
+            <article class="panel results-panel">
+              <header class="panel-header"><h2>5. 结果后处理与分析</h2></header>
+              <div class="panel-body results-layout">
+                <aside class="result-tabs" aria-label="结果类型">
+                  <button class="active" type="button">性能分析</button>
+                  <button type="button">寿命预测</button>
+                  <button type="button">衰减机理分析</button>
+                  <button type="button">热分析</button>
+                  <button type="button">参数分布</button>
+                  <button type="button">对比分析</button>
+                </aside>
+                <div class="result-charts">
+                  <figure><figcaption>容量衰减</figcaption><svg id="capacityChart" viewBox="0 0 300 210"></svg></figure>
+                  <figure><figcaption>内阻增长</figcaption><svg id="resistanceChart" viewBox="0 0 300 210"></svg></figure>
+                  <figure><figcaption>能量效率</figcaption><svg id="efficiencyChart" viewBox="0 0 300 210"></svg></figure>
+                </div>
+                <aside class="rul-card">
+                  <div class="rul-title" id="summaryTitle">容量衰减至80% @ 25°C</div>
+                  <strong id="summaryValue">782</strong>
+                  <span id="summaryUnit">循环</span>
+                  <p id="summaryLine1">预测区间: 720 - 860 循环</p>
+                  <p id="summaryLine2">置信度: 95%</p>
+                  <button class="btn outline compact" type="button">查看寿命预测详情</button>
+                </aside>
+                <div class="export-strip">
+                  <button class="btn outline" type="button" data-action="export"><span class="icon" data-icon="download"></span>数据导出 (CSV)</button>
+                  <button class="btn outline" type="button"><span class="icon" data-icon="image"></span>图表导出 (PNG)</button>
+                  <button class="btn outline" type="button"><span class="icon" data-icon="file"></span>生成报告 (PDF)</button>
+                  <button class="btn outline" type="button"><span class="icon" data-icon="save"></span>保存到项目</button>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+    <div class="scrim" data-action="toggle-menu"></div>
+    <div class="toast" role="status" aria-live="polite"></div>
+  </div>
+  <script src="./app.js"></script>
+</body>
+</html>

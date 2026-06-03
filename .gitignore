@@ -27,12 +27,28 @@ BatteryProject/pybamm/
 *.ipynb
 !BatteryProject/docs/*.ipynb
 !BatteryProject/examples/*.ipynb
+# 本机 DLP 解不开的高密级笔记本（python 也读到密文）——不跟踪，传密文无意义
+BatteryProject/docs/Using_BatteryProject.ipynb
+BatteryProject/examples/EIS.ipynb
+BatteryProject/examples/峰值电流.ipynb
+BatteryProject/examples/干涸.ipynb
+BatteryProject/examples/循环老化.ipynb
+BatteryProject/examples/欧盟电池法.ipynb
+BatteryProject/examples/粒径分布.ipynb
+BatteryProject/examples/调频.ipynb
 # 注意：如果你有重要的说明文档是txt，就把上面的 *.txt 删掉
 
 # --- VS Code 配置 ---
 .vscode/
 *.json
 # 注意：如果你需要保留 launch.json (调试配置)，就把 *.json 删掉
+
+# --- Claude Code 工作目录 ---
+.claude/
+
+# --- Node / 临时实验目录 (不进仓库) ---
+node_modules/
+.scratch/
 
 # --- 操作系统垃圾 ---
 .DS_Store

@@ -22,7 +22,7 @@
 |------|-------------|------|
 | 核心仿真代码 | `BatteryProject/src/AGENTS.md` | 函数签名规范、测试要求、模块导出 |
 | 参数文件 | `params/AGENTS.md` | 参数文件结构、温度依赖函数、防污染规则 |
-| Notebook 工作区 | `MIC/AGENTS.md` (各电芯目录同构) | Notebook 模板、importlib.reload、作图规范 |
+| Notebook 工作区 | `studies/MIC_1175Ah/AGENTS.md` (各电芯目录同构) | Notebook 模板、importlib.reload、作图规范 |
 | 计划与规格 | `.plans/AGENTS.md` | spec/plan 沉淀流程、任务分解模板 |
 
 ---
@@ -44,12 +44,12 @@
 ### Notebook 工作区
 | 目录 | 电芯型号 | 主要内容 |
 |------|---------|---------|
-| `MIC/` | MIC 1175Ah | 峰值电流、CW363对标、欧盟循环、电解液干涸 |
-| `314/` | 314Ah | 老化建模、竞品分析、可靠性对标、不同温度/倍率 |
-| `280/` | 280Ah | CW254 对标 |
-| `587/` | 587Ah | 常规循环、脉冲插入 |
-| `圆柱/` | 50方壳/64150 | 圆柱电芯 fade 建模 |
-| `AI虚拟电芯/` | — | 定容能效、COMSOL迁移 |
+| `studies/MIC_1175Ah/` | MIC 1175Ah | 峰值电流、CW363对标、欧盟循环、电解液干涸 |
+| `studies/314Ah/` | 314Ah | 老化建模、竞品分析、可靠性对标、不同温度/倍率 |
+| `studies/280Ah/` | 280Ah | CW254 对标 |
+| `studies/587Ah/` | 587Ah | 常规循环、脉冲插入 |
+| `studies/cylindrical/` | 50方壳/64150 | 圆柱电芯 fade 建模 |
+| `studies/AI_virtual_cell/` | — | 定容能效、COMSOL迁移 |
 
 ---
 
@@ -111,5 +111,6 @@
 - 每次换温度必须重新 `pybamm.ParameterValues("OKane2022")` + `params.update()`，防止参数污染
 - 修改 src 后 Notebook 需 `importlib.reload()` 并重新绑定函数符号
 - `var_pts` 标准配置: `{"x_n": 5, "x_s": 5, "x_p": 5, "r_n": 20, "r_p": 20}`
+- 本机工作区文件可能受加密软件保护；如果 PowerShell/`Get-Content`/`cmd type` 看到 `%TSD-Header-###%` 或乱码，不要反复排查编码，改用 Python 读取/解析文件内容。
 - 在编写代码前先描述方案并等待批准；需求不明确时先提问
-- 单次任务修改超过 3 个文件时，先分解为更小任务
+- 单次任务修改超过 7 个文件时，先分解为更小任务
