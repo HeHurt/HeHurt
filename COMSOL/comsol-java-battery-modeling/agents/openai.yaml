@@ -1,0 +1,4 @@
+interface:
+  display_name: "COMSOL Java Battery Modeling"
+  short_description: "Automate COMSOL battery Java models"
+  default_prompt: "Use $comsol-java-battery-modeling to inspect, patch, compile, or run a COMSOL battery Java model."

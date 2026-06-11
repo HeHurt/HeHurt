@@ -42,39 +42,38 @@ F. **生成报告** (.docx, 5-8 页)
 
 ```
 comsol-java-battery-modeling/
-├── SKILL.md                          主skill (双模式, 唯一入口)
-├── README.md                         本文件
-├── comsol.instructions.md            Copilot instruction (部署到 .github/instructions/)
-├── autonomous-sim.prompt.md          Copilot prompt — Autonomous (部署到 .github/prompts/)
-├── cp-sweep.prompt.md                Copilot prompt — Snippet
-├── c-rate-sweep.prompt.md            Copilot prompt — Snippet
-├── diff-models.prompt.md             Copilot prompt — Snippet
-├── references/                       深度参考文档 (按需加载)
-│   ├── java_export_slimming.md           .java 导出瘦身
-│   ├── comsol_java_anatomy.md            .java 结构 + grep 定位
-│   ├── liion_lfp_reference.md            LFP/Gr 参数 + CP 模板
-│   ├── multiscale_1d_3d_coupling.md      1D-3D 多尺度耦合
-│   ├── parameter_sweep_patterns.md       参数扫描 5 模式 + CSV
-│   ├── matlab_livelink_patterns.md       MATLAB LiveLink
-│   ├── comsol_64_api_notes.md            6.4 特定 API 变化
-│   ├── team_workflow.md                  Git/仓库/命名规范
-│   ├── copilot_setup.md                  Copilot 部署配置
-│   ├── autonomous_execution.md       ★   自主执行管线 + 错误库 + debug
-│   ├── acceptance_criteria.md        ★   验收条件 YAML 框架
-│   ├── comsol_official_docs.md       ★   官方文档检索
-│   └── simulation_report_template.md ★   .docx 报告模板
-├── scripts/                          执行 / 瘦身脚本
-│   ├── comsol_batch_runner.py        ★   主执行管线 (编译+求解+验收)
-│   ├── parse_comsol_errors.py        ★   错误日志解析器
-│   ├── generate_report.py            ★   .docx 报告生成器
-│   ├── analyze_java_size.py              .java 体积诊断 (Snippet)
-│   └── strip_java_for_ai.py             .java 瘦身为 AI 阅读版 (Snippet)
-└── tests/                            脚本冒烟/逻辑测试
+├── SKILL.md                                    主skill (双模式)
+├── README.md                                   本文件
+├── examples/
+│   ├── README.md
+│   ├── github_instructions/
+│   │   └── comsol.instructions.md             复制到 .github/instructions/
+│   ├── github_prompts/
+│   │   ├── cp-sweep.prompt.md                 Snippet模式: CP扫描
+│   │   ├── c-rate-sweep.prompt.md             Snippet模式: C倍率扫描
+│   │   ├── diff-models.prompt.md              Snippet模式: 对比两个.java
+│   │   └── autonomous-sim.prompt.md   ★ v3.0  Autonomous模式触发
+│   └── scripts/
+│       ├── analyze_java_size.py               .java体积诊断 (v2.1)
+│       ├── strip_java_for_ai.py               生成AI阅读专用版 (v2.1)
+│       ├── comsol_batch_runner.py     ★ v3.0  主执行管线 (编译+求解+验收)
+│       ├── parse_comsol_errors.py     ★ v3.0  错误日志解析器
+│       └── generate_report.py         ★ v3.0  .docx报告生成器
+└── references/
+    ├── comsol_java_anatomy.md                  .java结构 + grep定位法
+    ├── liion_lfp_reference.md                  LFP/Gr参数 + CP实现 + LumpedBattery/SPM
+    ├── multiscale_1d_3d_coupling.md            1D P2D + 3D热耦合
+    ├── parameter_sweep_patterns.md             参数扫描5模式 + CSV导出
+    ├── matlab_livelink_patterns.md             LiveLink驱动 + 优化器集成
+    ├── comsol_64_api_notes.md                  6.4 vs 5.x API差异
+    ├── team_workflow.md                        Git/仓库/命名/diff
+    ├── copilot_setup.md                        .github/instructions/ 详细配置
+    ├── java_export_slimming.md                 .java瘦身完整工作流 (v2.1)
+    ├── autonomous_execution.md         ★ v3.0  执行管线 + 错误模式库 + debug循环
+    ├── acceptance_criteria.md          ★ v3.0  验收条件YAML框架 + 实验对标
+    ├── comsol_official_docs.md         ★ v3.0  官方文档检索指南
+    └── simulation_report_template.md   ★ v3.0  仿真报告标准模板
 ```
-
-说明:
-- `SKILL.md` 是唯一入口;深度文档放 `references/`,执行脚本放 `scripts/`。文档中所有路径以 skill 根目录为基准 (`references/X.md`、`scripts/X.py`)。
-- 根目录的 `*.instructions.md` / `*.prompt.md` 是 GitHub Copilot 部署产物,按下方"使用方法"复制到 `.github/` 下。
 
 ## 使用方法 (按工具)
 
@@ -99,8 +98,8 @@ pip install pyyaml pandas matplotlib python-docx
 **Snippet Mode** (默认):
 ```bash
 mkdir -p .github/instructions .github/prompts
-cp comsol.instructions.md .github/instructions/
-cp *.prompt.md .github/prompts/
+cp examples/github_instructions/comsol.instructions.md .github/instructions/
+cp examples/github_prompts/*.prompt.md .github/prompts/
 ```
 
 **Autonomous Mode** (Copilot Agent Mode 才支持):

@@ -48,32 +48,40 @@ description: 触发 COMSOL Autonomous Mode 完全自动化仿真流程 (写完�
 
 保存为 `<workdir>/GeneratedModel.java`。
 
-### STEP C-E — Debug 循环
+### STEP C-E — Debug 循环 (Agent 驱动)
 
-调用 `scripts/comsol_batch_runner.py`:
+**循环的大脑是你 (Agent),不是脚本。** `comsol_batch_runner.py` 每次只跑一轮。
 
+第一轮:
 ```bash
-python <skill>/scripts/comsol_batch_runner.py \
+python <skill>/examples/scripts/comsol_batch_runner.py \
     --java <workdir>/GeneratedModel.java \
     --criteria <workdir>/acceptance.yaml \
     --paths <workdir>/paths.json \
     --workdir <workdir> \
-    --max-iter 8
+    --iteration 1
 ```
 
-读 `<workdir>/cycle_result.json` 判断:
+读 `<workdir>/cycle_result.json` 的 `next_action`:
 
-- `success: true` → 进入 STEP F
-- `success: false, reason: compile_failed` → 读 `debug_history.json` 末条错误,按 `references/autonomous_execution.md` 第 2.3 节修复 .java,重跑
-- `success: false, reason: solve_failed` → 同上,按第 3.2-3.3 节调收敛
-- `success: false, reason: acceptance_failed` → 物理调参,按第 5.2 节调参映射,重跑
-- `success: false, reason: blocking_error` → **立即停止**,告诉用户检查 license
-- `success: false, reason: max_iter_exceeded` → 停止,进入 STEP F (生成失败报告)
+- `"done"` → 验收通过,进入 STEP F
+- `"agent_adjust_and_rerun"` → 看 `acceptance.items_failed` 和 `skipped`,按 `references/autonomous_execution.md` 第 5.2 节物理调参映射改 .java
+- `reason="compile_failed"` → 看 `details.parsed_errors`,按第 2.3 节修 .java
+- `reason="solve_failed"` → 按第 3.2-3.3 节调收敛
+- `reason="blocking_error"` → **立即停止**,报告用户检查 license
+
+修改 .java 后,**iteration 递增**重跑(不传 `--reset-history`,历史会累积):
+```bash
+python <skill>/examples/scripts/comsol_batch_runner.py \
+    ... --iteration 2     # 然后 3, 4, ...
+```
+
+你自己控制总轮数 (建议 ≤ 8)。历史累积在同一个 `debug_history.json`,报告才能展示完整 debug 过程。
 
 ### STEP F — 报告
 
 ```bash
-python <skill>/scripts/generate_report.py \
+python <skill>/examples/scripts/generate_report.py \
     --java <workdir>/GeneratedModel.java \
     --metrics <workdir>/metrics.csv \
     --criteria <workdir>/acceptance.yaml \

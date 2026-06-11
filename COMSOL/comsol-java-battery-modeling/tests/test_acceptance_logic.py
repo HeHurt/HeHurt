@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 
 
-MODULE_PATH = Path(__file__).resolve().parents[1] / "comsol_batch_runner.py"
+MODULE_PATH = Path(__file__).resolve().parents[1] / "examples" / "scripts" / "comsol_batch_runner.py"
 spec = importlib.util.spec_from_file_location("comsol_batch_runner", MODULE_PATH)
 runner = importlib.util.module_from_spec(spec)
 assert spec.loader is not None
@@ -17,6 +17,7 @@ def _write_two_col_csv(path, xs, ys):
 
 def test_physical_sanity_voltage_window_fails_when_outside(tmp_path):
     metrics = {
+        "E_cell": 4.0,
         "V_min": 2.5,
         "V_max": 3.65,
         "min_voltage": 2.4,

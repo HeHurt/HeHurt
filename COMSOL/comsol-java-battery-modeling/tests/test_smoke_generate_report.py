@@ -7,7 +7,7 @@ import pandas as pd
 import yaml
 
 
-REPORTER = Path(__file__).resolve().parents[1] / "generate_report.py"
+REPORTER = Path(__file__).resolve().parents[1] / "examples" / "scripts" / "generate_report.py"
 
 
 def test_smoke_generate_report_outputs_docx(tmp_path):

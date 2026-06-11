@@ -17,10 +17,56 @@ You CANNOT read the .mph; only the .java is your source of truth.
 - **Operating Modes**: CC (constant current) AND CP (constant power)
 - **No aging models** (no SEI/Li-plating/mechanical stress)
 
-## Mandatory 5-Step Workflow
+## Two Operating Modes (v3.0)
+
+This skill supports two modes. **Determine the mode at task start**:
+
+### Snippet Mode (default)
+- AI outputs code snippets for user to paste
+- Used in regular Copilot Chat, Cursor Chat (no agent/terminal)
+- Default for all "modify this model" or "add X feature" requests
+
+### Autonomous Mode (when triggered)
+Triggered ONLY when ALL of these are true:
+1. Current environment has terminal/agent access (Copilot Agent Mode / Cursor Composer Agent / Claude Code)
+2. User explicitly says: "自己跑完", "全自动", "出 .mph", "出报告", "run it yourself", "autonomous", or invokes `/autonomous-sim` prompt
+3. User has provided acceptance criteria (numeric metrics or experimental CSV)
+4. COMSOL paths are configured (comsolcompile.exe, comsolbatch.exe)
+
+In Autonomous Mode:
+- AI writes COMPLETE .java (not snippets) including `main()` with `study.run()` + `model.save()`
+- AI invokes `examples/scripts/comsol_batch_runner.py` to compile + solve
+- AI auto-debugs based on `comsol_batch_runner.py` output (see `references/autonomous_execution.md`)
+- AI invokes `examples/scripts/generate_report.py` to produce .docx
+- Final deliverables: `result.mph` + `simulation_report.docx`
+
+**Autonomous Mode Red Lines** (NEVER violate):
+- ❌ Never compile/solve before user confirms acceptance criteria
+- ❌ Never exceed max_iterations (default 8)
+- ❌ Never modify physics structure (only numeric parameters, solver settings)
+- ❌ Never overwrite user-provided reference .java
+- ❌ Never retry on License errors — STOP immediately, ask user
+- ✅ Always log every parameter adjustment to debug_history.json
+- ✅ Always generate report, even on failure (failure record has audit value)
+
+For Snippet Mode, continue to the 5-step workflow below.
+
+## Mandatory 5-Step Workflow (Snippet Mode)
 
 When asked to modify a model, execute these steps **in order**.
 Do NOT skip Step 2-3 and jump to coding.
+
+### Pre-Step 1: Check .java file size
+
+Before reading the file, check its size. If >1 MB, warn the user:
+> "This .java is X MB, which is unusually large for an LFP cell model
+>  (expected <500 KB). Common causes: Solver Configurations not deleted,
+>  Interpolation tables embedded, Material Library full copies. See
+>  references/java_export_slimming.md for the cleanup checklist, or run
+>  `python examples/scripts/analyze_java_size.py` for diagnosis."
+
+If user confirms they want to proceed anyway with the large file, do so,
+but reading may use significant context window.
 
 ### Step 1 (already done by user)
 The user has exported .mph → .java via COMSOL Desktop's "Save As Model File for Java".

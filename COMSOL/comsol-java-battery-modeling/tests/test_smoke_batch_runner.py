@@ -6,7 +6,7 @@ from pathlib import Path
 import yaml
 
 
-RUNNER = Path(__file__).resolve().parents[1] / "comsol_batch_runner.py"
+RUNNER = Path(__file__).resolve().parents[1] / "examples" / "scripts" / "comsol_batch_runner.py"
 
 
 def test_smoke_batch_runner_generates_cycle_result_json(tmp_path):
@@ -44,7 +44,7 @@ def test_smoke_batch_runner_generates_cycle_result_json(tmp_path):
         str(tmp_path),
         "--output",
         output_name,
-        "--max-iter",
+        "--iteration",
         "1",
     ]
     proc = subprocess.run(cmd, capture_output=True, text=True)
