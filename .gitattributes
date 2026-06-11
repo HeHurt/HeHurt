@@ -1,0 +1,4 @@
+# DLP 解密 filter：让 git 存明文而非 Trend Micro 密文（见 tools/git_dlp_clean.py）
+# filter 定义在本地 .git/config（不随仓库分发）；换机后需重新 git config。
+*.py    filter=dlp
+*.ipynb filter=dlp

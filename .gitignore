@@ -88,3 +88,11 @@ record_layer_seg*
 /release
 Output/
 *.mat
+
+# --- COMSOL 本地导出/编译产物 ---
+# COMSOL 根目录下的模型导出和批处理产物由本机 DLP 保护，默认不进 Git。
+COMSOL/*.java
+COMSOL/*.class
+COMSOL/*.status
+COMSOL/_codex_work*/
+COMSOL/_sim_cli_trial/
