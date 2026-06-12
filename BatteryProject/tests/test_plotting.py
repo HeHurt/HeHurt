@@ -63,5 +63,24 @@ class BatteryPlotterStateTests(unittest.TestCase):
         bp.plot(target_exp="all", target_sim="all")  # uses Agg, no show
 
 
+class RetentionNormalizationTests(unittest.TestCase):
+    """retention 内部统一 0–1 小数；百分制输入自动归一化。"""
+
+    def test_percent_input_normalized_to_fraction(self):
+        bp = BatteryPlotter()
+        bp.add_exp_data("A", [1, 2], [10.0, 9.0], [100.0, 90.0])
+        np.testing.assert_allclose(bp.exp_db["A"]["ret"], [1.0, 0.9])
+
+    def test_fraction_input_kept_as_is(self):
+        bp = BatteryPlotter()
+        bp.add_sim_data("A", [1, 2], [10.0, 9.0], [1.0, 0.9])
+        np.testing.assert_allclose(bp.sim_db["A"]["ret"], [1.0, 0.9])
+
+    def test_all_nan_retention_does_not_crash(self):
+        bp = BatteryPlotter()
+        bp.add_exp_data("A", [1, 2], [10.0, 9.0], [np.nan, np.nan])
+        self.assertTrue(np.isnan(bp.exp_db["A"]["ret"]).all())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -2,108 +2,183 @@ from __future__ import annotations
 
 import argparse
 import contextlib
-import functools
-import http.server
-import json
 import socket
-import socketserver
 import webbrowser
 from http import HTTPStatus
 from pathlib import Path
-from urllib.parse import urlparse
+from typing import Any
+
+import uvicorn
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse, Response
+from fastapi.staticfiles import StaticFiles
 
 from api.jobs import JobManager
+from api.studio_db import StudioDatabase
+from api.studio_io import StudioDataManager, StudioProjectStore
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 STUDIO_ROOT = PROJECT_ROOT / "studio"
 
 
-class ReusableTCPServer(socketserver.ThreadingTCPServer):
-    allow_reuse_address = True
-    daemon_threads = True
+def create_app() -> FastAPI:
+    if not STUDIO_ROOT.exists():
+        raise FileNotFoundError(f"Studio directory does not exist: {STUDIO_ROOT}")
 
+    database = StudioDatabase()
+    job_manager = JobManager()
+    data_manager = StudioDataManager(db=database)
+    project_store = StudioProjectStore(db=database)
 
-class StudioRequestHandler(http.server.SimpleHTTPRequestHandler):
-    job_manager: JobManager
+    app = FastAPI(title="Battery Sim Studio API", version="0.1.0")
+    app.state.database = database
+    app.state.job_manager = job_manager
+    app.state.data_manager = data_manager
+    app.state.project_store = project_store
 
-    def _send_json(self, payload: dict, status: int = HTTPStatus.OK) -> None:
-        data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(data)))
-        self.end_headers()
-        self.wfile.write(data)
+    @app.exception_handler(HTTPException)
+    async def http_error(_request: Request, exc: HTTPException) -> JSONResponse:
+        return JSONResponse({"error": str(exc.detail)}, status_code=exc.status_code)
 
-    def _read_json_body(self) -> dict:
-        length = int(self.headers.get("Content-Length", "0"))
-        if length <= 0:
-            return {}
-        raw = self.rfile.read(length)
-        return json.loads(raw.decode("utf-8"))
+    @app.exception_handler(RequestValidationError)
+    async def validation_error(_request: Request, exc: RequestValidationError) -> JSONResponse:
+        return JSONResponse({"error": str(exc)}, status_code=HTTPStatus.BAD_REQUEST)
 
-    def do_GET(self) -> None:
-        path = urlparse(self.path).path
-        if not path.startswith("/api/"):
-            return super().do_GET()
+    def csv_download(csv_text: str, filename: str) -> Response:
+        return Response(
+            content=csv_text.encode("utf-8-sig"),
+            media_type="text/csv; charset=utf-8",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
 
+    def job_dir(job_id: str) -> Path:
+        return job_manager.job_root / job_id
+
+    @app.get("/api/health")
+    def health() -> dict[str, Any]:
+        return {
+            "ok": True,
+            "backend": "fastapi",
+            "db_path": str(database.path),
+        }
+
+    @app.get("/api/projects")
+    def list_projects() -> dict[str, Any]:
+        return {"ok": True, "projects": database.list_projects()}
+
+    @app.get("/api/jobs")
+    def list_jobs() -> dict[str, Any]:
+        jobs = database.list_jobs()
+        # The SQLite rows are snapshots; refresh non-terminal jobs from their
+        # status.json so the history list reflects reality without per-job polling.
+        for job in jobs:
+            if job.get("status") not in {"running", "queued"}:
+                continue
+            try:
+                status = job_manager.get_status(job["job_id"])
+            except KeyError:
+                continue
+            database.upsert_job(status, job_dir(job["job_id"]))
+            job.update(
+                status=status.get("status"),
+                progress=status.get("progress"),
+                current_cycle=status.get("current_cycle"),
+                total_cycles=status.get("total_cycles"),
+            )
+        return {"ok": True, "jobs": jobs}
+
+    @app.get("/api/project/config")
+    def load_project_config() -> dict[str, Any]:
+        return project_store.load_config()
+
+    @app.post("/api/project/config", status_code=HTTPStatus.CREATED)
+    async def save_project_config(request: Request) -> dict[str, Any]:
+        payload = await request.json()
+        return project_store.save_config(payload)
+
+    @app.post("/api/data/import", status_code=HTTPStatus.CREATED)
+    async def import_data(request: Request) -> dict[str, Any]:
+        payload = await request.json()
         try:
-            if path == "/api/health":
-                self._send_json({"ok": True})
-                return
+            return data_manager.import_upload(payload)
+        except ValueError as exc:
+            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=str(exc)) from exc
 
-            parts = [part for part in path.strip("/").split("/") if part]
-            if len(parts) == 3 and parts[:2] == ["api", "jobs"]:
-                self._send_json(self.job_manager.get_status(parts[2]))
-                return
-            if len(parts) == 4 and parts[:2] == ["api", "jobs"] and parts[3] == "results":
-                self._send_json(self.job_manager.get_result(parts[2]))
-                return
-            if len(parts) == 4 and parts[:2] == ["api", "jobs"] and parts[3] == "export.csv":
-                csv_text = self.job_manager.export_csv(parts[2])
-                data = csv_text.encode("utf-8-sig")
-                self.send_response(HTTPStatus.OK)
-                self.send_header("Content-Type", "text/csv; charset=utf-8")
-                self.send_header("Content-Disposition", f'attachment; filename="studio_job_{parts[2]}.csv"')
-                self.send_header("Content-Length", str(len(data)))
-                self.end_headers()
-                self.wfile.write(data)
-                return
-        except KeyError:
-            self._send_json({"error": "Job not found."}, HTTPStatus.NOT_FOUND)
-            return
-        except Exception as exc:
-            self._send_json({"error": str(exc)}, HTTPStatus.INTERNAL_SERVER_ERROR)
-            return
+    @app.get("/api/data")
+    def list_datasets() -> dict[str, Any]:
+        return {"ok": True, "datasets": database.list_datasets()}
 
-        self._send_json({"error": "Unknown API endpoint."}, HTTPStatus.NOT_FOUND)
-
-    def do_POST(self) -> None:
-        path = urlparse(self.path).path
-        if not path.startswith("/api/"):
-            return super().do_POST()
-
+    @app.get("/api/data/{dataset_id}")
+    def get_dataset_detail(dataset_id: str) -> dict[str, Any]:
         try:
-            if path == "/api/jobs":
-                payload = self._read_json_body()
-                self._send_json(self.job_manager.create_job(payload), HTTPStatus.CREATED)
-                return
+            return data_manager.dataset_detail(dataset_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Dataset not found.") from exc
 
-            parts = [part for part in path.strip("/").split("/") if part]
-            if len(parts) == 4 and parts[:2] == ["api", "jobs"] and parts[3] == "stop":
-                self._send_json(self.job_manager.stop_job(parts[2]))
-                return
-        except json.JSONDecodeError:
-            self._send_json({"error": "Invalid JSON request body."}, HTTPStatus.BAD_REQUEST)
-            return
-        except KeyError:
-            self._send_json({"error": "Job not found."}, HTTPStatus.NOT_FOUND)
-            return
-        except Exception as exc:
-            self._send_json({"error": str(exc)}, HTTPStatus.INTERNAL_SERVER_ERROR)
-            return
+    @app.post("/api/project/switch")
+    async def switch_project(request: Request) -> dict[str, Any]:
+        payload = await request.json()
+        try:
+            return project_store.switch_project(str(payload.get("project_name", "")))
+        except ValueError as exc:
+            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=str(exc)) from exc
 
-        self._send_json({"error": "Unknown API endpoint."}, HTTPStatus.NOT_FOUND)
+    @app.get("/api/data/{dataset_id}/export.csv")
+    def export_dataset_csv(dataset_id: str) -> Response:
+        try:
+            return csv_download(data_manager.export_csv(dataset_id), f"studio_dataset_{dataset_id}.csv")
+        except KeyError as exc:
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Dataset not found.") from exc
+
+    @app.post("/api/jobs", status_code=HTTPStatus.CREATED)
+    async def create_job(request: Request) -> dict[str, Any]:
+        payload = await request.json()
+        try:
+            status = job_manager.create_job(payload)
+        except ValueError as exc:
+            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=str(exc)) from exc
+        database.upsert_job(status, job_dir(status["job_id"]))
+        return status
+
+    @app.get("/api/jobs/{job_id}")
+    def get_job_status(job_id: str) -> dict[str, Any]:
+        try:
+            status = job_manager.get_status(job_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Job not found.") from exc
+        database.upsert_job(status, job_dir(job_id))
+        return status
+
+    @app.get("/api/jobs/{job_id}/results")
+    def get_job_results(job_id: str) -> dict[str, Any]:
+        try:
+            return job_manager.get_result(job_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Job not found.") from exc
+
+    @app.get("/api/jobs/{job_id}/export.csv")
+    def export_job_csv(job_id: str) -> Response:
+        try:
+            return csv_download(job_manager.export_csv(job_id), f"studio_job_{job_id}.csv")
+        except KeyError as exc:
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Job not found.") from exc
+
+    @app.post("/api/jobs/{job_id}/stop")
+    def stop_job(job_id: str) -> dict[str, Any]:
+        try:
+            status = job_manager.stop_job(job_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Job not found.") from exc
+        database.upsert_job(status, job_dir(job_id))
+        return status
+
+    app.mount("/", StaticFiles(directory=str(STUDIO_ROOT), html=True), name="studio")
+    return app
+
+
+app = create_app()
 
 
 def find_port(preferred: int) -> int:
@@ -119,25 +194,19 @@ def find_port(preferred: int) -> int:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Launch the Battery Sim Studio static UI.")
+    parser = argparse.ArgumentParser(description="Launch the Battery Sim Studio FastAPI server.")
     parser.add_argument("--port", type=int, default=8601, help="Preferred local server port.")
     parser.add_argument("--host", default="127.0.0.1", help="Bind address.")
     parser.add_argument("--no-browser", action="store_true", help="Do not open a browser automatically.")
     args = parser.parse_args()
 
-    if not STUDIO_ROOT.exists():
-        raise FileNotFoundError(f"Studio directory does not exist: {STUDIO_ROOT}")
-
     port = find_port(args.port) if args.host in {"127.0.0.1", "localhost"} else args.port
-    StudioRequestHandler.job_manager = JobManager()
-    handler = functools.partial(StudioRequestHandler, directory=str(STUDIO_ROOT))
-
-    with ReusableTCPServer((args.host, port), handler) as server:
-        url = f"http://{args.host}:{port}/"
-        print(f"Battery Sim Studio running at {url}")
-        if not args.no_browser:
-            webbrowser.open(url)
-        server.serve_forever()
+    url = f"http://{args.host}:{port}/"
+    print(f"Battery Sim Studio running at {url}")
+    print(f"FastAPI docs available at {url}docs")
+    if not args.no_browser:
+        webbrowser.open_new(url)
+    uvicorn.run(app, host=args.host, port=port, log_level="info")
 
 
 if __name__ == "__main__":

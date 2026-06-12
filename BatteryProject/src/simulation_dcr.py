@@ -3,6 +3,7 @@
 提供 ``perform_dcr_test``（单点 DCR + 功率脉冲）和 ``run_dcr_and_power_test``
 （多倍率、分块循环 + 每块 DCR/功率），以及一键运行+绘图的 ``run_and_plot_all``。
 """
+import logging
 import os
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
@@ -11,6 +12,8 @@ import pybamm
 
 from .experiment_utils import build_power_step
 from .simulation_common import _make_parameter_values, _prepare_solution_for_storage
+
+logger = logging.getLogger(__name__)
 
 
 def perform_dcr_test(
@@ -447,7 +450,7 @@ def run_dcr_and_power_test(
         rate_charge_time_results[rate] = rate_result["charge_time"]
         sol_list.extend(rate_result["sol_list"])
         for log_line in rate_result["logs"]:
-            print(log_line)
+            logger.info(log_line)
 
     return {
         "dcr": rate_dcr_results,

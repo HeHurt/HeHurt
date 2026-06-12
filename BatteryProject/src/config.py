@@ -188,6 +188,18 @@ def plating_exchange_current_density_OKane2020(c_e, c_Li, T):
 
 
 def get_hithium_params(t_factor=1, temperature=298.15):
+    """生成 Hithium 参数字典（供 pybamm.ParameterValues.update 使用）。
+
+    参数
+    ----
+    t_factor : float
+        老化加速因子，按比例放大 SEI/析锂/裂纹/LAM 等速率常数。
+    temperature : float
+        目标环境温度 (K)。同时用于：
+        - 选择低温/高温活化能分段（E_D_s、E_r、k_sei、D_sei）；
+        - 设置返回字典中的 "Ambient temperature [K]"。
+        注意 pybamm.Experiment(temperature=...) 仍会覆盖 ambient。
+    """
     def LFP_diffusivity(sto, T):
         D_ref = 2.4e-16
         E_D_s = 45000 if temperature < 298 else 20000
@@ -261,14 +273,16 @@ def get_hithium_params(t_factor=1, temperature=298.15):
         "Open-circuit voltage at 100% SOC [V]": 3.65,
         "Negative electrode exchange-current density [A.m-2]": graphite_exchange_current_density,
         "Positive electrode exchange-current density [A.m-2]": LFP_exchange_current_density,
-        "Positive electrode diffusivity [m2.s-1]": LFP_diffusivity,
-        "Negative electrode diffusivity [m2.s-1]": Gr_diffusivity,
+        "Positive particle diffusivity [m2.s-1]": LFP_diffusivity,
+        "Negative particle diffusivity [m2.s-1]": Gr_diffusivity,
         "Electrolyte diffusivity [m2.s-1]": electrolyte_diffusivity_Nyman2008_arrhenius,
         "Electrolyte conductivity [S.m-1]": electrolyte_conductivity,
         "Total heat transfer coefficient [W.m-2.K-1]": 30,
-        "Effective volumetric heat capacity [J.K-1.m-3]": 1040,
+        # 注：PyBaMM 不读取 "Effective volumetric heat capacity"（它由各组分
+        # density × specific heat 计算得到），原 1040 条目为无效配置已删除；
+        # 如需调热容请改各组分 "X specific heat capacity [J.kg-1.K-1]"。
         "Effective thermal conductivity [W.m-1.K-1]": 2,
-        "Ambient temperature [K]": 298.15,
+        "Ambient temperature [K]": temperature,
         "Positive electrode Bruggeman coefficient (electrode)": 1.5,
         "Positive electrode Bruggeman coefficient (electrolyte)": 1.5,
         "Negative electrode Bruggeman coefficient (electrolyte)": 1.5,

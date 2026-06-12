@@ -92,5 +92,42 @@ class PeakCurrentRegressionTests(unittest.TestCase):
         )
 
 
+class FindPeakBracketTests(unittest.TestCase):
+    """_find_peak_current_bracket 自适应扩展（纯函数，无需求解器）。"""
+
+    def test_root_inside_grid_unchanged(self):
+        from src.simulation_peak import _find_peak_current_bracket
+
+        left, right, _ = _find_peak_current_bracket(lambda r: 3 - r, [1, 2, 5])
+        self.assertEqual((left, right), (2, 5))
+
+    def test_root_above_grid_extends_upward(self):
+        from src.simulation_peak import _find_peak_current_bracket
+
+        # 根在 7，网格最大 5——复现 0°C 峰值倍率刚超出采样网格的回归场景
+        left, right, sampled = _find_peak_current_bracket(lambda r: 7 - r, [1, 2, 5])
+        self.assertEqual((left, right), (5, 10))
+        self.assertGreater(len(sampled), 3)
+
+    def test_root_below_grid_extends_downward(self):
+        from src.simulation_peak import _find_peak_current_bracket
+
+        left, right, _ = _find_peak_current_bracket(
+            lambda r: 0.3 - r, [1, 2, 5], max_extensions=4
+        )
+        self.assertIsNotNone(left)
+        self.assertLessEqual(left, 0.3)
+        self.assertGreaterEqual(right, 0.3)
+
+    def test_no_root_returns_none(self):
+        from src.simulation_peak import _find_peak_current_bracket
+
+        left, right, _ = _find_peak_current_bracket(
+            lambda r: 1.0, [1, 2], max_extensions=2
+        )
+        self.assertIsNone(left)
+        self.assertIsNone(right)
+
+
 if __name__ == "__main__":
     unittest.main()

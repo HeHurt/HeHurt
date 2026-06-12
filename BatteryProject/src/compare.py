@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+import logging
 import re
 from pathlib import Path
 import numpy as np
@@ -24,6 +25,8 @@ import matplotlib.pyplot as plt
 from .exp_loader import load_cycling_folder
 from .analysis import get_discharge_capacity, compute_cycle_energies, calculate_cycle_swelling
 from .plotting import _apply_default_style
+
+logger = logging.getLogger(__name__)
 
 
 # ── 辅助：按温度+倍率做模糊匹配 ──────────────────────────────────────────
@@ -162,10 +165,6 @@ def compare_retention(
 
     参数
     ----
-    method : {"engineering", "pybamm_thickness"}
-        膨胀位移来源；pybamm_thickness 会优先读取 Cell thickness change [m]。
-    reference : {"cycle_start", "solution_start", "parameter_initial"}
-        膨胀位移零点定义。
     filter_conditions : str | list[str] | None
         工况筛选，如 "25°C"、"0.5P"、["25°C", "0.5P"]。
     sim_bias : float
@@ -188,9 +187,10 @@ def compare_retention(
 
         # 仿真
         caps = get_discharge_capacity(sol).get("discharge_capacity", np.array([]))
-        caps = caps[~np.isnan(caps)]
+        valid_idx = np.flatnonzero(~np.isnan(caps))
+        caps = caps[valid_idx]
         if caps.size > 0 and caps[0] != 0:
-            sim_cycle = np.arange(len(caps)) * acceleration_factor
+            sim_cycle = valid_idx * acceleration_factor
             sim_ret = caps / caps[0] + sim_bias
             bias_tag = f" (bias={sim_bias:+g})" if sim_bias != 0 else ""
             ax.plot(sim_cycle, sim_ret, ls="--", lw=2.5, color=color, label=f"{lbl} (Sim){bias_tag}")
@@ -249,7 +249,7 @@ def compare_efficiency(
         res = compute_cycle_energies(sol)
         eff = res.get("efficiency", np.array([]))
         if len(eff) > 0:
-            sim_cycle = np.arange(len(eff)) * acceleration_factor
+            sim_cycle = res.get("cycle_index", np.arange(len(eff))) * acceleration_factor
             eff_biased = np.array(eff) + sim_bias
             bias_tag = f" (bias={sim_bias:+g})" if sim_bias != 0 else ""
             ax.plot(sim_cycle, eff_biased, ls="--", lw=2.5, color=color, label=f"{lbl} (Sim){bias_tag}")
@@ -287,6 +287,7 @@ def compare_swelling(
     filter_conditions=None,
     sim_bias: float = 0.0,
     exp_bias: float = 0.0,
+    **swelling_kwargs,
 ):
     """对标膨胀力（最大/最小，Sim vs Exp）。
 
@@ -322,6 +323,7 @@ def compare_swelling(
             omega_n=omega_n, omega_p=omega_p,
             k_stiffness=k_stiffness, preload_force=preload_force,
             method=method, reference=reference,
+            **swelling_kwargs,
         )
         if len(max_f) > 0:
             sim_cycle = np.arange(1, len(max_f) + 1) * acceleration_factor
@@ -374,6 +376,7 @@ def compare_all(
     filter_conditions=None,
     sim_bias: dict | float = 0.0,
     exp_bias: dict | float = 0.0,
+    **swelling_kwargs,
 ):
     """一站式自动对标。
 
@@ -437,22 +440,22 @@ def compare_all(
         exp_data_list = load_cycling_folder(exp_folder, channel=channel)
 
     if not exp_data_list:
-        print("⚠️ 未加载到任何实验数据，跳过对标。")
+        logger.warning("未加载到任何实验数据，跳过对标。")
         return {}
 
     # 自动匹配并显示匹配结果
     pairs = _auto_match(sim_labels, exp_data_list, filter_conditions)
-    print(f"\n🔗 自动匹配结果 ({len(pairs)} 对):")
+    logger.info("自动匹配结果 (%d 对):", len(pairs))
     for si, ei in pairs:
-        print(f"   Sim[{sim_labels[si]}]  ↔  Exp[{exp_data_list[ei]['label']}]")
+        logger.info("  Sim[%s]  ↔  Exp[%s]", sim_labels[si], exp_data_list[ei]["label"])
     unmatched_sim = [i for i in range(len(sim_labels)) if i not in {p[0] for p in pairs}]
     unmatched_exp = [i for i in range(len(exp_data_list)) if i not in {p[1] for p in pairs}]
     if unmatched_sim:
-        print(f"   ⚠️ 未匹配仿真: {[sim_labels[i] for i in unmatched_sim]}")
+        logger.warning("未匹配仿真: %s", [sim_labels[i] for i in unmatched_sim])
     if unmatched_exp:
-        print(f"   ⚠️ 未匹配实验: {[exp_data_list[i]['label'] for i in unmatched_exp]}")
+        logger.warning("未匹配实验: %s", [exp_data_list[i]["label"] for i in unmatched_exp])
     if filter_conditions is not None:
-        print(f"   🔍 筛选条件: {filter_conditions}")
+        logger.info("筛选条件: %s", filter_conditions)
 
     axes = {}
 
@@ -474,7 +477,7 @@ def compare_all(
 
     if "swelling" in metrics:
         if params is None:
-            print("⚠️ 未提供 params，跳过膨胀力对标。")
+            logger.warning("未提供 params，跳过膨胀力对标。")
         else:
             fig_s, (ax_mx, ax_mn) = plt.subplots(1, 2, figsize=(14, 5))
             compare_swelling(
@@ -486,6 +489,7 @@ def compare_all(
                 method=method, reference=reference,
                 filter_conditions=filter_conditions, sim_bias=bias_map.get("swelling", 0.0),
                 exp_bias=exp_bias_map.get("swelling", 0.0),
+                **swelling_kwargs,
             )
             plt.tight_layout()
             axes["swelling_max"] = ax_mx

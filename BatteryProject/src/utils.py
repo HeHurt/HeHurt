@@ -102,8 +102,9 @@ def load_excel_to_plotter(plotter_instance, file_path, sheet_names=None):
                 if "放电容量" in str(col_name):
                     temp_storage[label]["cap"] = col_data
                 elif "容量保持率" in str(col_name):
-                    if np.nanmean(col_data) < 2.0:
-                        col_data = col_data * 100
+                    # 统一为 0–1 小数（百分制自动 /100），与 exp_loader 契约一致
+                    if np.nanmean(col_data) > 2.0:
+                        col_data = col_data / 100.0
                     temp_storage[label]["ret"] = col_data
             count = 0
             for lbl, vals in temp_storage.items():
@@ -128,7 +129,9 @@ def process_sol_list_with_custom_extractor(plotter_instance, sol_list, label_lis
                 cap_Ah = cap_clean
                 raw_cycles = np.arange(0, len(cap_Ah))
                 real_cycles = raw_cycles * t_factor
-                retention = (cap_Ah / cap_Ah[1]) * 100
+                # 首圈通常是 conditioning，保持率以第 2 圈为基线；单圈数据退回首圈
+                base_cap = cap_Ah[1] if cap_Ah.size > 1 else cap_Ah[0]
+                retention = cap_Ah / base_cap  # 0–1 小数，与 exp_loader 契约一致
                 plotter_instance.add_sim_data(label, real_cycles, cap_Ah, retention)
         except Exception as e:
             logger.error("%s 错误: %s", label, e)
@@ -203,7 +206,7 @@ def load_dat_folder_to_plotter(
             if base == 0 or not np.isfinite(base):
                 retention = np.full_like(cap, np.nan, dtype=float)
             else:
-                retention = cap / base * 100
+                retention = cap / base  # 0–1 小数，与 exp_loader 契约一致
 
             if label_mode == "stem":
                 label = f.stem

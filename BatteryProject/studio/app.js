@@ -8,8 +8,20 @@ const state = {
   totalCycles: 3,
   currentJobId: null,
   currentResult: null,
+  importedDataset: null,
+  savedConfig: null,
+  projectMetadata: {
+    project_name: "Demo_Project",
+    cell_type: "NCM/Graphite",
+    created_at: null,
+  },
+  runtime: {
+    pybamm_version: "--",
+  },
   toastTimer: null,
   pollTimer: null,
+  pollFailures: 0,
+  simTimeH: null,
 };
 
 const parameterNominalCapacity = {
@@ -62,6 +74,8 @@ const iconPaths = {
   chart: '<path d="M3 3v18h18"></path><path d="m7 15 4-4 3 3 5-7"></path>',
   image: '<rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="8" cy="10" r="1.5"></circle><path d="m21 15-5-5L5 21"></path>',
   file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path>',
+  history: '<path d="M3.5 12a8.5 8.5 0 1 0 2.5-6L3.5 8.5"></path><path d="M3.5 3.5v5h5"></path><path d="M12 7.5V12l3 2"></path>',
+  close: '<path d="m6 6 12 12"></path><path d="m18 6-12 12"></path>',
 };
 
 function iconMarkup(name) {
@@ -90,6 +104,41 @@ function showToast(message) {
   state.toastTimer = setTimeout(() => toast.classList.remove("show"), 2200);
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function formatMetric(value, options = {}) {
+  if (value === null || value === undefined || value === "") return "--";
+  const number = Number(value);
+  if (!Number.isFinite(number)) return String(value);
+  const digits = options.digits ?? 3;
+  const suffix = options.suffix || "";
+  if (digits === 0) return `${Math.round(number)}${suffix}`;
+  return `${number.toFixed(digits).replace(/\.?0+$/, "")}${suffix}`;
+}
+
+function downloadUrl(url) {
+  const link = document.createElement("a");
+  link.href = url;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+function formatProjectTime(value) {
+  if (!value) return "--";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value).replace("T", " ").slice(0, 16);
+  const pad = (number) => String(number).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 async function apiFetch(path, options = {}) {
   const response = await fetch(path, {
     headers: {
@@ -101,7 +150,9 @@ async function apiFetch(path, options = {}) {
   const text = await response.text();
   const payload = text ? JSON.parse(text) : {};
   if (!response.ok) {
-    throw new Error(payload.error || `API 请求失败: ${response.status}`);
+    const error = new Error(payload.error || payload.detail || `API 请求失败: ${response.status}`);
+    error.status = response.status;
+    throw error;
   }
   return payload;
 }
@@ -144,17 +195,150 @@ function collectSimulationRequest() {
   };
 }
 
+function collectProjectConfigPayload() {
+  return {
+    project_name: state.projectMetadata.project_name,
+    project_metadata: state.projectMetadata,
+    simulation_request: collectSimulationRequest(),
+    current_job_id: state.currentJobId,
+    dataset: state.importedDataset,
+    ui: {
+      route: state.route,
+      saved_from: "Battery Sim Studio",
+    },
+  };
+}
+
+function renderProjectInfo() {
+  document.getElementById("projectNameText").textContent = state.projectMetadata.project_name || "Demo_Project";
+  document.getElementById("cellTypeValue").textContent = state.projectMetadata.cell_type || "NCM/Graphite";
+  document.getElementById("projectCreatedAt").textContent = formatProjectTime(state.projectMetadata.created_at);
+  document.getElementById("pybammVersion").textContent = state.runtime.pybamm_version || "--";
+}
+
+function applyProjectConfig(config, runtime = {}) {
+  const metadata = config?.project_metadata || {};
+  state.projectMetadata = {
+    project_name: metadata.project_name || config?.project_name || state.projectMetadata.project_name || "Demo_Project",
+    cell_type: metadata.cell_type || state.projectMetadata.cell_type || "NCM/Graphite",
+    created_at: metadata.created_at || state.projectMetadata.created_at,
+  };
+  state.runtime = {
+    ...state.runtime,
+    ...runtime,
+  };
+  renderProjectInfo();
+}
+
+function applySimulationRequest(request = {}) {
+  const setValue = (selector, value) => {
+    const element = document.querySelector(selector);
+    if (element && value !== undefined && value !== null) element.value = String(value);
+  };
+  const setChecked = (selector, value) => {
+    const element = document.querySelector(selector);
+    if (element && value !== undefined && value !== null) element.checked = Boolean(value);
+  };
+  setValue("#modelSelect", request.model);
+  setValue("#parameterSet", request.parameter_set);
+  setValue("#cycleMode", request.rate_unit);
+  setValue("#chargeRate", request.charge_rate);
+  setValue("#dischargeRate", request.discharge_rate);
+  setValue("#chargeCutoff", request.charge_cutoff_v);
+  setValue("#dischargeCutoff", request.discharge_cutoff_v);
+  setValue("#temperatureC", request.temperature_c);
+  setValue("#cycleCount", request.cycles);
+  setValue("#restMinutes", request.rest_minutes);
+  setChecked("#dcrEnabled", request.dcr_enabled);
+  setValue("#dcrSoc", request.dcr_soc !== undefined ? Number(request.dcr_soc) * 100 : undefined);
+  setValue("#dcrRate", request.dcr_rate);
+  setValue("#dcrDuration", request.dcr_duration_s);
+  setValue("#dcrEvery", request.dcr_every_cycles);
+  setChecked("#agingEnabled", request.aging_enabled);
+  const aging = request.aging_options || {};
+  setValue("#agingSei", aging.SEI);
+  setValue("#agingSeiFilm", aging["SEI film resistance"]);
+  setValue("#agingSeiPorosity", aging["SEI porosity change"]);
+  setValue("#agingSeiCracks", aging["SEI on cracks"]);
+  setValue("#agingPlating", aging["lithium plating"]);
+  setValue("#agingPlatingPorosity", aging["lithium plating porosity change"]);
+  setValue("#agingMechanics", aging["particle mechanics"]);
+  setValue("#agingStressDiffusion", aging["stress-induced diffusion"]);
+  setValue("#agingLam", aging["loss of active material"]);
+  document.querySelector("#dcrOptions")?.style.setProperty(
+    "display",
+    document.querySelector("#dcrEnabled")?.checked ? "" : "none"
+  );
+  syncAgingControls();
+  updateCurrentPreview();
+  drawConditionChart();
+}
+
+const AGING_CONTROL_SELECTORS = [
+  "#agingSei",
+  "#agingSeiFilm",
+  "#agingSeiPorosity",
+  "#agingSeiCracks",
+  "#agingPlating",
+  "#agingPlatingPorosity",
+  "#agingMechanics",
+  "#agingStressDiffusion",
+  "#agingLam",
+];
+
+function syncAgingControls() {
+  const enabled = Boolean(document.querySelector("#agingEnabled")?.checked);
+  AGING_CONTROL_SELECTORS.forEach((selector) => {
+    const element = document.querySelector(selector);
+    if (element) element.disabled = !enabled;
+  });
+}
+
+// 路由 → 视图：多个导航项可共享一个视图
+const ROUTE_VIEWS = {
+  simulation: "simulation",
+  results: "simulation",
+  projects: "projects",
+  new: "projects",
+  open: "projects",
+  import: "projects",
+  "data-import": "data",
+  "data-browser": "data",
+  "data-clean": "data",
+  "data-analysis": "data",
+};
+
+// 尚未实现的模块：显示占位页
+const PLACEHOLDER_ROUTES = {
+  identify: "参数识别",
+  sensitivity: "敏感性分析",
+  optimize: "优化设计",
+  equivalent: "等效电路模型",
+  material: "材料参数库",
+  database: "电芯数据库",
+  report: "报告导出",
+};
+
 function setRoute(route) {
   state.route = route || "simulation";
+  const view = ROUTE_VIEWS[state.route] || (PLACEHOLDER_ROUTES[state.route] ? "placeholder" : "simulation");
+  document.querySelectorAll(".main-content > .view").forEach((node) => {
+    node.hidden = node.dataset.view !== view;
+  });
+  if (view === "placeholder") {
+    document.getElementById("placeholderTitle").textContent = `${PLACEHOLDER_ROUTES[state.route]} · 建设中`;
+  }
   document.querySelector(".app-shell").dataset.route = state.route;
   document.querySelectorAll(".nav-item, .module-tabs a").forEach((item) => {
     const target = item.getAttribute("href")?.replace("#", "");
     item.classList.toggle("active", target === state.route || (state.route === "simulation" && target === "simulation"));
   });
+  if (view === "projects") loadProjectsView();
+  if (view === "data") loadDatasetsView();
 }
 
-function createPreviewRows() {
-  const rows = [
+function createPreviewRows(rows = null) {
+  const displayRows = rows || [
     ["1", "3.102", "11.42", "10.83", "94.83"],
     ["2", "3.098", "11.40", "10.81", "94.82"],
     ["3", "3.094", "11.37", "10.78", "94.81"],
@@ -164,8 +348,8 @@ function createPreviewRows() {
     ["500", "2.342", "8.49", "7.90", "93.05"],
   ];
   document.getElementById("previewRows").innerHTML = rows
-    .map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`)
-    .join("");
+    ? displayRows.map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`).join("")
+    : displayRows.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`).join("");
 }
 
 function createLogRows() {
@@ -424,128 +608,76 @@ function drawConditionChart() {
   );
 }
 
-function drawAgingChart() {
-  const svg = document.getElementById("agingChart");
-  const width = 360;
-  const height = 190;
-  const margin = { top: 12, right: 58, bottom: 32, left: 36 };
-  const xScale = makeScale([0, 3.8], [margin.left, width - margin.right]);
-  const yScale = makeScale([2, 4.5], [height - margin.bottom, margin.top]);
-  svg.innerHTML = "";
-  drawAxes(svg, { width, height, margin, xScale, yScale, xTicks: [0, 0.8, 1.6, 2.4, 3.8], yTicks: [2, 3, 4, 4.5] });
-  for (let i = 0; i < 36; i += 1) {
-    const t = i / 35;
-    const cutoff = 2.85 + 0.62 * (1 - t) + 0.16 * Math.sin(t * Math.PI);
-    const points = [];
-    for (let j = 0; j <= 44; j += 1) {
-      const x = (j / 44) * cutoff;
-      const y = 4.28 - 0.26 * Math.log1p(x * 1.7) - 0.05 * t - 1.75 / (1 + Math.exp(-(x - cutoff + 0.24) * 14));
-      points.push([x, y]);
-    }
-    const hue = 220 - t * 195;
-    const color = `hsl(${hue}, 88%, ${54 + t * 4}%)`;
-    svg.insertAdjacentHTML("beforeend", `<path class="chart-line" fill="none" d="${linePath(points, xScale, yScale)}" stroke="${color}" opacity="0.82"></path>`);
-  }
-  const red = [[0, 4.22], [0.25, 3.98], [0.75, 3.85], [1.25, 3.55], [1.65, 3.05], [1.82, 2.55]];
-  svg.insertAdjacentHTML("beforeend", `<path class="chart-line chart-red" fill="none" d="${linePath(red, xScale, yScale)}"></path>`);
-  const barX = width - 36;
-  const grad = '<defs><linearGradient id="cycleGrad" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#2455e8"></stop><stop offset="0.55" stop-color="#f4d443"></stop><stop offset="1" stop-color="#e11d48"></stop></linearGradient></defs>';
-  svg.insertAdjacentHTML("afterbegin", grad);
-  svg.insertAdjacentHTML("beforeend", `<rect x="${barX}" y="22" width="14" height="126" fill="url(#cycleGrad)"></rect><text class="tick-label" x="${barX + 28}" y="30">500</text><text class="tick-label" x="${barX + 28}" y="149">1</text><text class="tick-label" x="${barX - 7}" y="14">循环序号</text><text class="tick-label" x="180" y="184" text-anchor="middle">容量 (Ah)</text>`);
+function drawDataPreviewCharts() {
+  const cycles = [1, 100, 200, 300, 400, 500];
+  const smallSpec = {
+    width: 300,
+    height: 112,
+    margin: { top: 8, right: 10, bottom: 24, left: 34 },
+    xDomain: [0, 500],
+    xTicks: [0, 250, 500],
+    xlabel: "循环",
+  };
+  drawLineChart("previewRetentionChart", {
+    ...smallSpec,
+    yDomain: [92, 101],
+    yTicks: [92, 96, 100],
+    lines: [{ className: "chart-blue", points: cycles.map((cycle, index) => [cycle, [100, 98.9, 97.3, 95.8, 94.3, 93.05][index]]) }],
+  });
+  drawLineChart("previewCapacityChart", {
+    ...smallSpec,
+    yDomain: [2.2, 3.2],
+    yTicks: [2.2, 2.7, 3.2],
+    lines: [{ className: "chart-blue", points: cycles.map((cycle, index) => [cycle, [3.102, 2.98, 2.82, 2.66, 2.5, 2.342][index]]) }],
+  });
+  drawLineChart("previewEfficiencyChart", {
+    ...smallSpec,
+    yDomain: [92.5, 95.2],
+    yTicks: [92.5, 94, 95.2],
+    lines: [{ className: "chart-blue", points: cycles.map((cycle, index) => [cycle, [94.83, 94.62, 94.29, 93.88, 93.46, 93.05][index]]) }],
+  });
 }
 
-function drawResultChart(id, title, yDomain, blue, red, options = {}) {
-  const { width, height, margin } = resultChartSpec;
-  const { xDomain, xTicks } = cycleAxisForPointSets([blue, red], options.maxCycle || 1000);
+function renderTimePlaceholder(id, message, options = {}) {
+  const svg = document.getElementById(id);
+  if (!svg) return;
+  const width = options.width || 270;
+  const height = options.height || 190;
   drawLineChart(id, {
     width,
     height,
-    margin,
-    xDomain,
-    yDomain,
-    xTicks,
-    yTicks: options.yTicks,
-    ylabel: options.ylabel,
-    xlabel: "循环次数",
-    lines: [
-      { className: "chart-blue", points: blue, pointsVisible: true, dot: "#2563eb" },
-      { className: "chart-red", points: red, pointsVisible: true, dot: "#ef4444" },
-    ],
-    legend: [
-      { label: "仿真", color: "#2563eb" },
-      { label: "实验", color: "#ef4444" },
-    ],
+    xDomain: [0, 1],
+    yDomain: options.yDomain || [0, 1],
+    xTicks: [],
+    yTicks: options.yTicks || [],
+    xlabel: options.xlabel || "时间 (h)",
+    lines: [],
   });
-  const svg = document.getElementById(id);
-  if (options.threshold) {
-    const xScale = makeScale(xDomain, [margin.left, width - margin.right]);
-    const yScale = makeScale(yDomain, [height - margin.bottom, margin.top]);
-    const y = yScale(options.threshold.value);
-    svg.insertAdjacentHTML("beforeend", `<path d="M${xScale(xDomain[0])} ${y}H${xScale(xDomain[1])}" fill="none" stroke="#8b98aa" stroke-width="1" stroke-dasharray="5 4"></path><text class="tick-label" x="${xScale(xDomain[0]) + 8}" y="${y - 5}">${options.threshold.label}</text>`);
-  }
+  svg.insertAdjacentHTML(
+    "beforeend",
+    `<text class="tick-label" x="${width / 2}" y="${height / 2}" text-anchor="middle">${message}</text>`
+  );
 }
 
 function drawCharts() {
   drawConditionChart();
-  drawLineChart("voltageChart", {
-    xDomain: [0, 7],
-    yDomain: [2, 4.5],
-    xTicks: [0, 1.2, 2.5, 6, 7],
-    yTicks: [2, 3, 4, 4.5],
-    xlabel: "时间 (h)",
-    lines: [
-      { className: "chart-blue", points: [[0, 3.0], [0.1, 3.5], [0.4, 3.72], [1.7, 4.12], [1.85, 4.22], [2.05, 3.18], [2.23, 3.55], [2.8, 3.85], [5.6, 4.18], [6.8, 4.26]] },
-      { className: "chart-red", dashed: true, points: [[2.0, 2.7], [2.12, 3.45], [2.55, 3.78], [4.5, 3.98], [6.7, 4.22]] },
-    ],
-    legend: [
-      { label: "仿真", color: "#2563eb" },
-      { label: "数据", color: "#ef4444", dashed: true },
-    ],
+  drawDataPreviewCharts();
+  renderTimePlaceholder("voltageChart", "运行仿真后显示");
+  renderTimePlaceholder("currentChart", "运行仿真后显示");
+  renderTimePlaceholder("temperatureChart", "运行仿真后显示");
+  renderTimePlaceholder("agingChart", "运行仿真后显示充放电曲线演化", { width: 360, xlabel: "容量 (Ah)" });
+  renderCyclePlaceholder("capacityChart", "容量衰减", "运行仿真后显示", {
+    yDomain: [0, 100],
+    yTicks: [0, 50, 100],
   });
-
-  drawLineChart("currentChart", {
-    xDomain: [0, 4],
-    yDomain: [-2, 2],
-    xTicks: [0, 1, 2, 3, 4],
-    yTicks: [-2, -1, 0, 1, 2],
-    xlabel: "时间 (h)",
-    lines: [
-      { className: "chart-blue", points: [[0, 1.65], [1.0, 1.65], [1.02, -1.9], [2.55, -1.9], [2.58, 1.78], [3.5, 1.78], [3.52, 0.02], [4, 0.02]] },
-    ],
-  });
-
-  drawLineChart("temperatureChart", {
-    xDomain: [0, 3],
-    yDomain: [24, 32],
-    xTicks: [0, 1.2, 2.1, 3],
-    yTicks: [24, 26, 28, 30, 32],
-    xlabel: "时间 (h)",
-    lines: [
-      { className: "chart-blue", points: [[0, 25.5], [0.5, 26.5], [1.1, 27.4], [1.55, 28.6], [1.85, 29.3], [2.15, 29.4], [2.3, 28.5], [2.7, 27.7], [3, 27.3]] },
-    ],
-  });
-
-  drawAgingChart();
-
-  const cycles = [0, 80, 160, 240, 320, 420, 520, 620, 720, 820, 920, 1000];
-  const capBlue = cycles.map((cycle, index) => [cycle, 3.35 - 0.00075 * cycle - 0.00000052 * cycle * cycle + (index % 2 ? 0.025 : -0.012)]);
-  const capRed = cycles.map((cycle, index) => [cycle, 3.35 - 0.0009 * cycle - 0.00000082 * cycle * cycle + (index % 2 ? -0.012 : 0.018)]);
-  drawResultChart("capacityChart", "容量衰减", [1.5, 3.5], capBlue, capRed, {
-    yTicks: [1.5, 2, 2.5, 3, 3.5],
-    threshold: { value: 2.4, label: "80% 2.40Ah" },
-  });
-
-  const resBlue = cycles.map((cycle) => [cycle, 18 + cycle * 0.022]);
-  const resRed = cycles.map((cycle, index) => [cycle, 18 + cycle * 0.029 + Math.max(0, index - 8) * 2.1]);
-  drawResultChart("resistanceChart", "内阻增长", [15, 60], resBlue, resRed, {
-    yTicks: [20, 30, 40, 50, 60],
+  renderCyclePlaceholder("resistanceChart", "DCR", "勾选「DCR 仿真」后运行", {
+    yDomain: [0, 1],
+    yTicks: [0, 0.5, 1],
     ylabel: "DCR (mΩ)",
   });
-
-  const effBlue = cycles.map((cycle, index) => [cycle, 98.5 - cycle * 0.0038 + (index % 2 ? -0.06 : 0.04)]);
-  const effRed = cycles.map((cycle, index) => [cycle, 98.9 - cycle * 0.0042 + (index % 2 ? 0.08 : -0.03)]);
-  drawResultChart("efficiencyChart", "能量效率", [88, 100], effBlue, effRed, {
-    yTicks: [88, 92, 96, 100],
+  renderCyclePlaceholder("efficiencyChart", "能量效率", "运行仿真后显示", {
+    yDomain: [80, 100],
+    yTicks: [80, 90, 100],
   });
 }
 
@@ -566,7 +698,7 @@ function updateRunStatus() {
   document.getElementById("cycleText").textContent = `${state.cycle} / ${state.totalCycles}`;
   document.getElementById("elapsedTime").textContent = fmtClock(state.elapsedSeconds);
   document.getElementById("remainingTime").textContent = remainingSeconds === null ? "--:--:--" : fmtClock(remainingSeconds);
-  document.getElementById("simTime").textContent = `${(state.cycle * 0.345).toFixed(2)} h`;
+  document.getElementById("simTime").textContent = state.simTimeH === null ? "-- h" : `${state.simTimeH.toFixed(2)} h`;
   document.getElementById("runStatus").textContent = statusLabels[state.status] || state.status;
   document.querySelector('[data-action="stop"]').disabled = !state.running;
   document.querySelector(".status-dot")?.classList.toggle("error", state.status === "failed");
@@ -590,7 +722,7 @@ function renderLogs(logs) {
   const rows = logs.length ? logs : [{ time: "--:--:--", level: "INFO", message: "等待创建真实仿真任务" }];
   document.getElementById("logRows").innerHTML = rows
     .slice(-8)
-    .map((row) => `<tr><td>${row.time}</td><td>${row.level}</td><td>${row.message}</td></tr>`)
+    .map((row) => `<tr><td>${escapeHtml(row.time)}</td><td>${escapeHtml(row.level)}</td><td>${escapeHtml(row.message)}</td></tr>`)
     .join("");
 }
 
@@ -601,6 +733,8 @@ async function startRunSimulation() {
   }
   const request = collectSimulationRequest();
   state.currentResult = null;
+  state.simTimeH = null;
+  state.pollFailures = 0;
   showToast("正在提交真实 PyBaMM 仿真任务");
   const status = await apiFetch("/api/jobs", {
     method: "POST",
@@ -620,6 +754,7 @@ async function pollJobStatus() {
   if (!state.currentJobId) return;
   try {
     const status = await apiFetch(`/api/jobs/${state.currentJobId}`);
+    state.pollFailures = 0;
     applyJobStatus(status);
     if (["completed", "failed", "canceled"].includes(status.status)) {
       clearInterval(state.pollTimer);
@@ -635,12 +770,34 @@ async function pollJobStatus() {
       }
     }
   } catch (error) {
+    state.pollFailures += 1;
+    // 临时网络抖动不立刻判失败：404（任务已不存在）或连续 3 次失败才停止轮询
+    if (error.status !== 404 && state.pollFailures < 3) return;
     clearInterval(state.pollTimer);
     state.pollTimer = null;
     state.running = false;
     state.status = "failed";
     updateRunStatus();
     showToast(error.message);
+  }
+}
+
+async function resumeCurrentJob() {
+  if (!state.currentJobId) return;
+  try {
+    const status = await apiFetch(`/api/jobs/${state.currentJobId}`);
+    applyJobStatus(status);
+    if (["running", "queued"].includes(status.status)) {
+      state.pollFailures = 0;
+      clearInterval(state.pollTimer);
+      state.pollTimer = setInterval(pollJobStatus, 1200);
+      showToast("已恢复跟踪正在运行的仿真任务");
+    } else if (status.status === "completed") {
+      state.currentResult = await apiFetch(`/api/jobs/${state.currentJobId}/results`);
+      renderSimulationResult(state.currentResult);
+    }
+  } catch (error) {
+    console.warn("恢复仿真任务失败", error);
   }
 }
 
@@ -659,28 +816,371 @@ async function stopRunSimulation() {
   showToast("已请求停止仿真任务");
 }
 
+const JOB_STATUS_LABELS = {
+  queued: "排队中",
+  running: "运行中",
+  completed: "已完成",
+  failed: "失败",
+  canceled: "已停止",
+};
+
+function renderJobsRows(jobs) {
+  const body = document.getElementById("jobsRows");
+  if (!jobs.length) {
+    body.innerHTML = '<tr><td colspan="6">暂无任务记录</td></tr>';
+    return;
+  }
+  body.innerHTML = jobs
+    .map((job) => {
+      const jobId = escapeHtml(job.job_id);
+      const actions = [];
+      if (job.status === "completed") {
+        actions.push(`<button class="btn outline compact" type="button" data-action="load-job" data-job-id="${jobId}">查看结果</button>`);
+        actions.push(`<button class="btn outline compact" type="button" data-action="job-csv" data-job-id="${jobId}">CSV</button>`);
+      } else if (job.status === "running" || job.status === "queued") {
+        actions.push(`<button class="btn outline compact" type="button" data-action="track-job" data-job-id="${jobId}">跟踪</button>`);
+      }
+      return `<tr>
+        <td>${jobId}</td>
+        <td>${escapeHtml(JOB_STATUS_LABELS[job.status] || job.status)}</td>
+        <td>${Number(job.progress || 0).toFixed(0)}%</td>
+        <td>${escapeHtml(job.current_cycle ?? 0)} / ${escapeHtml(job.total_cycles ?? 0)}</td>
+        <td>${escapeHtml(String(job.updated_at || "").replace("T", " ").slice(0, 19))}</td>
+        <td class="job-actions">${actions.join("") || "--"}</td>
+      </tr>`;
+    })
+    .join("");
+}
+
+async function openJobsModal() {
+  const modal = document.getElementById("jobsModal");
+  modal.hidden = false;
+  const body = document.getElementById("jobsRows");
+  body.innerHTML = '<tr><td colspan="6">加载中...</td></tr>';
+  try {
+    const payload = await apiFetch("/api/jobs");
+    renderJobsRows(payload.jobs || []);
+  } catch (error) {
+    body.innerHTML = `<tr><td colspan="6">${escapeHtml(error.message)}</td></tr>`;
+  }
+}
+
+function closeJobsModal() {
+  const modal = document.getElementById("jobsModal");
+  if (modal) modal.hidden = true;
+}
+
+async function loadJobResult(jobId) {
+  state.currentJobId = jobId;
+  const status = await apiFetch(`/api/jobs/${jobId}`);
+  applyJobStatus(status);
+  state.currentResult = await apiFetch(`/api/jobs/${jobId}/results`);
+  renderSimulationResult(state.currentResult);
+  closeJobsModal();
+  showToast("已加载历史任务结果");
+}
+
+async function loadProjectsView() {
+  const body = document.getElementById("projectsRows");
+  if (!body) return;
+  body.innerHTML = '<tr><td colspan="5">加载中...</td></tr>';
+  try {
+    const payload = await apiFetch("/api/projects");
+    const projects = payload.projects || [];
+    if (!projects.length) {
+      body.innerHTML = '<tr><td colspan="5">暂无项目，点击右上角「新建项目」创建</td></tr>';
+      return;
+    }
+    const current = state.projectMetadata.project_name;
+    body.innerHTML = projects
+      .map((project) => {
+        const name = escapeHtml(project.project_name);
+        const isCurrent = project.project_name === current;
+        const action = isCurrent
+          ? '<strong>当前项目</strong>'
+          : `<button class="btn outline compact" type="button" data-action="switch-project" data-project-name="${name}">设为当前</button>`;
+        return `<tr>
+          <td>${name}</td>
+          <td>${escapeHtml(project.cell_type)}</td>
+          <td>${escapeHtml(formatProjectTime(project.created_at))}</td>
+          <td>${escapeHtml(formatProjectTime(project.updated_at))}</td>
+          <td>${action}</td>
+        </tr>`;
+      })
+      .join("");
+  } catch (error) {
+    body.innerHTML = `<tr><td colspan="5">${escapeHtml(error.message)}</td></tr>`;
+  }
+}
+
+async function switchProject(projectName) {
+  const saved = await apiFetch("/api/project/switch", {
+    method: "POST",
+    body: JSON.stringify({ project_name: projectName }),
+  });
+  const config = saved.config || {};
+  applyProjectConfig(config, saved.runtime);
+  if (config.simulation_request) applySimulationRequest(config.simulation_request);
+  applySavedDataset(config.dataset);
+  state.currentResult = null;
+  state.simTimeH = null;
+  clearInterval(state.pollTimer);
+  state.pollTimer = null;
+  state.currentJobId = config.current_job_id || null;
+  if (state.currentJobId) {
+    await resumeCurrentJob();
+  } else {
+    state.status = "idle";
+    state.running = false;
+    state.progress = 0;
+    state.cycle = 0;
+    state.elapsedSeconds = 0;
+    updateRunStatus();
+  }
+  await loadProjectsView();
+  showToast(`已切换到项目 ${config.project_name || projectName}`);
+}
+
+async function loadDatasetsView() {
+  const body = document.getElementById("datasetsRows");
+  if (!body) return;
+  body.innerHTML = '<tr><td colspan="5">加载中...</td></tr>';
+  try {
+    const payload = await apiFetch("/api/data");
+    const datasets = payload.datasets || [];
+    if (!datasets.length) {
+      body.innerHTML = '<tr><td colspan="5">暂无数据集，点击右上角「导入数据」上传 CSV/Excel</td></tr>';
+      return;
+    }
+    const currentId = state.importedDataset?.id;
+    body.innerHTML = datasets
+      .map((dataset) => {
+        const id = escapeHtml(dataset.id);
+        const mark = dataset.id === currentId ? " <strong>(当前)</strong>" : "";
+        return `<tr>
+          <td>${id}${mark}</td>
+          <td>${escapeHtml(dataset.file_name)}</td>
+          <td>${escapeHtml(dataset.rows)}</td>
+          <td>${escapeHtml(formatProjectTime(dataset.imported_at))}</td>
+          <td>
+            <button class="btn outline compact" type="button" data-action="use-dataset" data-dataset-id="${id}">设为数据源</button>
+            <button class="btn outline compact" type="button" data-action="dataset-csv" data-dataset-id="${id}">CSV</button>
+          </td>
+        </tr>`;
+      })
+      .join("");
+  } catch (error) {
+    body.innerHTML = `<tr><td colspan="5">${escapeHtml(error.message)}</td></tr>`;
+  }
+}
+
+function renderImportedDataset(payload) {
+  const dataset = payload.dataset;
+  state.importedDataset = dataset;
+  document.getElementById("datasetName").textContent = dataset.file_name;
+  document.getElementById("datasetStatus").textContent = "已导入";
+  document.getElementById("datasetMeta").textContent = `真实数据 ${dataset.rows} 行 · ${dataset.imported_at}`;
+  const source = document.getElementById("dataSource");
+  if (source) {
+    const value = `dataset:${dataset.id}`;
+    let option = [...source.options].find((item) => item.value === value);
+    if (!option) {
+      option = new Option(dataset.file_name, value);
+      source.add(option);
+    }
+    source.value = value;
+  }
+  if (payload.preview?.rows) {
+    createPreviewRows(payload.preview.rows);
+  }
+  const metrics = payload.metrics || {};
+  document.getElementById("metricInitialCapacity").textContent = formatMetric(metrics.initial_capacity_ah);
+  document.getElementById("metricNominalCapacity").textContent = formatMetric(metrics.nominal_capacity_ah);
+  document.getElementById("metricCycle80").textContent = formatMetric(metrics.cycle_to_80, { digits: 0 });
+  document.getElementById("metricResistanceGrowth").textContent = formatMetric(metrics.resistance_growth_500_pct, { digits: 2, suffix: "%" });
+  document.getElementById("metricMeanEfficiency").textContent = formatMetric(metrics.mean_efficiency_pct, { digits: 2, suffix: "%" });
+}
+
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",", 2)[1] || "");
+    reader.onerror = () => reject(reader.error || new Error("文件读取失败"));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function importDataFile(file) {
+  if (!file) return;
+  showToast("正在导入真实数据文件");
+  const contentBase64 = await readFileAsBase64(file);
+  const payload = await apiFetch("/api/data/import", {
+    method: "POST",
+    body: JSON.stringify({
+      file_name: file.name,
+      content_base64: contentBase64,
+    }),
+  });
+  renderImportedDataset(payload);
+  if (!document.querySelector('.view[data-view="data"]')?.hidden) {
+    await loadDatasetsView();
+  }
+  showToast(`已导入 ${payload.dataset.file_name}：${payload.dataset.rows} 行`);
+}
+
+async function saveProjectConfig() {
+  const payload = collectProjectConfigPayload();
+  const saved = await apiFetch("/api/project/config", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  state.savedConfig = saved.config;
+  applyProjectConfig(saved.config, saved.runtime);
+  showToast("项目配置已写入本地项目目录");
+}
+
+async function updateProjectField(field, value) {
+  const nextValue = String(value || "").trim();
+  if (!nextValue) return;
+  state.projectMetadata = {
+    ...state.projectMetadata,
+    [field]: nextValue,
+  };
+  renderProjectInfo();
+  await saveProjectConfig();
+}
+
+function applySavedDataset(dataset) {
+  if (!dataset) return;
+  state.importedDataset = dataset;
+  document.getElementById("datasetName").textContent = dataset.file_name || "已导入数据";
+  document.getElementById("datasetStatus").textContent = "已保存";
+  document.getElementById("datasetMeta").textContent = `保存的数据集 · ${dataset.rows || "--"} 行`;
+  const source = document.getElementById("dataSource");
+  if (source && dataset.id) {
+    const value = `dataset:${dataset.id}`;
+    let option = [...source.options].find((item) => item.value === value);
+    if (!option) {
+      option = new Option(dataset.file_name || "已导入数据", value);
+      source.add(option);
+    }
+    source.value = value;
+  }
+}
+
+async function loadProjectConfig() {
+  try {
+    const saved = await apiFetch("/api/project/config");
+    const config = saved.config;
+    if (!config) return;
+    state.savedConfig = config;
+    applyProjectConfig(config, saved.runtime);
+    applySavedDataset(config.dataset);
+    if (config.simulation_request) applySimulationRequest(config.simulation_request);
+    if (config.current_job_id) {
+      state.currentJobId = config.current_job_id;
+      await resumeCurrentJob();
+    }
+  } catch (error) {
+    console.warn("加载项目配置失败", error);
+  }
+}
+
 function downloadCsv() {
   if (state.currentJobId && state.currentResult) {
-    window.location.href = `/api/jobs/${state.currentJobId}/export.csv`;
+    downloadUrl(`/api/jobs/${state.currentJobId}/export.csv`);
     showToast("正在下载真实仿真 CSV");
     return;
   }
-  const csv = [
-    "cycle,capacity_ah,resistance_mohm,efficiency_pct",
-    "1,3.102,18.4,98.7",
-    "250,2.912,24.5,97.6",
-    "500,2.342,31.2,95.1",
-  ].join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  if (state.importedDataset?.id) {
+    downloadUrl(`/api/data/${state.importedDataset.id}/export.csv`);
+    showToast("正在下载已导入数据 CSV");
+    return;
+  }
+  showToast("没有可导出的真实数据：请先导入数据或完成仿真");
+}
+
+function serializeChartSvg(svg) {
+  const clone = svg.cloneNode(true);
+  clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  const style = document.createElementNS("http://www.w3.org/2000/svg", "style");
+  style.textContent = `
+    .chart-axis{stroke:#7182a4;stroke-width:1.15}
+    .grid-line{stroke:#e2e8f0;stroke-width:1}
+    .chart-line{stroke:#2563eb;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .chart-blue{stroke:#2563eb}.chart-red{stroke:#ef4444}.chart-dashed{stroke-dasharray:5 4}
+    .tick-label,.legend-label{font:11px Arial,'Microsoft YaHei',sans-serif;fill:#475569}
+  `;
+  clone.insertBefore(style, clone.firstChild);
+  return new XMLSerializer().serializeToString(clone);
+}
+
+function svgToImage(svg) {
+  return new Promise((resolve, reject) => {
+    const blob = new Blob([serializeChartSvg(svg)], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const image = new Image();
+    image.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("图表 SVG 转 PNG 失败"));
+    };
+    image.src = url;
+  });
+}
+
+async function exportChartsPng() {
+  const figures = [...document.querySelectorAll(".result-charts figure")];
+  if (!figures.length) {
+    showToast("没有可导出的图表");
+    return;
+  }
+  const scale = 2;
+  const chartWidth = 420;
+  const chartHeight = 280;
+  const gap = 28;
+  const padding = 34;
+  const titleHeight = 32;
+  const width = padding * 2 + figures.length * chartWidth + (figures.length - 1) * gap;
+  const height = padding * 2 + titleHeight + chartHeight;
+  const canvas = document.createElement("canvas");
+  canvas.width = width * scale;
+  canvas.height = height * scale;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(scale, scale);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = "#0f2a4d";
+  ctx.font = "600 16px Arial, 'Microsoft YaHei', sans-serif";
+  ctx.fillText(`Battery Sim Studio 图表导出 · ${new Date().toLocaleString()}`, padding, 24);
+
+  for (let index = 0; index < figures.length; index += 1) {
+    const figure = figures[index];
+    const svg = figure.querySelector("svg");
+    if (!svg) continue;
+    const x = padding + index * (chartWidth + gap);
+    const y = padding + titleHeight;
+    ctx.fillStyle = "#0f2a4d";
+    ctx.font = "600 14px Arial, 'Microsoft YaHei', sans-serif";
+    ctx.fillText(figure.querySelector("figcaption")?.textContent || `图表 ${index + 1}`, x, y - 10);
+    const image = await svgToImage(svg);
+    ctx.drawImage(image, x, y, chartWidth, chartHeight);
+  }
+
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+  if (!blob) throw new Error("PNG 生成失败");
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "battery_sim_results.csv";
+  link.download = `battery_studio_charts_${new Date().toISOString().slice(0, 10)}.png`;
   document.body.appendChild(link);
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
-  showToast("当前还没有真实结果，已导出示例 CSV");
+  showToast(state.currentResult ? "已导出真实结果图表 PNG" : "已导出当前页面图表 PNG");
 }
 
 async function fetchSimulationSnapshot() {
@@ -816,6 +1316,9 @@ function renderCycleCurves(curves, series) {
 function renderSimulationResult(result) {
   state.currentResult = result;
   const series = result.series || {};
+  const finiteTimes = (series.time_h || []).filter((value) => Number.isFinite(value));
+  state.simTimeH = finiteTimes.length ? finiteTimes.at(-1) : null;
+  updateRunStatus();
   const metrics = result.cycle_metrics || {};
   const request = result.request || {};
   const maxCycle = Math.max(...(metrics.cycle || [request.cycles || 100]).map((value) => Number(value) || 0), 1);
@@ -899,16 +1402,107 @@ function wireInteractions() {
         showToast(error.message);
       }
     }
+    if (action === "import-data") {
+      document.getElementById("dataFileInput")?.click();
+    }
+    if (action === "edit-project") {
+      const nextName = window.prompt("编辑当前项目名称", state.projectMetadata.project_name || "Demo_Project");
+      if (nextName !== null) {
+        try {
+          await updateProjectField("project_name", nextName);
+        } catch (error) {
+          showToast(error.message);
+        }
+      }
+    }
+    if (action === "edit-cell-type") {
+      const nextType = window.prompt("编辑电芯类型", state.projectMetadata.cell_type || "NCM/Graphite");
+      if (nextType !== null) {
+        try {
+          await updateProjectField("cell_type", nextType);
+        } catch (error) {
+          showToast(error.message);
+        }
+      }
+    }
     if (action === "save") {
-      showToast("项目配置已保存");
+      try {
+        await saveProjectConfig();
+      } catch (error) {
+        showToast(error.message);
+      }
     }
     if (action === "export") {
       downloadCsv();
+    }
+    if (action === "export-charts") {
+      try {
+        await exportChartsPng();
+      } catch (error) {
+        showToast(error.message);
+      }
     }
     if (action === "preview") {
       drawConditionChart();
       showToast("工况预览已按当前模型容量和输入项更新");
     }
+    if (action === "jobs") {
+      await openJobsModal();
+    }
+    if (action === "close-jobs") {
+      closeJobsModal();
+    }
+    if (action === "load-job") {
+      try {
+        await loadJobResult(actionNode.dataset.jobId);
+      } catch (error) {
+        showToast(error.message);
+      }
+    }
+    if (action === "track-job") {
+      state.currentJobId = actionNode.dataset.jobId;
+      closeJobsModal();
+      await resumeCurrentJob();
+    }
+    if (action === "job-csv") {
+      downloadUrl(`/api/jobs/${actionNode.dataset.jobId}/export.csv`);
+      showToast("正在下载该任务的 CSV");
+    }
+    if (action === "switch-project") {
+      try {
+        await switchProject(actionNode.dataset.projectName);
+      } catch (error) {
+        showToast(error.message);
+      }
+    }
+    if (action === "new-project") {
+      const name = window.prompt("新项目名称", "");
+      if (name && name.trim()) {
+        try {
+          await switchProject(name.trim());
+        } catch (error) {
+          showToast(error.message);
+        }
+      }
+    }
+    if (action === "use-dataset") {
+      try {
+        const payload = await apiFetch(`/api/data/${actionNode.dataset.datasetId}`);
+        renderImportedDataset(payload);
+        await loadDatasetsView();
+        showToast(`已选用数据集 ${payload.dataset.file_name}，保存项目后生效`);
+      } catch (error) {
+        showToast(error.message);
+      }
+    }
+    if (action === "dataset-csv") {
+      downloadUrl(`/api/data/${actionNode.dataset.datasetId}/export.csv`);
+      showToast("正在下载数据集 CSV");
+    }
+  });
+
+  document.getElementById("jobsModal")?.addEventListener("click", (event) => {
+    if (event.target === event.currentTarget) closeJobsModal();
   });
 
   document.querySelectorAll(".segmented button, .mini-tabs button, .result-tabs button").forEach((button) => {
@@ -941,6 +1535,18 @@ function wireInteractions() {
   dcrToggle?.addEventListener("change", () => {
     if (dcrOptions) dcrOptions.style.display = dcrToggle.checked ? "" : "none";
   });
+
+  document.querySelector("#agingEnabled")?.addEventListener("change", syncAgingControls);
+
+  document.getElementById("dataFileInput")?.addEventListener("change", async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    try {
+      await importDataFile(file);
+    } catch (error) {
+      showToast(error.message);
+    }
+  });
 }
 
 function boot() {
@@ -952,6 +1558,7 @@ function boot() {
   updateCurrentPreview();
   setRoute(window.location.hash.replace("#", "") || "simulation");
   updateRunStatus();
+  loadProjectConfig();
 }
 
 document.addEventListener("DOMContentLoaded", boot);

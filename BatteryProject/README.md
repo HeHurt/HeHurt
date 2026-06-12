@@ -8,9 +8,11 @@
 - output/：图片与结果输出
 - src/：源代码包
   - config.py：配置与材料参数
-  - simulation.py：PyBaMM 仿真与实验工况
+  - simulation.py：仿真统一 facade（实现拆分在 simulation_* 子模块）
   - analysis.py：数据提取与指标计算
   - plotting.py：绘图与结果注入
+  - compare.py：Sim-Exp 一站式对标
+  - exp_loader.py：实验循环 CSV 加载（中/英文列名自动对齐）
   - utils.py：IO、Excel 解析与导出
   - data_cleaning.py：实验数据清洗/记录层提取
   - parameter_identification.py：老化参数辨识与优化
@@ -19,13 +21,23 @@
 ## 核心模块说明
 
 - analysis.py：RRMSE 计算、容量提取、产热分量、膨胀力估算
-- simulation.py：
-、
+- simulation.py：facade，再导出以下子模块的公共符号
+  - simulation_dcr.py：DCR + 恒功率分块循环
+  - simulation_peak.py：峰值电流/功率搜索
+  - simulation_rpt.py：Branch-RPT 诊断
+  - simulation_eis.py：生命周期 EIS 工作流
+  - simulation_frequency.py：调频工况老化
 - plotting.py：BatteryPlotter 与产热/容量注入
+- compare.py：compare_all 自动匹配仿真标签与实验 CSV 并出对比图
+- exp_loader.py：load_cycling_csv / load_cycling_folder，文件名解析温度倍率
 - utils.py：Excel 读取、数据导出、仿真结果注入
 - config.py：路径/默认参数/材料参数与熵系数加载
 - data_cleaning.py：曲线清洗、record layer 数据提取、实验数据配置化加载
 - parameter_identification.py：loss 计算（cycle_line/cycle_line_v2/record）、目标函数构建、BO/GO/MO/DA/BH 优化
+- electrolyte_dryout.py：电解液干涸老化耦合
+- psd_workflow.py：粒径分布拟合与材料对比研究
+- reporting.py：循环指标 Excel 报表导出
+- runtime.py：PyBaMM 运行时限制与 notebook 环境配置
 
 ## 详细 API 目录
 
@@ -42,10 +54,16 @@ Fun_HZ 拆解迁移对照见 [docs/FUN_HZ_MIGRATION.md](docs/FUN_HZ_MIGRATION.md
 
 ## 快速开始
 
-先安装依赖：
+先安装依赖（依赖以 `pyproject.toml` 为唯一来源）：
 
 ```bash
-pip install -r requirements.txt
+uv sync                 # 推荐；可加 --extra dev / --extra opt / --extra ui
+```
+
+或不使用 uv：
+
+```bash
+pip install -e ".[dev]"
 ```
 
 > 在 Notebook 中推荐使用：
@@ -77,7 +95,37 @@ PROJECT_ROOT, WORKSPACE_ROOT, PARAMS_ROOT = configure_notebook_environment(
 
 ## 前端操作界面
 
-项目已提供可点击操作的前端界面（Streamlit）：
+项目提供两套本地界面：新版 Battery Sim Studio 独立 UI，以及旧版 Streamlit 前端。
+
+### Battery Sim Studio
+
+新版 Studio 使用静态 HTML/CSS/JS + FastAPI 本地后端，项目、数据集与任务索引会写入
+`output/studio.sqlite3`，大文件仍保存在 `output/` 对应目录。
+
+推荐用 uv 管理本地 Python 环境：
+
+```bash
+uv run python run_studio.py --port 8601
+```
+
+或在 Windows 中直接双击：
+
+`run_studio_uv.bat`
+
+如果不使用 uv，也可以直接运行当前 Python 环境：
+
+```bash
+python run_studio.py --port 8601
+```
+
+启动后访问：
+
+- Studio UI: <http://127.0.0.1:8601/>
+- FastAPI docs: <http://127.0.0.1:8601/docs>
+
+### Streamlit 前端
+
+旧版 Streamlit 前端仍可使用：
 
 1. 启动前端（两种方式任选其一）：
 

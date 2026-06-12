@@ -206,6 +206,13 @@ svg {
   margin-bottom: 12px;
 }
 
+.project-name span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .project-card dl {
   margin: 0;
 }
@@ -220,9 +227,41 @@ svg {
 }
 
 .project-card dd {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin: 4px 0 0;
   color: #ffffff;
   font-size: 14px;
+}
+
+.project-card dd span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inline-edit {
+  width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  color: #d9e8ff;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+}
+
+.inline-edit:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.inline-edit .icon {
+  width: 14px;
+  height: 14px;
 }
 
 .version {
@@ -303,6 +342,26 @@ svg {
   flex-direction: column;
   overflow: hidden;
   padding: 14px 16px 18px;
+}
+
+/* 视图容器不参与布局（display:contents），切换页面时整组隐藏 */
+.view {
+  display: contents;
+}
+
+.view[hidden] {
+  display: none;
+}
+
+.view-panel {
+  flex: 1;
+  min-height: 0;
+}
+
+.view-panel .panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .flow-actions {
@@ -704,6 +763,33 @@ th {
 
 .compact-table {
   margin-bottom: 18px;
+}
+
+.data-viz-grid {
+  display: grid;
+  gap: 10px;
+  margin: -2px 0 18px;
+}
+
+.data-viz-grid figure {
+  padding: 8px 8px 6px;
+  background: #fbfcff;
+  border: 1px solid var(--line-100);
+  border-radius: var(--radius-sm);
+}
+
+.data-viz-grid figcaption {
+  margin-bottom: 2px;
+  text-align: left;
+  color: #174b84;
+  font-size: 12px;
+}
+
+.data-viz-grid svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
 }
 
 .tool-grid {
@@ -1334,6 +1420,54 @@ figcaption {
 
 .scrim {
   display: none;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(13, 30, 56, 0.45);
+}
+
+.modal-backdrop[hidden] {
+  display: none;
+}
+
+.modal {
+  width: min(760px, 100%);
+  max-height: min(560px, calc(100vh - 48px));
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border-radius: var(--radius-md);
+  box-shadow: 0 18px 48px rgba(15, 35, 65, 0.3);
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line-100);
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.modal .table-wrap {
+  flex: 1;
+  min-height: 0;
+  margin: 12px 16px 16px;
+}
+
+.job-actions .btn {
+  margin: 0 3px;
 }
 
 body.light-alt {

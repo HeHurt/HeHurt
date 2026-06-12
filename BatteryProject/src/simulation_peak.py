@@ -117,7 +117,18 @@ def _default_peak_search_ratios(current_guess, min_ratio=0.01, max_ratio=50):
     return unique_ratios
 
 
-def _find_peak_current_bracket(objective_function, search_ratios):
+def _find_peak_current_bracket(
+    objective_function, search_ratios, max_extensions=8, extension_factor=2.0
+):
+    """在采样比例中寻找目标函数符号变化区间。
+
+    若给定网格内无符号变化（根落在网格外，例如低温下峰值倍率刚好
+    超过最大采样值），则从网格两端按几何步长（×/÷ extension_factor）
+    向外自适应扩展，每个方向最多 ``max_extensions`` 次。
+
+    返回 (left_ratio, right_ratio, sampled_values)；left==right 表示采样点
+    恰好命中根；两者为 None 表示扩展后仍未找到符号变化。
+    """
     sampled_values = []
     for ratio in search_ratios:
         value = float(objective_function(ratio))
@@ -128,6 +139,37 @@ def _find_peak_current_bracket(objective_function, search_ratios):
             left_ratio, left_value = sampled_values[-2]
             if np.sign(left_value) != np.sign(value):
                 return left_ratio, ratio, sampled_values
+
+    if not sampled_values:
+        return None, None, sampled_values
+
+    # 网格内无符号变化：先向上扩展（峰值倍率超过最大采样值，最常见），
+    # 超大电流的脉冲不可行时目标函数会变号/置负，扩展会很快终止。
+    prev_ratio, prev_value = sampled_values[-1]
+    ratio = prev_ratio
+    for _ in range(max_extensions):
+        ratio *= extension_factor
+        value = float(objective_function(ratio))
+        sampled_values.append((ratio, value))
+        if abs(value) < 1e-8:
+            return ratio, ratio, sampled_values
+        if np.sign(value) != np.sign(prev_value):
+            return prev_ratio, ratio, sampled_values
+        prev_ratio, prev_value = ratio, value
+
+    # 再向下扩展（根小于最小采样比例的少见情形）
+    prev_ratio, prev_value = sampled_values[0]
+    ratio = prev_ratio
+    for _ in range(max_extensions):
+        ratio /= extension_factor
+        value = float(objective_function(ratio))
+        sampled_values.append((ratio, value))
+        if abs(value) < 1e-8:
+            return ratio, ratio, sampled_values
+        if np.sign(value) != np.sign(prev_value):
+            return ratio, prev_ratio, sampled_values
+        prev_ratio, prev_value = ratio, value
+
     return None, None, sampled_values
 
 

@@ -114,3 +114,41 @@ def graphite_entropic(sto):
         + 4.46024654e-04 * sto
         + 6.00000000e-04
     )
+def build_lfp_cell_params(temperature, overrides):
+    """LFP 电芯参数基座。
+
+    携带全库 13 个 LFP 参数文件中**完全同值**的脚手架条目（电压窗、
+    Bruggeman、双电层、电解液传输函数、环境温度等），每芯差异项由
+    ``overrides`` 提供并覆盖/追加。各 ``paramsXXX.py`` 的
+    ``get_hithium_params`` 内部调用本函数，对外签名与返回内容不变。
+
+    新建电芯文件时：先写 overrides（几何/浓度/动力学/老化），共有项
+    不要重复写——若某颗电芯确需不同的脚手架值，直接放进 overrides
+    即可覆盖。
+    """
+    params = {
+        # 环境
+        "Ambient temperature [K]": temperature,
+        # 电压窗（LFP 全系一致）
+        "Lower voltage cut-off [V]": 2.5,
+        "Upper voltage cut-off [V]": 3.65,
+        "Open-circuit voltage at 0% SOC [V]": 2.5,
+        "Open-circuit voltage at 100% SOC [V]": 3.65,
+        # 电解液传输（Nyman2008 + 本库电导拟合）
+        "Electrolyte diffusivity [m2.s-1]": electrolyte_diffusivity_nyman2008_arrhenius,
+        "Electrolyte conductivity [S.m-1]": electrolyte_conductivity,
+        # Bruggeman 系数
+        "Positive electrode Bruggeman coefficient (electrode)": 1.5,
+        "Positive electrode Bruggeman coefficient (electrolyte)": 1.5,
+        "Negative electrode Bruggeman coefficient (electrolyte)": 1.5,
+        "Negative electrode Bruggeman coefficient (electrode)": 1.5,
+        # 双电层
+        "Positive electrode double-layer capacity [F.m-2]": 0,
+        "Negative electrode double-layer capacity [F.m-2]": 0,
+        # 结构 / SEI 初值
+        "Number of electrodes connected in parallel to make a cell": 1,
+        "Lithium plating transfer coefficient": 0.5,
+        "Initial SEI thickness [m]": 5e-9,
+    }
+    params.update(overrides)
+    return params

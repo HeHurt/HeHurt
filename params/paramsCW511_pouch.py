@@ -4,6 +4,7 @@ from common import (
     build_cracking_rate,
     build_diffusivity,
     build_exchange_current_density,
+    build_lfp_cell_params,
     build_ocp_function,
     electrolyte_conductivity,
     electrolyte_diffusivity_nyman2008_arrhenius,
@@ -12,7 +13,6 @@ from common import (
     plating_exchange_current_density_okane2020,
     select_by_requested_temperature,
 )
-
 
 electrolyte_diffusivity_Nyman2008_arrhenius = electrolyte_diffusivity_nyman2008_arrhenius
 plating_exchange_current_density_OKane2020 = plating_exchange_current_density_okane2020
@@ -23,7 +23,6 @@ LFP_ocp_charge = build_ocp_function("LFP.csv", name="Pos_OCP", offset=0.02)
 LFP_ocp_discharge = build_ocp_function("LFP.csv", name="Pos_OCP", offset=-0.02)
 graphite_ocp_charge = build_ocp_function("Gr_charge.csv", name="Neg_OCP")
 graphite_ocp_discharge = build_ocp_function("Gr_discharge.csv", name="Neg_OCP")
-
 
 def get_hithium_params(t_factor=1, temperature=298.15):
     LFP_diffusivity = build_diffusivity(
@@ -54,7 +53,7 @@ def get_hithium_params(t_factor=1, temperature=298.15):
     effective_area_factor = 0.752785
     electrolyte_volume_scale = 3.96 / 314
 
-    hithium_params = {
+    hithium_params = build_lfp_cell_params(temperature, {
         # 电池几何参数
         "Negative electrode thickness [m]": 1.1148224399661709e-04,
         "Separator thickness [m]": 1.28e-05,
@@ -67,7 +66,6 @@ def get_hithium_params(t_factor=1, temperature=298.15):
 
         # 电池容量参数
         "Nominal cell capacity [A.h]": 3.96,
-        "Number of electrodes connected in parallel to make a cell": 1,
         "Maximum concentration in negative electrode [mol.m-3]": 29094,
         "Maximum concentration in positive electrode [mol.m-3]": 19261,
 
@@ -83,31 +81,14 @@ def get_hithium_params(t_factor=1, temperature=298.15):
         "Initial concentration in positive electrode [mol.m-3]": 18259,
         "Initial concentration in electrolyte [mol.m-3]": 960.0,
 
-        # 电压限制
-        "Lower voltage cut-off [V]": 2.5,
-        "Upper voltage cut-off [V]": 3.65,
-        "Open-circuit voltage at 0% SOC [V]": 2.5,
-        "Open-circuit voltage at 100% SOC [V]": 3.65,
-
         # 电化学参数
         "Negative electrode exchange-current density [A.m-2]": graphite_exchange_current_density,
         "Positive electrode exchange-current density [A.m-2]": LFP_exchange_current_density,
-        "Positive electrode diffusivity [m2.s-1]": LFP_diffusivity,
-        "Negative electrode diffusivity [m2.s-1]": Gr_diffusivity,
-        "Electrolyte diffusivity [m2.s-1]": electrolyte_diffusivity_Nyman2008_arrhenius,
-        "Electrolyte conductivity [S.m-1]": electrolyte_conductivity,
+        "Positive particle diffusivity [m2.s-1]": LFP_diffusivity,
+        "Negative particle diffusivity [m2.s-1]": Gr_diffusivity,
 
         # 传热
         "Total heat transfer coefficient [W.m-2.K-1]": 30,
-        "Effective volumetric heat capacity [J.K-1.m-3]": 1040,
-        "Effective thermal conductivity [W.m-1.K-1]": 2,
-        "Ambient temperature [K]": 298.15,
-
-        # Bruggeman系数
-        "Positive electrode Bruggeman coefficient (electrode)": 1.5,
-        "Positive electrode Bruggeman coefficient (electrolyte)": 1.5,
-        "Negative electrode Bruggeman coefficient (electrolyte)": 1.5,
-        "Negative electrode Bruggeman coefficient (electrode)": 1.5,
 
         # 电极导电性
         "Positive electrode conductivity [S.m-1]": 4.5,
@@ -125,18 +106,13 @@ def get_hithium_params(t_factor=1, temperature=298.15):
 
         # 其他电参数
         "Contact resistance [Ohm]": 1e-4,
-        "Positive electrode double-layer capacity [F.m-2]": 0,
-        "Negative electrode double-layer capacity [F.m-2]": 0,
 
         # 老化参数
-        "Lithium plating transfer coefficient": 0.5,
-        "Exchange-current density for plating [A.m-2]": plating_exchange_current_density_OKane2020,
         "Positive electrode cracking rate": 0,
         "Positive electrode initial crack length [m]": 0,
         "Positive electrode initial crack width [m]": 0,
         "Ratio of lithium moles to SEI moles": 2,
         "SEI partial molar volume [m3.mol-1]": 0.00009645,
-        "Initial SEI thickness [m]": 5e-9,
         "Negative electrode LAM constant proportional term [s-1]": 1e-7 * t_factor,
         "SEI kinetic rate constant [m.s-1]": 4.8e-14 * k_sei * t_factor,
         "EC diffusivity [m2.s-1]": 3.5e-22 * D_sei * t_factor,
@@ -152,5 +128,5 @@ def get_hithium_params(t_factor=1, temperature=298.15):
         "Initial total electrolyte volume in whole cell [m3]": 3e-3 * electrolyte_volume_scale,
         "Initial total electrolyte volume in jelly roll [m3]": 0.0027387 * electrolyte_volume_scale,
         "Electrolyte dry out rate [m3.s-1]": 2e-14,
-    }
+    })
     return hithium_params

@@ -170,6 +170,75 @@ class CalculateCycleSwellingTests(unittest.TestCase):
         self.assertIn("source_method", table.columns)
 
 
+class SwellingPhysicsTests(unittest.TestCase):
+    def test_unilateral_contact_clamps_force_at_zero(self):
+        sol = _FakeSolution([_engineering_cycle([0.0, -3.0])])
+
+        max_f, min_f = calculate_cycle_swelling(
+            sol, _swelling_params(), omega_n=3.0, k_stiffness=1.0, preload_force=1.0,
+        )
+
+        # 位移 [0, -3] -> 原始力 [1, -2]，单边接触后最小力钳到 0
+        np.testing.assert_allclose(max_f, [1.0])
+        np.testing.assert_allclose(min_f, [0.0])
+
+    def test_series_stiffness_combines_fixture_and_cell(self):
+        sol = _FakeSolution([_engineering_cycle([0.0, 3.0])])
+
+        max_f, _ = calculate_cycle_swelling(
+            sol, _swelling_params(), omega_n=3.0, k_stiffness=2.0, k_cell=2.0,
+        )
+
+        # k_eff = 1/(1/2 + 1/2) = 1，最大位移 3 -> 力 3
+        np.testing.assert_allclose(max_f, [3.0])
+
+    def test_irreversible_term_scaled_by_surface_area(self):
+        params = _swelling_params()
+        params["Negative electrode surface area to volume ratio [m-1]"] = 10.0
+        sol = _FakeSolution([_engineering_cycle([0.0, 0.0], sei=[1.0, 2.0])])
+
+        max_f, min_f = calculate_cycle_swelling(
+            sol, params, omega_n=0.0, k_stiffness=1.0, beta_irreversible=0.5,
+        )
+
+        # Δδ_film = [0, 1] -> 位移 = β·a_n·L_n·Δδ = 0.5*10*1*[0, 1]
+        np.testing.assert_allclose(max_f, [5.0])
+        np.testing.assert_allclose(min_f, [0.0])
+
+    def test_irreversible_term_disabled_without_surface_area(self):
+        sol = _FakeSolution([_engineering_cycle([0.0, 0.0], sei=[1.0, 2.0])])
+
+        max_f, _ = calculate_cycle_swelling(
+            sol, _swelling_params(), omega_n=0.0, k_stiffness=1.0,
+        )
+
+        np.testing.assert_allclose(max_f, [0.0])
+
+    def test_nonlinear_expansion_function_used_when_c_max_present(self):
+        params = _swelling_params()
+        params["Maximum concentration in negative electrode [mol.m-3]"] = 10.0
+        sol = _FakeSolution([_engineering_cycle([0.0, 5.0])])
+
+        max_f, _ = calculate_cycle_swelling(
+            sol, params, k_stiffness=1.0,
+            expansion_function_n=lambda sto: 2.0 * np.asarray(sto, dtype=float),
+        )
+
+        # f(sto) = 2·sto, L_n=1: ΔL = 2*(0.5 - 0) = 1
+        np.testing.assert_allclose(max_f, [1.0])
+
+    def test_builtin_expansion_functions_and_invalid_name(self):
+        from src.analysis import graphite_expansion_fraction, lfp_expansion_fraction
+
+        self.assertAlmostEqual(float(graphite_expansion_fraction(0.0)), 0.0)
+        self.assertAlmostEqual(float(graphite_expansion_fraction(1.0)), 0.132)
+        self.assertAlmostEqual(float(lfp_expansion_fraction(1.0)), 0.022)
+
+        sol = _FakeSolution([_engineering_cycle([0.0])])
+        with self.assertRaises(ValueError):
+            calculate_cycle_swelling(sol, _swelling_params(), expansion_function_n="bogus")
+
+
 class GetDischargeCapacityTests(unittest.TestCase):
     def test_none_sol_returns_empty(self):
         result = get_discharge_capacity(None)

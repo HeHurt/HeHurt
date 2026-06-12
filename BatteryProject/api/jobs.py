@@ -344,8 +344,11 @@ def build_model(pybamm: Any, request: dict[str, Any]) -> Any:
     options = {
         "calculate discharge energy": "true",
         "contact resistance": "true",
-        "open-circuit potential": ("current sigmoid", "current sigmoid"),
     }
+    # current sigmoid OCP needs lithiation/delithiation OCP data, which only the
+    # project parameter sets provide; builtin sets (Chen2020/OKane2022) lack it.
+    if PARAMETER_SETS[request["parameter_set"]]["kind"] == "project":
+        options["open-circuit potential"] = ("current sigmoid", "current sigmoid")
     options.update(request.get("aging_options", {}))
     # PyBaMM tuple value = per-electrode (negative, positive). The parameter set
     # has no positive-electrode crack data (initial crack length = 0); running the
@@ -781,10 +784,15 @@ class JobManager:
         if not status:
             raise KeyError(job_id)
         process = self.processes.get(job_id)
-        if process and not process.is_alive() and status.get("status") == "running":
+        if status.get("status") in {"running", "queued"} and (process is None or not process.is_alive()):
+            message = (
+                "Worker process exited unexpectedly."
+                if process is not None
+                else "Server restarted; the worker process for this job is gone."
+            )
             status["status"] = "failed"
-            status["error"] = "Worker process exited unexpectedly."
-            append_log(status, "ERROR", "Worker process exited unexpectedly.")
+            status["error"] = message
+            append_log(status, "ERROR", message)
             atomic_write_json(job_dir / "status.json", status)
         return status
 
@@ -808,12 +816,32 @@ class JobManager:
         result = self.get_result(job_id)
         rows = []
         metrics = result.get("cycle_metrics", {})
+        dcr_series = result.get("dcr_series") or {}
+        dcr_by_cycle = {
+            cycle: _list_get(dcr_series.get("dcr_mohm", []), index)
+            for index, cycle in enumerate(dcr_series.get("cycle", []))
+        }
         for index, cycle in enumerate(metrics.get("cycle", [])):
             rows.append(
                 {
                     "cycle": cycle,
                     "capacity_ah": _list_get(metrics.get("capacity_ah", []), index),
+                    "retention_pct": _list_get(metrics.get("retention_pct", []), index),
                     "efficiency_pct": _list_get(metrics.get("efficiency_pct", []), index),
+                    "dcr_mohm": dcr_by_cycle.get(cycle, ""),
+                }
+            )
+        metric_cycles = set(metrics.get("cycle", []))
+        for cycle, dcr_mohm in dcr_by_cycle.items():
+            if cycle in metric_cycles:
+                continue
+            rows.append(
+                {
+                    "cycle": cycle,
+                    "capacity_ah": "",
+                    "retention_pct": "",
+                    "efficiency_pct": "",
+                    "dcr_mohm": dcr_mohm,
                 }
             )
         if not rows:

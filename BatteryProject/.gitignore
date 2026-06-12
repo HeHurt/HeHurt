@@ -7,6 +7,7 @@ __pycache__/
 *.egg-info
 *.log
 /venv
+/.venv
 *.npy
 *.pyc
 *.h5
@@ -19,6 +20,7 @@ __pycache__/
 *.pt
 *.json
 *.lock
+!uv.lock
 cycle_layer_seg*
 record_layer_seg*
 /usage/追溯数据导入/

@@ -20,8 +20,8 @@ authors = [{name = "Hithium / Hez"}]
 #   matplotlib 3.8.1
 #   openpyxl   3.1.5
 dependencies = [
-  # PyBaMM 是最敏感的，版本绑死到 26.4.x（patch 自由升级，minor 不动）
-  "pybamm==26.4.*",
+  # PyBaMM 是最敏感的，精确锁定当前验证过的版本，避免 uv 环境和系统环境结果漂移
+  "pybamm==26.4.2",
 
   # NumPy 2 对 PyBaMM/SciPy 兼容性还在收敛期，先不放上 2.x
   "numpy>=1.26,<2",
@@ -35,6 +35,10 @@ dependencies = [
   # Matplotlib / openpyxl 影响小，只设下限
   "matplotlib>=3.8",
   "openpyxl>=3.1",
+
+  # Battery Sim Studio 本地 API 服务
+  "fastapi>=0.115,<1",
+  "uvicorn[standard]>=0.34,<1",
 ]
 
 
@@ -101,4 +105,4 @@ filterwarnings = [
 
 # uv 配置
 [tool.uv]
-package = true
+package = false

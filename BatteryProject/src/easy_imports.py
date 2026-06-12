@@ -54,6 +54,18 @@ from .runtime import apply_pybamm_runtime_limits, configure_notebook_environment
 
 apply_pybamm_runtime_limits()
 
+# 库层已统一用 logging（不再 print）。notebook 入口在此给 src 包挂一个
+# INFO 级 StreamHandler（仅当用户尚未自行配置时），让 compare_all 等的
+# 匹配结果输出仍然可见；工程代码直接 import 子模块则不受影响。
+import logging as _logging
+
+_pkg_logger = _logging.getLogger(__package__)
+if not _pkg_logger.handlers:
+    _pkg_handler = _logging.StreamHandler()
+    _pkg_handler.setFormatter(_logging.Formatter("%(message)s"))
+    _pkg_logger.addHandler(_pkg_handler)
+    _pkg_logger.setLevel(_logging.INFO)
+
 # --- 子模块命名空间 ---------------------------------------------------
 from . import (
     analysis,
@@ -138,6 +150,7 @@ from .electrolyte_dryout import (
     DryoutTracker,
     run_aging_with_dryout,
 )
+from .swelling_coupling import SwellingCoupler
 
 # --- PSD 工作流 ------------------------------------------------------
 from .psd_workflow import (
@@ -220,6 +233,7 @@ __all__ = [
     # 老化
     "DryoutTracker",
     "run_aging_with_dryout",
+    "SwellingCoupler",
     # PSD
     "analyze_materials",
     "build_operation_cases",

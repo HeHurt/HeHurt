@@ -53,13 +53,19 @@
 
       <div class="project-card">
         <div class="muted-label">当前项目</div>
-        <div class="project-name">Demo_Project <button type="button" class="icon-button ghost" aria-label="编辑项目"><span class="icon" data-icon="edit"></span></button></div>
+        <div class="project-name">
+          <span id="projectNameText">Demo_Project</span>
+          <button type="button" class="icon-button ghost" aria-label="编辑项目" data-action="edit-project"><span class="icon" data-icon="edit"></span></button>
+        </div>
         <dl>
-          <div><dt>电芯类型</dt><dd>NCM/Graphite</dd></div>
-          <div><dt>创建时间</dt><dd>2024-05-20 14:30</dd></div>
+          <div>
+            <dt>电芯类型</dt>
+            <dd><span id="cellTypeValue">NCM/Graphite</span><button type="button" class="inline-edit" aria-label="编辑电芯类型" data-action="edit-cell-type"><span class="icon" data-icon="edit"></span></button></dd>
+          </div>
+          <div><dt>创建时间</dt><dd id="projectCreatedAt">--</dd></div>
         </dl>
       </div>
-      <div class="version">PyBaMM 版本: 23.9</div>
+      <div class="version">PyBaMM 版本: <span id="pybammVersion">--</span></div>
     </aside>
 
     <div class="workspace">
@@ -73,6 +79,7 @@
           <a href="#report">报告导出</a>
         </div>
         <div class="top-actions">
+          <button class="text-button" type="button" data-action="jobs"><span class="icon" data-icon="history"></span>任务历史</button>
           <button class="text-button" type="button"><span class="icon" data-icon="help"></span>帮助文档</button>
           <button class="text-button" type="button" data-action="theme"><span class="icon" data-icon="sun"></span>主题切换</button>
           <span class="divider"></span>
@@ -82,6 +89,7 @@
       </header>
 
       <main class="main-content">
+        <section class="view" data-view="simulation">
         <div class="flow-actions">
           <ol class="stepper" aria-label="仿真流程">
             <li class="done">
@@ -119,19 +127,20 @@
             <div class="panel-body">
               <h3>数据源</h3>
               <div class="input-row">
-                <button class="btn compact primary" type="button">导入数据</button>
-                <select aria-label="数据源">
+                <button class="btn compact primary" type="button" data-action="import-data">导入数据</button>
+                <input id="dataFileInput" type="file" accept=".csv,.txt,.xlsx,.xls" hidden>
+                <select id="dataSource" aria-label="数据源">
                   <option>示例数据</option>
                   <option>本地实验数据</option>
                 </select>
               </div>
               <div class="dataset-card">
                 <div class="dataset-title">
-                  <span>NCM_3Ah_cycle_data.xlsx</span>
-                  <strong>已加载</strong>
+                  <span id="datasetName">NCM_3Ah_cycle_data.xlsx</span>
+                  <strong id="datasetStatus">示例</strong>
                   <button class="icon-button ghost" type="button" aria-label="更多"><span class="icon" data-icon="more"></span></button>
                 </div>
-                <div class="dataset-meta">循环数据 <span></span> 25°C <span></span> 0.5C充放电</div>
+                <div class="dataset-meta" id="datasetMeta">循环数据 <span></span> 25°C <span></span> 0.5C充放电</div>
               </div>
 
               <h3>数据预览</h3>
@@ -144,6 +153,22 @@
                 </table>
               </div>
 
+              <h3>数据可视化</h3>
+              <div class="data-viz-grid" aria-label="实验数据趋势预览">
+                <figure>
+                  <figcaption>容量保持率</figcaption>
+                  <svg id="previewRetentionChart" viewBox="0 0 300 112" aria-label="容量保持率随循环变化趋势"></svg>
+                </figure>
+                <figure>
+                  <figcaption>放电容量</figcaption>
+                  <svg id="previewCapacityChart" viewBox="0 0 300 112" aria-label="放电容量随循环变化趋势"></svg>
+                </figure>
+                <figure>
+                  <figcaption>能效</figcaption>
+                  <svg id="previewEfficiencyChart" viewBox="0 0 300 112" aria-label="能效随循环变化趋势"></svg>
+                </figure>
+              </div>
+
               <h3>数据处理</h3>
               <div class="tool-grid">
                 <button type="button"><span class="icon" data-icon="branch"></span>异常值检测</button>
@@ -154,11 +179,11 @@
 
               <h3>特征指标</h3>
               <dl class="metric-list">
-                <div><dt>初始容量 (Ah)</dt><dd>3.102</dd></div>
-                <div><dt>标称容量 (Ah)</dt><dd>3.000</dd></div>
-                <div><dt>容量衰减至80%循环</dt><dd>782</dd></div>
-                <div><dt>内阻增长率 (500周)</dt><dd>35.21%</dd></div>
-                <div><dt>能量效率均值</dt><dd>94.18%</dd></div>
+                <div><dt>初始容量 (Ah)</dt><dd id="metricInitialCapacity">3.102</dd></div>
+                <div><dt>标称容量 (Ah)</dt><dd id="metricNominalCapacity">3.000</dd></div>
+                <div><dt>容量衰减至80%循环</dt><dd id="metricCycle80">782</dd></div>
+                <div><dt>内阻增长率 (500周)</dt><dd id="metricResistanceGrowth">35.21%</dd></div>
+                <div><dt>能量效率均值</dt><dd id="metricMeanEfficiency">94.18%</dd></div>
               </dl>
             </div>
           </article>
@@ -183,7 +208,7 @@
                   <label class="field"><span>截止电压下限</span><div class="unit-input"><input id="dischargeCutoff" value="2.50"><em>V</em></div></label>
                   <label class="field"><span>环境温度</span><div class="unit-input"><input id="temperatureC" value="25"><em>°C</em></div></label>
                   <label class="field"><span>静置时长</span><div class="unit-input"><input id="restMinutes" value="5"><em>min</em></div></label>
-                  <label class="field"><span>循环次数</span><div class="unit-input"><input id="cycleCount" value="500"><em>份</em></div></label>
+                  <label class="field"><span>循环次数</span><div class="unit-input"><input id="cycleCount" value="500"><em>次</em></div></label>
                   <label class="field"><span>识别电流</span><div class="unit-input"><input id="currentPreview" value="157.0" readonly><em id="currentPreviewUnit">A</em></div></label>
                 </div>
                 <label class="check-row run-mode-row"><input id="dcrEnabled" type="checkbox">DCR 仿真 <span class="mini-input">内阻</span></label>
@@ -292,26 +317,84 @@
                   <figure><figcaption>能量效率</figcaption><svg id="efficiencyChart" viewBox="0 0 300 210"></svg></figure>
                 </div>
                 <aside class="rul-card">
-                  <div class="rul-title" id="summaryTitle">容量衰减至80% @ 25°C</div>
-                  <strong id="summaryValue">782</strong>
-                  <span id="summaryUnit">循环</span>
-                  <p id="summaryLine1">预测区间: 720 - 860 循环</p>
-                  <p id="summaryLine2">置信度: 95%</p>
+                  <div class="rul-title" id="summaryTitle">仿真摘要</div>
+                  <strong id="summaryValue">--</strong>
+                  <span id="summaryUnit">Ah</span>
+                  <p id="summaryLine1">运行仿真后显示真实摘要</p>
+                  <p id="summaryLine2"></p>
                   <button class="btn outline compact" type="button">查看寿命预测详情</button>
                 </aside>
                 <div class="export-strip">
                   <button class="btn outline" type="button" data-action="export"><span class="icon" data-icon="download"></span>数据导出 (CSV)</button>
-                  <button class="btn outline" type="button"><span class="icon" data-icon="image"></span>图表导出 (PNG)</button>
+                  <button class="btn outline" type="button" data-action="export-charts"><span class="icon" data-icon="image"></span>图表导出 (PNG)</button>
                   <button class="btn outline" type="button"><span class="icon" data-icon="file"></span>生成报告 (PDF)</button>
-                  <button class="btn outline" type="button"><span class="icon" data-icon="save"></span>保存到项目</button>
+                  <button class="btn outline" type="button" data-action="save"><span class="icon" data-icon="save"></span>保存到项目</button>
                 </div>
               </div>
             </article>
           </div>
         </section>
+        </section>
+
+        <section class="view" data-view="projects" hidden>
+          <article class="panel view-panel">
+            <header class="panel-header">
+              <h2>我的项目</h2>
+              <button class="btn compact primary" type="button" data-action="new-project">新建项目</button>
+            </header>
+            <div class="panel-body">
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>项目名称</th><th>电芯类型</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
+                  <tbody id="projectsRows"></tbody>
+                </table>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section class="view" data-view="data" hidden>
+          <article class="panel view-panel">
+            <header class="panel-header">
+              <h2>数据管理</h2>
+              <button class="btn compact primary" type="button" data-action="import-data">导入数据</button>
+            </header>
+            <div class="panel-body">
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>数据集 ID</th><th>文件名</th><th>行数</th><th>导入时间</th><th>操作</th></tr></thead>
+                  <tbody id="datasetsRows"></tbody>
+                </table>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section class="view" data-view="placeholder" hidden>
+          <article class="panel view-panel">
+            <header class="panel-header"><h2 id="placeholderTitle">功能建设中</h2></header>
+            <div class="panel-body">
+              <p class="small-note">该模块尚未实现。当前可用模块：工况仿真、项目管理、数据管理、任务历史。</p>
+            </div>
+          </article>
+        </section>
       </main>
     </div>
     <div class="scrim" data-action="toggle-menu"></div>
+    <div class="modal-backdrop" id="jobsModal" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-label="任务历史">
+        <header class="modal-header">
+          <h2>任务历史</h2>
+          <button class="icon-button ghost" type="button" aria-label="关闭" data-action="close-jobs"><span class="icon" data-icon="close"></span></button>
+        </header>
+        <div class="table-wrap modal-table">
+          <table>
+            <thead><tr><th>任务 ID</th><th>状态</th><th>进度</th><th>循环</th><th>更新时间</th><th>操作</th></tr></thead>
+            <tbody id="jobsRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
     <div class="toast" role="status" aria-live="polite"></div>
   </div>
   <script src="./app.js"></script>

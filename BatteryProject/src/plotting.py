@@ -47,13 +47,30 @@ class BatteryPlotter:
             self.color_idx += 1
         return self.color_map[key]
 
+    @staticmethod
+    def _normalize_retention(retention):
+        """保持率统一为 0–1 小数（全库内部表示）；百分制输入自动 /100。"""
+        ret = np.asarray(retention, dtype=float)
+        finite = ret[np.isfinite(ret)]
+        if finite.size > 0 and finite.mean() > 2.0:
+            ret = ret / 100.0
+        return ret
+
     def add_exp_data(self, label, cycle, capacity, retention):
-        """写入一组实验数据（循环数、容量、保持率）。"""
-        self.exp_db[label] = {"x": np.array(cycle), "cap": np.array(capacity), "ret": np.array(retention)}
+        """写入一组实验数据（循环数、容量、保持率）。
+
+        retention 内部统一存 0–1 小数；传入百分制（均值 > 2）会自动 /100。
+        绘图时由 plot() 统一 ×100 显示为百分比。
+        """
+        self.exp_db[label] = {"x": np.array(cycle), "cap": np.array(capacity), "ret": self._normalize_retention(retention)}
 
     def add_sim_data(self, label, cycle, capacity, retention):
-        """写入一组仿真数据（循环数、容量、保持率）。"""
-        self.sim_db[label] = {"x": np.array(cycle), "cap": np.array(capacity), "ret": np.array(retention)}
+        """写入一组仿真数据（循环数、容量、保持率）。
+
+        retention 内部统一存 0–1 小数；传入百分制（均值 > 2）会自动 /100。
+        绘图时由 plot() 统一 ×100 显示为百分比。
+        """
+        self.sim_db[label] = {"x": np.array(cycle), "cap": np.array(capacity), "ret": self._normalize_retention(retention)}
 
     def _resolve_keys(self, db, target):
         """将 target 解析为待绘制 key 列表。"""
@@ -151,7 +168,7 @@ class BatteryPlotter:
                 data = db[lbl]
                 color = self._get_color(lbl)
                 y_left = data["cap"] * factor + bias
-                y_right = data["ret"]
+                y_right = data["ret"] * 100  # 内部 0–1 小数，显示为百分比
                 if style_type == "exp":
                     kw = {"ls": "-", "lw": 2.0, "alpha": 0.7, "label": f"{lbl} (Exp)"}
                 else:
@@ -165,6 +182,7 @@ class BatteryPlotter:
         self._finalize_axis(ax1, title_left, xlabel, ylabel_left, xlim, ylim_left, invert_xaxis)
         self._finalize_axis(ax2, title_right, xlabel, ylabel_right, xlim, ylim_right, invert_xaxis)
         plt.tight_layout()
+        return fig, (ax1, ax2)
 
     def plot_heat(
         self,
@@ -213,6 +231,7 @@ class BatteryPlotter:
         self._finalize_axis(ax1, title_left, xlabel, ylabel_left, xlim, ylim_left, invert_xaxis)
         self._finalize_axis(ax2, title_right, xlabel, ylabel_right, xlim, ylim_right, invert_xaxis)
         plt.tight_layout()
+        return fig, (ax1, ax2)
 
 
 def different_cycle_voltage(sol, battery_model, rate, temperature, acceleration_factor=50):
@@ -598,7 +617,7 @@ def plot_efficiency_vs_cycle(sol, acceleration_factor=50):
     if len(efficiency) == 0:
         return None
 
-    x = np.arange(len(efficiency)) * acceleration_factor
+    x = res["cycle_index"] * acceleration_factor
 
     # 使用一行两列子图：左图为能效，右图为充放电能量
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
@@ -634,7 +653,7 @@ def plot_efficiency_vs_cycle_all(sol_list, rate_range, cycles_per_block=50, xlim
         efficiency = res["efficiency"]
         if len(efficiency) == 0:
             continue
-        x = np.arange(len(efficiency)) * cycles_per_block
+        x = res["cycle_index"] * cycles_per_block
         plt.plot(x, efficiency, marker='o', linestyle='-', label=f'{rate}P')
 
     plt.xlabel('Cycle Number')
@@ -739,6 +758,7 @@ def plot_swelling_for_condition(
     preload_force=0.0,
     method="engineering",
     reference="parameter_initial",
+    **swelling_kwargs,
 ):
     """绘制单一工况的膨胀分解图（基线/振幅）与包络图（最大/最小）。"""
     from .analysis import calculate_cycle_swelling
@@ -753,6 +773,7 @@ def plot_swelling_for_condition(
         preload_force=preload_force,
         method=method,
         reference=reference,
+        **swelling_kwargs,
     )
     if len(max_f) == 0:
         return
@@ -806,6 +827,7 @@ def plot_swelling(
     preload_force=0.0,
     method="engineering",
     reference="parameter_initial",
+    **swelling_kwargs,
 ):
     """对比多工况膨胀分量，并可按温度/倍率条件筛选。"""
     from .analysis import calculate_cycle_swelling
@@ -831,6 +853,7 @@ def plot_swelling(
             preload_force=preload_force,
             method=method,
             reference=reference,
+            **swelling_kwargs,
         )
         if len(eoc_f) == 0:
             continue
@@ -896,9 +919,7 @@ def plot_swelling(
         ax_total.legend(title="Condition / Type")
         plt.tight_layout()
     else:
-        print(
-            f"⚠️ 未找到匹配过滤条件的数据（filter_total={filter_total}），已跳过总包络图。"
-        )
+        logger.warning("未找到匹配过滤条件的数据（filter_total=%s），已跳过总包络图。", filter_total)
 
 
 def process_sol_list_for_all_heat_components(
@@ -911,7 +932,7 @@ def process_sol_list_for_all_heat_components(
     """批量计算并注入全部产热分量（充/放电的不可逆、可逆与总热）。"""
     from .analysis import get_all_heat_components
 
-    print("🔥 计算全部分量热数据 (Irrev, Rev, Total)...")
+    logger.info("计算全部分量热数据 (Irrev, Rev, Total)...")
     for sol, label in zip(sol_list, label_list):
         try:
             data = get_all_heat_components(sol, label)
@@ -941,7 +962,7 @@ def process_sol_list_for_all_heat_components(
             inject("Rev_Chg", data["rev_chg"])
             inject("Total_Chg", data["total_chg"])
         except Exception as e:
-            print(f"❌ {label} 热量计算失败: {e}")
+            logger.warning("%s 热量计算失败: %s", label, e)
 
 
 # === PEP 8 命名别名（向后兼容，原名保留可用） ===
@@ -957,7 +978,7 @@ def plot_and_calculate_rrmse(df, x_columns, y_columns, sol_list, labels, colors,
         plt.plot(res["x_exp"], res["y_exp"], linestyle="-", linewidth=1, color=color, label=f"{label}P")
         if np.isfinite(res["rmse"]):
             logger.info("%sP %s曲线 RMSE: %.4f", label, charge_or_discharge, res["rmse"])
-            logger.info("%sP %s曲线 RRMSE: %.4%%", label, charge_or_discharge, res["rrmse"] * 100)
+            logger.info("%sP %s曲线 RRMSE: %.4f%%", label, charge_or_discharge, res["rrmse"] * 100)
         else:
             logger.warning("%sP %s曲线 RMSE/RRMSE 无有效数据。", label, charge_or_discharge)
     plt.xlabel("Capacity(Ah)")

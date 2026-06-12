@@ -156,7 +156,7 @@ class DryoutTracker:
         print(f"  干涸LAM:    {lam_dry[-1]:.2f}%")
 
 
-def apply_dryout_to_initial_conditions(model, sol, params):
+def apply_dryout_to_initial_conditions(model, sol, params, porosity_factors=None):
     """将干涸浓度修正应用到初始条件，返回新模型。
 
     这是 Fun_NC.py 中 ``Run_Model_Base_On_Last_Solution`` 内
@@ -191,12 +191,37 @@ def apply_dryout_to_initial_conditions(model, sol, params):
         if key in dict_short:
             dict_short[key] = dict_short[key] * ratio
 
+    # 膨胀力耦合：把孔隙率压缩因子同步乘到 ε·c_e 状态（保持 c_e 不变）
+    if porosity_factors:
+        _apply_porosity_factors_to_state(dict_short, porosity_factors)
+
     return model.set_initial_conditions_from(dict_short, inplace=False)
 
 
 # ---------------------------------------------------------------------------
 #  内部函数
 # ---------------------------------------------------------------------------
+
+_POROSITY_TIMES_CONC_KEYS = {
+    "negative electrode": "Negative electrode porosity times concentration [mol.m-3]",
+    "separator": "Separator porosity times concentration [mol.m-3]",
+    "positive electrode": "Positive electrode porosity times concentration [mol.m-3]",
+}
+
+
+def _apply_porosity_factors_to_state(dict_short, porosity_factors):
+    """把力学压缩因子乘到 ε·c_e 状态上（与孔隙率参数同因子，保持 c_e 不变）。
+
+    孔隙率本身在 PyBaMM 中是代数量（初始孔隙率参数 - 副反应产物体积），
+    参数端的压缩由 SwellingCoupler.update 完成；这里只同步电解液状态，
+    被挤出的电解液在下一次 DryoutTracker.update 经 Vol_Pore_decrease
+    进入 reservoir。
+    """
+    for domain, factor in porosity_factors.items():
+        key = _POROSITY_TIMES_CONC_KEYS.get(domain)
+        if key and key in dict_short:
+            dict_short[key] = dict_short[key] * factor
+
 
 def _safe_update(params, key, value):
     """安全更新 ParameterValues，自动处理 check_already_exists。"""
@@ -469,6 +494,7 @@ def run_aging_with_dryout(
     model, params, experiment, solver, var_pts,
     starting_solution=None,
     tracker=None,
+    swelling_coupler=None,
     n_blocks=10,
     cycles_per_block=20,
     t_factor=50,
@@ -528,7 +554,9 @@ def run_aging_with_dryout(
         # 可选：刷新老化参数。tracker 启用时仅首块刷新一次——否则
         # get_hithium_params 会把 tracker 管理的几何键 (Electrode width)
         # 重置为原值，抹掉累计的干涸压缩。
-        if get_hithium_params is not None and (tracker is None or i_block == 0):
+        if get_hithium_params is not None and (
+            (tracker is None and swelling_coupler is None) or i_block == 0
+        ):
             params.update(
                 get_hithium_params(t_factor, temperature=temperature),
             )
@@ -537,6 +565,11 @@ def run_aging_with_dryout(
         if tracker is not None and sol is not None:
             tracker.update(sol, params)
 
+        # 膨胀力 -> 孔隙率（块间准静态耦合，见 src/swelling_coupling.py）
+        porosity_factors = None
+        if swelling_coupler is not None and sol is not None:
+            porosity_factors = swelling_coupler.update(sol, params)
+
         # 构建实验
         if callable(experiment) and not isinstance(experiment, pybamm.Experiment):
             exp = experiment(cycles_per_block)
@@ -544,8 +577,10 @@ def run_aging_with_dryout(
             exp = experiment
 
         # 构建模型初始条件
-        if tracker is not None and sol is not None:
-            model_run = apply_dryout_to_initial_conditions(model, sol, params)
+        if (tracker is not None or porosity_factors) and sol is not None:
+            model_run = apply_dryout_to_initial_conditions(
+                model, sol, params, porosity_factors=porosity_factors
+            )
         else:
             model_run = model
 
@@ -571,5 +606,7 @@ def run_aging_with_dryout(
     # 最后一块结束后再更新一次
     if tracker is not None and sol is not None:
         tracker.update(sol, params)
+    if swelling_coupler is not None and sol is not None:
+        swelling_coupler.update(sol, params)
 
     return sol_list

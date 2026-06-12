@@ -47,6 +47,7 @@ def get_hithium_params(t_factor=1,temperature=298.15):
         
         # 电池容量参数
         "Nominal cell capacity [A.h]": 162,
+        "Ambient temperature [K]": temperature,
         "Number of electrodes connected in parallel to make a cell": 1,
         "Maximum concentration in negative electrode [mol.m-3]": 23051,
         "Maximum concentration in positive electrode [mol.m-3]": 13484 ,
@@ -74,8 +75,8 @@ def get_hithium_params(t_factor=1,temperature=298.15):
         "Positive electrode exchange-current density [A.m-2]": Na_exchange_current_density,
         'Electrolyte diffusivity [m2.s-1]': electrolyte_diffusivity_Nyman2008_arrhenius,
         "Electrolyte conductivity [S.m-1]": electrolyte_conductivity,
-        "Positive electrode diffusivity [m2.s-1]": Na_diffusivity,
-        "Negative electrode diffusivity [m2.s-1]": Gr_diffusivity,
+        "Positive particle diffusivity [m2.s-1]": Na_diffusivity,
+        "Negative particle diffusivity [m2.s-1]": Gr_diffusivity,
         
         # Bruggeman系数
         "Positive electrode Bruggeman coefficient (electrode)": 1.5,

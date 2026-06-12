@@ -81,5 +81,54 @@ class ProcessSolListTests(unittest.TestCase):
         self.assertEqual(plotter.calls, [])
 
 
+class _FakeVar:
+    def __init__(self, entries):
+        self.entries = np.asarray(entries, dtype=float)
+
+
+class _FakeCapStep:
+    def __init__(self, current, throughput):
+        self._d = {
+            "Current [A]": _FakeVar(current),
+            "Throughput capacity [A.h]": _FakeVar(throughput),
+        }
+
+    def __getitem__(self, key):
+        return self._d[key]
+
+
+class _FakeCapCycle:
+    def __init__(self, steps):
+        self.steps = steps
+
+
+class _FakeCapSol:
+    def __init__(self, cycles):
+        self.cycles = cycles
+
+
+class RetentionUnitTests(unittest.TestCase):
+    """process_sol_list_with_custom_extractor 注入 0–1 小数保持率。"""
+
+    def test_injects_fraction_with_second_cycle_baseline(self):
+        sol = _FakeCapSol([
+            _FakeCapCycle([_FakeCapStep([1.0, 1.0], [0.0, 0.5])]),
+            _FakeCapCycle([_FakeCapStep([1.0, 1.0], [0.0, 0.4])]),
+        ])
+
+        calls = []
+
+        class _DummyPlotter:
+            def add_sim_data(self, label, x, cap, ret):
+                calls.append((label, x, cap, ret))
+
+        process_sol_list_with_custom_extractor(_DummyPlotter(), [sol], ["c"], t_factor=50)
+        self.assertEqual(len(calls), 1)
+        _, _, cap, ret = calls[0]
+        # 基线为第 2 圈（conditioning 跳过约定），且为 0–1 小数（非百分制）
+        np.testing.assert_allclose(cap, [0.5, 0.4])
+        np.testing.assert_allclose(ret, [1.25, 1.0])
+
+
 if __name__ == "__main__":
     unittest.main()

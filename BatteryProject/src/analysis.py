@@ -110,7 +110,7 @@ def _parse_temperature_from_label(label_for_temp):
     """
     try:
         if label_for_temp:
-            match = re.search(r"(\d+)\s*°?C", label_for_temp)
+            match = re.search(r"(-?\d+(?:\.\d+)?)\s*°?C", label_for_temp)
             return float(match.group(1)) + 273.15 if match else 298.15
     except Exception:
         pass
@@ -286,10 +286,58 @@ def _normalize_swelling_reference(reference):
     return normalized
 
 
+# ---------------------------------------------------------------------------
+#  电极膨胀函数（嵌锂度 -> 厚度应变）
+# ---------------------------------------------------------------------------
+
+#: 石墨厚度应变-嵌锂度节点：分段线性近似石墨分阶膨胀（文献定形曲线，
+#: 满嵌约 13.2%；建议用本厂膨胀仪数据重标定节点）。
+GRAPHITE_EXPANSION_STO = (0.0, 0.12, 0.25, 0.5, 0.7, 1.0)
+GRAPHITE_EXPANSION_STRAIN = (0.0, 0.020, 0.043, 0.062, 0.090, 0.132)
+
+#: LFP 满嵌-脱嵌体积变化约 +6.6%，各向同性线性化为厚度应变（1/3）。
+LFP_EXPANSION_STRAIN_MAX = 0.022
+
+
+def graphite_expansion_fraction(sto):
+    """石墨电极厚度应变 f(sto)，捕捉分阶非线性（中段平台 + 末端陡升）。"""
+    return np.interp(
+        np.asarray(sto, dtype=float),
+        GRAPHITE_EXPANSION_STO,
+        GRAPHITE_EXPANSION_STRAIN,
+    )
+
+
+def lfp_expansion_fraction(sto):
+    """LFP 电极厚度应变 f(sto)：嵌锂膨胀，充电时与石墨呼吸反相、部分抵消。"""
+    return LFP_EXPANSION_STRAIN_MAX * np.asarray(sto, dtype=float)
+
+
+_EXPANSION_FUNCTIONS = {
+    "graphite": graphite_expansion_fraction,
+    "lfp": lfp_expansion_fraction,
+}
+
+
+def _resolve_expansion_function(func):
+    """把 None / 字符串 / 可调用统一解析为膨胀函数（None 表示线性 ω 公式）。"""
+    if func is None or callable(func):
+        return func
+    key = str(func).strip().lower()
+    if key in ("", "none", "linear"):
+        return None
+    if key not in _EXPANSION_FUNCTIONS:
+        raise ValueError(
+            f"unknown expansion function {func!r}; "
+            f"use one of {sorted(_EXPANSION_FUNCTIONS)}, None, or a callable"
+        )
+    return _EXPANSION_FUNCTIONS[key]
+
+
 def _get_engineering_swelling_params(params):
     """Read geometry/concentration parameters for engineering swelling estimate."""
     try:
-        return {
+        pack = {
             "L_n": params["Negative electrode thickness [m]"],
             "L_p": params["Positive electrode thickness [m]"],
             "c_n_init": params["Initial concentration in negative electrode [mol.m-3]"],
@@ -300,48 +348,165 @@ def _get_engineering_swelling_params(params):
             "Missing geometry/concentration params (%s); using approximate defaults for swelling estimate.",
             exc,
         )
-        return {
+        pack = {
             "L_n": 85e-6,
             "L_p": 75e-6,
             "c_n_init": 25000,
             "c_p_init": 1000,
         }
 
+    def _optional(key):
+        try:
+            return params[key]
+        except Exception:
+            return None
 
-def _engineering_swelling_displacement(cycle, param_pack, omega_n, omega_p):
-    """Compute displacement profile using the legacy concentration-based estimate."""
+    # 非线性膨胀函数需要最大浓度；不可逆项需要负极比表面积
+    pack["c_n_max"] = _optional("Maximum concentration in negative electrode [mol.m-3]")
+    pack["c_p_max"] = _optional("Maximum concentration in positive electrode [mol.m-3]")
+    pack["a_n"] = _optional("Negative electrode surface area to volume ratio [m-1]")
+    return pack
+
+
+_IRREVERSIBLE_THICKNESS_VARS = (
+    "X-averaged negative SEI thickness [m]",
+    "X-averaged negative lithium plating thickness [m]",
+    "X-averaged negative dead lithium thickness [m]",
+)
+
+
+def _time_profile(variable):
+    """把 (空间 x 时间) entries 压成时间序列。"""
+    profile = np.asarray(variable.entries, dtype=float)
+    if profile.ndim > 1:
+        profile = np.mean(profile, axis=0)
+    return profile.reshape(-1)
+
+
+def _add_profiles(a, b):
+    """对齐长度后逐点相加（a 可为 None）。"""
+    if a is None:
+        return b
+    n = min(len(a), len(b))
+    return a[:n] + b[:n]
+
+
+def _irreversible_film_thickness(cycle):
+    """副反应产物等效膜厚时间序列（SEI + 析锂 + 死锂 + 裂纹SEI×(粗糙度-1)）。
+
+    口径与 PyBaMM ReactionDriven 孔隙率子模型一致；返回 None 表示解中
+    没有任何副反应厚度变量。
+    """
+    total = None
+    for name in _IRREVERSIBLE_THICKNESS_VARS:
+        try:
+            profile = _time_profile(cycle[name])
+        except Exception:
+            continue
+        total = _add_profiles(total, profile)
+    try:
+        cr = _time_profile(cycle["X-averaged negative SEI on cracks thickness [m]"])
+        rough = _time_profile(cycle["X-averaged negative electrode roughness ratio"])
+        n = min(len(cr), len(rough))
+        total = _add_profiles(total, cr[:n] * (rough[:n] - 1.0))
+    except Exception:
+        pass
+    return total
+
+
+def _irreversible_displacement(cycle, param_pack, beta_irreversible, run_state):
+    """不可逆副反应位移 = β·a_n·L_n·Δδ_film。
+
+    把单颗粒表面膜厚换算成电极级体积（乘比表面积 a_n 与电极厚度 L_n），
+    再按顶出系数 β 折算为厚度增长（其余体积视为被孔隙吸收）。
+    缺少 a_n 参数时禁用该项并告警一次。
+    """
+    film = _irreversible_film_thickness(cycle)
+    if film is None or film.size == 0:
+        return 0.0
+    a_n = param_pack.get("a_n")
+    if not a_n:
+        if not run_state.get("warned_a_n"):
+            logger.warning(
+                "'Negative electrode surface area to volume ratio [m-1]' missing; "
+                "irreversible swelling term disabled."
+            )
+            run_state["warned_a_n"] = True
+        return 0.0
+    if run_state.get("film_ref") is None:
+        run_state["film_ref"] = float(film[0])
+    return beta_irreversible * a_n * param_pack["L_n"] * (film - run_state["film_ref"])
+
+
+def _electrode_breathing(c_avg, c_init, c_max, L, omega, f_expansion, run_state, warn_key):
+    """单电极可逆呼吸位移：优先非线性 f(sto)，缺 c_max 时回退线性 ω 公式。"""
+    if f_expansion is not None and c_max:
+        sto = np.asarray(c_avg, dtype=float) / c_max
+        return L * (f_expansion(sto) - f_expansion(c_init / c_max))
+    if f_expansion is not None and not run_state.get(warn_key):
+        logger.warning(
+            "Maximum concentration parameter missing (%s); falling back to linear omega swelling.",
+            warn_key,
+        )
+        run_state[warn_key] = True
+    return L * (1 / 3) * omega * (np.asarray(c_avg, dtype=float) - c_init)
+
+
+def _engineering_swelling_displacement(
+    cycle, param_pack, omega_n, omega_p, f_n, f_p, beta_irreversible, run_state
+):
+    """由浓度/副反应状态计算电芯厚度位移时间序列。"""
     c_n_raw = cycle["X-averaged negative particle concentration [mol.m-3]"].entries
     c_p_raw = cycle["X-averaged positive particle concentration [mol.m-3]"].entries
     c_n_avg = np.mean(c_n_raw, axis=0) if getattr(c_n_raw, "ndim", 1) > 1 else c_n_raw
     c_p_avg = np.mean(c_p_raw, axis=0) if getattr(c_p_raw, "ndim", 1) > 1 else c_p_raw
 
-    try:
-        L_sei = cycle["X-averaged negative SEI thickness [m]"].entries
-        val_irrev = L_sei[0, -1] if np.ndim(L_sei) > 1 else L_sei[-1]
-    except Exception:
-        val_irrev = 0
+    delta_L_n = _electrode_breathing(
+        c_n_avg, param_pack["c_n_init"], param_pack.get("c_n_max"),
+        param_pack["L_n"], omega_n, f_n, run_state, "warned_c_n_max",
+    )
+    delta_L_p = _electrode_breathing(
+        c_p_avg, param_pack["c_p_init"], param_pack.get("c_p_max"),
+        param_pack["L_p"], omega_p, f_p, run_state, "warned_c_p_max",
+    )
 
-    delta_L_n = param_pack["L_n"] * (1 / 3) * omega_n * (c_n_avg - param_pack["c_n_init"])
-    delta_L_p = param_pack["L_p"] * (1 / 3) * omega_p * (c_p_avg - param_pack["c_p_init"])
-    return np.asarray(delta_L_n + delta_L_p + val_irrev, dtype=float).reshape(-1)
+    reversible = np.asarray(delta_L_n + delta_L_p, dtype=float).reshape(-1)
+    irreversible = _irreversible_displacement(cycle, param_pack, beta_irreversible, run_state)
+    if np.ndim(irreversible) == 0:
+        return reversible + irreversible
+    return _add_profiles(reversible, np.asarray(irreversible, dtype=float).reshape(-1))
 
 
-def _pybamm_thickness_displacement(cycle):
-    """Read the PyBaMM mechanics cell thickness change profile."""
-    return np.asarray(cycle["Cell thickness change [m]"].entries, dtype=float).reshape(-1)
+def _pybamm_thickness_displacement(cycle, param_pack, beta_irreversible, run_state):
+    """PyBaMM mechanics 厚度变化（粒子膨胀）+ 副反应不可逆位移。"""
+    disp = np.asarray(cycle["Cell thickness change [m]"].entries, dtype=float).reshape(-1)
+    irreversible = _irreversible_displacement(cycle, param_pack, beta_irreversible, run_state)
+    if np.ndim(irreversible) == 0:
+        return disp + irreversible
+    return _add_profiles(disp, np.asarray(irreversible, dtype=float).reshape(-1))
 
 
-def _resolve_swelling_displacement(cycle, method, param_pack, omega_n, omega_p):
+def _resolve_swelling_displacement(
+    cycle, method, param_pack, omega_n, omega_p, f_n, f_p, beta_irreversible, run_state
+):
     """Resolve displacement profile and actual source method for one cycle."""
     if method == "pybamm_thickness":
         try:
-            return _pybamm_thickness_displacement(cycle), "pybamm_thickness"
+            return (
+                _pybamm_thickness_displacement(cycle, param_pack, beta_irreversible, run_state),
+                "pybamm_thickness",
+            )
         except Exception:
             logger.warning(
                 "Cell thickness change [m] unavailable; falling back to engineering swelling estimate."
             )
 
-    return _engineering_swelling_displacement(cycle, param_pack, omega_n, omega_p), "engineering"
+    return (
+        _engineering_swelling_displacement(
+            cycle, param_pack, omega_n, omega_p, f_n, f_p, beta_irreversible, run_state
+        ),
+        "engineering",
+    )
 
 
 def _apply_swelling_reference(displacement, reference, solution_reference):
@@ -368,31 +533,54 @@ def calculate_cycle_swelling(
     omega_n=0.1 * 3.1e-6,
     omega_p=0,
     k_stiffness=1.0e9,
+    k_cell=None,
     preload_force=0.0,
+    beta_irreversible=1.0,
+    expansion_function_n="graphite",
+    expansion_function_p="lfp",
     method="engineering",
     reference="parameter_initial",
     return_table=False,
 ):
-    """估算每圈膨胀力及其分解指标。
+    """逐圈计算膨胀力分解指标。
+
+    力学模型::
+
+        F(t) = max(0, k_eff·ΔL(t) + preload_force)        # 单边接触
+        ΔL   = ΔL_rev(呼吸) + ΔL_irr(副反应产物累积)
+        k_eff = 1 / (1/k_stiffness + 1/k_cell)            # 夹具-电芯串联
 
     参数
     ----
-    omega_n : float
-        负极体积膨胀系数，单位 m^3/mol。
-    omega_p : float
-        正极体积膨胀系数，单位 m^3/mol。
+    omega_n / omega_p : float
+        线性偏摩尔体积系数（m^3/mol）。仅当对应 expansion_function_* 为
+        None、或参数缺少最大浓度时作为回退公式使用。
     k_stiffness : float
-        线性刚度系数，单位 N/m。
+        夹具刚度（N/m）。
+    k_cell : float or None
+        电芯堆叠刚度（N/m）；None 表示电芯视为刚性（k_eff = k_stiffness）。
     preload_force : float
-        预紧力常量，单位 N。会叠加到整条力曲线上（相当于初始基线抬升）。
+        初始预紧力（N）。电芯收缩脱离夹具后力被钳制到 0（单边接触）。
+    beta_irreversible : float
+        副反应产物顶出系数 β∈[0,1]：产物体积转化为电芯厚度增长的比例，
+        其余视为被孔隙吸收。
+    expansion_function_n / expansion_function_p : str, callable or None
+        电极厚度应变函数 f(sto)。内置 ``"graphite"``（分段非线性）与
+        ``"lfp"``（线性，充电时与石墨反相抵消）；None 退回线性 ω 公式。
+        需要参数 "Maximum concentration in ... electrode [mol.m-3]"，
+        缺失时自动回退 ω 公式并告警。
     method : {"engineering", "pybamm_thickness"}
-        位移来源。``engineering`` 保留旧的浓度-厚度估算；``pybamm_thickness``
-        优先读取 PyBaMM mechanics 输出 ``Cell thickness change [m]``，缺失时回退到 engineering。
+        位移来源。``engineering`` 用浓度-厚度估算；``pybamm_thickness``
+        优先读取 PyBaMM mechanics 的 ``Cell thickness change [m]``，
+        缺失时回退 engineering。两种方法均叠加副反应不可逆位移
+        β·a_n·L_n·Δδ_film（δ_film 为 SEI/析锂/死锂/裂纹SEI 等效膜厚之和，
+        需参数 "Negative electrode surface area to volume ratio [m-1]"）。
     reference : {"cycle_start", "solution_start", "parameter_initial"}
-        位移零点。``parameter_initial`` 使用参数/模型自身零点；``solution_start``
-        以整个解首个有效点为零点；``cycle_start`` 以每圈首点为零点。
+        位移零点。``parameter_initial`` 使用参数/模型初值为零点；
+        ``solution_start`` 以整段解首个有效点为零点；``cycle_start``
+        以每圈首点为零点。
     return_table : bool
-        True 时返回结构化 pandas.DataFrame，忽略 ``return_components``。
+        True 时返回结构化 pandas.DataFrame，优先于 ``return_components``。
 
     返回
     ----
@@ -402,10 +590,19 @@ def calculate_cycle_swelling(
     - 默认： (max_forces, min_forces)
     - return_components=True：
       (max_forces, min_forces, eoc_forces, reversible_amplitudes)
-      其中 eoc_forces 为圈末基线力，reversible_amplitudes = max-min。
+      其中 eoc_forces 为圈末膨胀力，reversible_amplitudes = max-min。
     """
     method = _normalize_swelling_method(method)
     reference = _normalize_swelling_reference(reference)
+    f_n = _resolve_expansion_function(expansion_function_n)
+    f_p = _resolve_expansion_function(expansion_function_p)
+
+    if k_cell is None:
+        k_eff = k_stiffness
+    else:
+        if k_stiffness <= 0 or k_cell <= 0:
+            raise ValueError("k_stiffness and k_cell must be positive")
+        k_eff = 1.0 / (1.0 / k_stiffness + 1.0 / k_cell)
 
     if sol is None:
         if return_table:
@@ -424,16 +621,21 @@ def calculate_cycle_swelling(
     reversible_amplitudes = []
     rows = []
     solution_reference = None
+    run_state = {}
 
     for cycle_number, cycle in enumerate(sol.cycles, start=1):
         displacement, source_method = _resolve_swelling_displacement(
-            cycle, method, param_pack, Omega_n, Omega_p
+            cycle, method, param_pack, Omega_n, Omega_p, f_n, f_p,
+            beta_irreversible, run_state,
         )
         displacement, solution_reference = _apply_swelling_reference(
             displacement, reference, solution_reference
         )
 
-        force_profile = np.asarray(k_stiffness * displacement + preload_force).reshape(-1)
+        force_profile = np.maximum(
+            np.asarray(k_eff * displacement + preload_force, dtype=float).reshape(-1),
+            0.0,
+        )
         if force_profile.size > 0:
             max_f = np.max(force_profile)
             min_f = np.min(force_profile)
@@ -500,13 +702,20 @@ def compute_cycle_energies(sol):
         - e_charge: np.array       充电能量 (Wh)
         - e_discharge: np.array    放电能量 (Wh)
         - efficiency: np.array     能效 (discharge/charge)
+        - cycle_index: np.array    保留圈对应的原始圈号（空圈会被跳过，用此键对齐 x 轴）
     """
     if sol is None:
         empty = np.array([])
-        return {"discharge_cap": empty, "e_charge": empty, "e_discharge": empty, "efficiency": empty}
+        return {
+            "discharge_cap": empty,
+            "e_charge": empty,
+            "e_discharge": empty,
+            "efficiency": empty,
+            "cycle_index": np.array([], dtype=int),
+        }
 
-    caps, e_chgs, e_dchgs = [], [], []
-    for cycle in sol.cycles:
+    caps, e_chgs, e_dchgs, cycle_idx = [], [], [], []
+    for i_cycle, cycle in enumerate(sol.cycles):
         current = cycle["Current [A]"].entries
         V = cycle["Voltage [V]"].entries
         t = cycle["Time [h]"].entries
@@ -522,16 +731,24 @@ def compute_cycle_energies(sol):
             caps.append(q_dchg)
             e_chgs.append(e_chg)
             e_dchgs.append(e_dchg)
+            cycle_idx.append(i_cycle)
 
     caps = np.array(caps)
     e_chgs = np.array(e_chgs)
     e_dchgs = np.array(e_dchgs)
+    cycle_idx = np.array(cycle_idx, dtype=int)
 
     with np.errstate(divide="ignore", invalid="ignore"):
         efficiencies = np.abs(e_dchgs / e_chgs)
         efficiencies = np.nan_to_num(efficiencies)
 
-    return {"discharge_cap": caps, "e_charge": e_chgs, "e_discharge": e_dchgs, "efficiency": efficiencies}
+    return {
+        "discharge_cap": caps,
+        "e_charge": e_chgs,
+        "e_discharge": e_dchgs,
+        "efficiency": efficiencies,
+        "cycle_index": cycle_idx,
+    }
 
 
 def extract_all_metrics_from_sol(sol):
