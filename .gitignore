@@ -89,6 +89,9 @@ record_layer_seg*
 Output/
 *.mat
 
+# --- Codex 自带系统 skill（随版本分发、自动重建，不该进仓库）---
+skills/.system/
+
 # --- COMSOL 本地导出/编译产物 ---
 # COMSOL/models/ 下按型号归档的模型导出和批处理产物由本机 DLP 保护，默认不进 Git。
 COMSOL/models/

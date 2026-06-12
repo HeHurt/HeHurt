@@ -61,6 +61,36 @@ $env:ELECTRON_RUN_AS_NODE='1'
 
 ---
 
+# 自动仿真路径选择与外部工具边界
+
+当用户提到 `COMSOL_Multiphysics_MCP`、`sim-cli`、`sim-plugin-comsol`、`shared-desktop`、"自动改模型代码自动仿真迭代"、"检查 mph 模型树"时,先做路径选择,不要直接开新工作流:
+
+| 目标 | 首选路径 | 不覆盖内容 |
+|---|---|---|
+| 修改/理解 COMSOL 导出的 `.java` | 本 skill 的 Snippet Mode | 不直接操作 `.mph` 内部树 |
+| 编译 `.java`、求解、导出 `.mph` 和报告 | 本 skill 的 Autonomous Mode + `comsolcompile.exe`/`comsolbatch.exe` | 不用 `java.exe` 代替 COMSOL 编译入口 |
+| 远程/桌面方式打开 COMSOL 或检查 `.mph` 模型树 | `sim-cli`/`sim-plugin-comsol` 或 COMSOL MCP,按用户已安装工具选择 | 不把 GUI 点击流程写进 Java snippet |
+| 通过 MCP 创建/查询模型、读取边界/数据集 | 已配置的 `mcp_servers.comsol` 工具 | 不重复实现 MCP 服务器 |
+| DLP/权限判断 | 先跑读取探针,再给 IT 证据包 | 不反复猜编码、不修改密文字节 |
+
+## DLP / IT 证据包最小探针
+
+遇到 "VS Code/Copilot 能读,COMSOL/Python/Java 读不到" 时,输出一份可交给 IT 的证据包:
+
+1. 文件路径与文件类型: `.java` / `.mph` / 数据文件。
+2. 读取矩阵: VS Code、PowerShell、Python、`Code.exe` bridge、COMSOL 自带 `java.exe`、`comsolcompile.exe`、`comsolbatch.exe` 分别能否读到明文。
+3. 每个进程的完整路径,尤其是:
+   - `D:\软件安装\Microsoft VS Code\Code.exe`
+   - `D:\Program Files\COMSOL\COMSOL64\Multiphysics\java\win64\jre\bin\java.exe`
+   - `D:\Program Files\COMSOL\COMSOL64\Multiphysics\bin\win64\comsolcompile.exe`
+   - `D:\Program Files\COMSOL\COMSOL64\Multiphysics\bin\win64\comsolbatch.exe`
+4. 最小复现命令和错误原文。
+5. 结论: 需要放行的是文件读取、Java runtime、COMSOL batch/compile,还是工作区编辑器通道。
+
+如果只是要证明链路能跑,先做 smoke run: 小模型、短时间、少参数,能编译/求解/导出即可;不要一开始跑完整电热耦合和大倍率矩阵。
+
+---
+
 # Snippet Mode 工作流 (v2.x 原工作流,默认)
 
 ## Pre-Step 1 — 检查 `.java` 体积
