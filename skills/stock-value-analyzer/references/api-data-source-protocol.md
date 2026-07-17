@@ -1,7 +1,9 @@
 # API 优先取数协议（API-First Data Source Protocol）
 
-> 配套 `stock-value-analyzer` v1.6 使用。本文档定义 **yfinance + AkShare 双引擎** 数据获取机制，
+> 配套 `stock-value-analyzer` v1.8 使用。本文档定义 **yfinance + AkShare 双引擎** 数据获取机制，
 > 用以替代以前完全依赖 `web_fetch` / `web_search` 抓取网页的做法。
+>
+> **v1.8 补充（2026-07-02）**：A 股 AkShare/Eastmoney 个股字段可能为空或代理异常；脚本已内置新浪 quote + 腾讯 quote 作为 A 股行情兜底，并把结果写入 `quote_crosscheck`。
 >
 > **核心改进（v1.6, 2026-05-05）**：
 > - **API 数据 = S 级信源**（高于原有 A 级），因其直接来自交易所/官方数据提供方，机器可读、口径统一、不受网页改版影响
@@ -94,6 +96,14 @@ ticker.cashflow         # 现金流量表
 | `ak.stock_dividend_cninfo(symbol="000001")` | 历年分红明细 |
 | `ak.stock_main_business_em(symbol="000001")` | 主营业务构成 |
 
+**A 股行情兜底（v1.8）**：
+| 接口 | 用途 |
+|---|---|
+| 新浪 quote `https://hq.sinajs.cn/list=sz000001` | AkShare/Eastmoney 行情字段缺失时补当前价、昨收、最高/最低、成交额、交易时间 |
+| 腾讯 quote `https://qt.gtimg.cn/q=sz000001` | 交叉验证当前价，并提供 PE/PB/市值等行情端参考字段 |
+
+脚本输出字段：`quote_crosscheck.sina`、`quote_crosscheck.tencent`。这两个 quote 属于行情端兜底/复验信源，不替代 CNINFO 财报原文。
+
 **常用接口**（港股）：
 | 接口 | 用途 |
 |---|---|
@@ -118,7 +128,8 @@ Step 0.1 — API 优先
    │
    ├── A 股
    │   └── AkShare 主取（S 级）
-   │       └── 失败 / 字段缺失 → 走 Step 0.2
+   │       └── 失败 / 字段缺失 → 新浪 quote + 腾讯 quote（脚本内置）
+   │           └── 仍失败 → 走 Step 0.2
    │
    └── 跨市场标的（AH、ADR）
        └── A 股端用 AkShare、H 股端用 yfinance、ADR 用 yfinance
@@ -281,6 +292,7 @@ Step 8.1 关键数据复验时，**复验信源不得与 Step 0 完全重叠**�
 | yfinance 对部分港股返回空 `info` | Yahoo 数据库偶尔丢失少数港股 | AkShare 港股接口兜底 |
 | `dividendYield` 是小数（0.0085）不是百分比 | 易被当 0.85% 误读为 0.0085% | 报告中显式 ×100 标注 |
 | `trailingPE` 在亏损公司返回 `None` | yfinance 不会返回负 PE | 改用 PS / PB / EV/EBITDA |
+| A 股 `stock_individual_info_em` / Eastmoney 个股字段为空 | 东财接口字段调整、代理异常、临时限流 | 查看 JSON 的 `quote_crosscheck.sina/tencent`；价格采用三源交叉，估值用股本和财报自算 |
 | AkShare A 股代码不带 sh/sz 前缀 | 如 600519、000001 | 注意接口签名差异 |
 | AkShare 港股代码 5 位带前导零 | 腾讯是 `00700` 不是 `0700` | 与 yfinance 的 `0700.HK` 区分 |
 | 财报数据有 1-2 季度滞后 | API 财报口径以最新已披露季报为准 | 报告中标注"截至 YYYY-Qn 财报" |
@@ -301,6 +313,8 @@ def fetch_price(symbol, market):
         elif market == "A":
             data = akshare_fetch_a(symbol)
             if data["price"]: return data, "akshare"
+            if data.get("quote_crosscheck"):
+                return data, "sina_tencent_fallback"
 
         # 一级降级：换引擎
         if market == "HK":
@@ -320,4 +334,5 @@ def fetch_price(symbol, market):
 
 ## 九、版本记录
 
+- **v1.8（2026-07-02）** — A 股 AkShare/Eastmoney 字段缺失兜底：脚本新增新浪 quote + 腾讯 quote，输出 `quote_crosscheck`；A 股价格固定三源复验，估值核心指标仍以股价、股本、财报自算。
 - **v1.6（2026-05-05）** — 初版。建立 yfinance + AkShare 双引擎机制，新增 Tier 0 信源等级，新增 `scripts/fetch_stock_data.py` 一键脚本。

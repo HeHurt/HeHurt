@@ -9,6 +9,8 @@ const state = {
   currentJobId: null,
   currentResult: null,
   importedDataset: null,
+  datasetSeries: null,
+  extrapolation: null,
   savedConfig: null,
   projectMetadata: {
     project_name: "Demo_Project",
@@ -993,6 +995,13 @@ function renderImportedDataset(payload) {
   if (payload.preview?.rows) {
     createPreviewRows(payload.preview.rows);
   }
+  if (payload.series) {
+    state.datasetSeries = payload.series;
+    state.extrapolation = null;
+    const note = document.getElementById("extrapolateNote");
+    if (note) note.hidden = true;
+    drawRealPreviewCharts(payload.series);
+  }
   const metrics = payload.metrics || {};
   document.getElementById("metricInitialCapacity").textContent = formatMetric(metrics.initial_capacity_ah);
   document.getElementById("metricNominalCapacity").textContent = formatMetric(metrics.nominal_capacity_ah);
@@ -1065,6 +1074,18 @@ function applySavedDataset(dataset) {
       source.add(option);
     }
     source.value = value;
+  }
+  // 项目恢复时拉取数据集详情，重画真实数据可视化曲线
+  if (dataset.id) {
+    apiFetch(`/api/data/${dataset.id}`)
+      .then((payload) => {
+        if (payload.series) {
+          state.datasetSeries = payload.series;
+          drawRealPreviewCharts(payload.series);
+        }
+        if (payload.preview?.rows) createPreviewRows(payload.preview.rows);
+      })
+      .catch(() => {});
   }
 }
 
@@ -1371,6 +1392,314 @@ function renderSimulationResult(result) {
   document.getElementById("summaryLine2").textContent = Number.isFinite(retention)
     ? `容量保持率: ${retention.toFixed(2)}%`
     : "容量保持率: --";
+  setResultTab(activeResultTab());
+}
+
+// ---------- 结果后处理 tab（性能/机理/热/参数/对比） ----------
+
+function echartsBox(id) {
+  if (typeof echarts === "undefined") return null;
+  const element = document.getElementById(id);
+  if (!element) return null;
+  const chart = echarts.getInstanceByDom(element) || echarts.init(element);
+  chart.resize();
+  return chart;
+}
+
+const ECHARTS_BASE = {
+  grid: { left: 60, right: 70, top: 56, bottom: 48 },
+  tooltip: { trigger: "axis" },
+};
+
+const ECHARTS_CYCLE_XAXIS = {
+  type: "value",
+  name: "循环次数",
+  nameLocation: "middle",
+  nameGap: 28,
+};
+
+function setResultTab(tab) {
+  document.querySelectorAll("[data-result-pane]").forEach((pane) => {
+    pane.hidden = pane.dataset.resultPane !== tab;
+  });
+  document.querySelectorAll(".result-tabs button").forEach((button) => {
+    button.classList.toggle("active", button.dataset.resultTab === tab);
+  });
+  if (tab === "mechanism") renderMechanismChart();
+  if (tab === "thermal") renderThermalChart();
+  if (tab === "params") renderParamTable();
+  if (tab === "compare") populateCompareDatasets();
+}
+
+function activeResultTab() {
+  return document.querySelector(".result-tabs button.active")?.dataset.resultTab || "performance";
+}
+
+const MECHANISM_SERIES_DEFS = [
+  ["lli_pct", "LLI (%)", 0],
+  ["lam_neg_pct", "LAM 负极 (%)", 0],
+  ["lam_pos_pct", "LAM 正极 (%)", 0],
+  ["sei_ah", "SEI 损失 (Ah)", 1],
+  ["sei_cracks_ah", "裂纹 SEI (Ah)", 1],
+  ["plating_ah", "析锂损失 (Ah)", 1],
+];
+
+function renderMechanismChart() {
+  const chart = echartsBox("mechanismChart");
+  if (!chart) return;
+  const data = state.currentResult?.degradation_metrics;
+  const note = document.getElementById("mechanismNote");
+  if (!data || !(data.cycle || []).length) {
+    chart.clear();
+    if (note) {
+      note.textContent = state.currentResult
+        ? "该任务无退化数据（老化接口未启用或退化变量缺失）"
+        : "运行开启老化接口的仿真后，显示 LLI / LAM / SEI / 析锂逐圈演化";
+    }
+    return;
+  }
+  if (note) note.textContent = "逐圈退化机理演化（每圈末值）";
+  const series = MECHANISM_SERIES_DEFS.filter(([key]) => Array.isArray(data[key])).map(([key, name, axis]) => ({
+    name,
+    type: "line",
+    yAxisIndex: axis,
+    showSymbol: false,
+    data: data.cycle.map((cycle, index) => [cycle, data[key][index]]),
+  }));
+  chart.setOption({
+    ...ECHARTS_BASE,
+    legend: { top: 0, type: "scroll" },
+    xAxis: ECHARTS_CYCLE_XAXIS,
+    yAxis: [
+      { type: "value", name: "损失 (%)" },
+      { type: "value", name: "容量损失 (Ah)" },
+    ],
+    series,
+  }, true);
+}
+
+const HEAT_SERIES_LABELS = {
+  irrev_chg: "不可逆热-充电",
+  irrev_dchg: "不可逆热-放电",
+  rev_chg: "可逆热-充电",
+  rev_dchg: "可逆热-放电",
+  total_chg: "总热-充电",
+  total_dchg: "总热-放电",
+};
+
+function renderThermalChart() {
+  const chart = echartsBox("thermalChart");
+  if (!chart) return;
+  const data = state.currentResult?.heat_metrics;
+  const note = document.getElementById("thermalNote");
+  if (!data || !(data.cycle || []).length) {
+    chart.clear();
+    if (note) {
+      note.textContent = state.currentResult
+        ? "该任务无产热数据（产热分量计算失败或数据不足）"
+        : "运行仿真后显示逐圈平均产热功率分量（不可逆/可逆 × 充/放）";
+    }
+    return;
+  }
+  if (note) note.textContent = "逐圈平均产热功率（W）";
+  const series = Object.entries(HEAT_SERIES_LABELS)
+    .filter(([key]) => Array.isArray(data[key]))
+    .map(([key, name]) => ({
+      name,
+      type: "line",
+      showSymbol: false,
+      data: data.cycle.map((cycle, index) => [cycle, data[key][index]]),
+    }));
+  chart.setOption({
+    ...ECHARTS_BASE,
+    legend: { top: 0, type: "scroll" },
+    xAxis: ECHARTS_CYCLE_XAXIS,
+    yAxis: { type: "value", name: "平均产热功率 (W)", scale: true },
+    series,
+  }, true);
+}
+
+function formatParamNumber(value) {
+  if (value !== 0 && (Math.abs(value) < 1e-3 || Math.abs(value) >= 1e5)) return value.toExponential(3);
+  return String(Number(value.toFixed(6)));
+}
+
+function renderParamTable() {
+  const body = document.getElementById("paramRows");
+  if (!body) return;
+  const parameters = state.currentResult?.parameters || [];
+  if (!parameters.length) {
+    body.innerHTML = '<tr><td colspan="2">运行仿真后显示该任务使用的关键参数</td></tr>';
+    return;
+  }
+  body.innerHTML = parameters
+    .map((parameter) => {
+      const value = typeof parameter.value === "number" ? formatParamNumber(parameter.value) : escapeHtml(parameter.value);
+      return `<tr><td>${escapeHtml(parameter.name)}</td><td>${value}</td></tr>`;
+    })
+    .join("");
+}
+
+async function populateCompareDatasets() {
+  const select = document.getElementById("compareDataset");
+  if (!select) return;
+  try {
+    const payload = await apiFetch("/api/data");
+    const datasets = payload.datasets || [];
+    const previous = select.value || state.importedDataset?.id || "";
+    select.innerHTML =
+      '<option value="">选择实验数据集...</option>' +
+      datasets
+        .map((dataset) => `<option value="${escapeHtml(dataset.id)}">${escapeHtml(dataset.file_name)}（${escapeHtml(dataset.rows)} 行）</option>`)
+        .join("");
+    if (previous && [...select.options].some((option) => option.value === previous)) {
+      select.value = previous;
+    }
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
+async function runCompare() {
+  const datasetId = document.getElementById("compareDataset")?.value;
+  if (!state.currentJobId || !state.currentResult) {
+    showToast("请先运行仿真或从任务历史加载结果");
+    return;
+  }
+  if (!datasetId) {
+    showToast("请选择要对比的实验数据集");
+    return;
+  }
+  showToast("正在计算仿真-实测对比");
+  const payload = await apiFetch(`/api/jobs/${state.currentJobId}/compare?dataset_id=${encodeURIComponent(datasetId)}`);
+  const chart = echartsBox("compareChart");
+  if (!chart) return;
+  const series = [];
+  const rrmseParts = [];
+  const addBlock = (block, label) => {
+    if (!block) return;
+    series.push({
+      name: `实测${label}`,
+      type: "scatter",
+      symbolSize: 5,
+      data: block.cycle.map((cycle, index) => [cycle, block.exp[index]]),
+    });
+    series.push({
+      name: `仿真${label}`,
+      type: "line",
+      showSymbol: false,
+      data: block.sim_full.cycle.map((cycle, index) => [cycle, block.sim_full.values[index]]),
+    });
+    rrmseParts.push(`${label} RRMSE ${block.rrmse_pct.toFixed(2)}%`);
+  };
+  addBlock(payload.retention, "保持率");
+  addBlock(payload.efficiency, "能效");
+  chart.setOption({
+    ...ECHARTS_BASE,
+    legend: { top: 0 },
+    xAxis: ECHARTS_CYCLE_XAXIS,
+    yAxis: { type: "value", name: "%", scale: true },
+    series,
+  }, true);
+  const rrmseNode = document.getElementById("compareRrmse");
+  if (rrmseNode) rrmseNode.textContent = rrmseParts.join(" · ");
+}
+
+// ---------- 数据可视化：真实数据集曲线 + 寿命外推 ----------
+
+const previewChartSpec = {
+  width: 300,
+  height: 112,
+  margin: { top: 8, right: 10, bottom: 24, left: 34 },
+  xlabel: "循环",
+};
+
+function drawRealPreviewCharts(series) {
+  if (!series) return;
+  const draw = (id, points) => {
+    if (points.length < 2) return;
+    const xDomain = paddedDomain(points.map((point) => point[0]), [0, 1], 0.02);
+    const yDomain = paddedDomain(points.map((point) => point[1]), [0, 1]);
+    drawLineChart(id, {
+      ...previewChartSpec,
+      xDomain,
+      yDomain,
+      xTicks: ticksForDomain(xDomain, 3),
+      yTicks: ticksForDomain(yDomain, 3),
+      lines: [{ className: "chart-blue", points }],
+    });
+  };
+  const capacity = finitePairs(series.cycle || [], series.capacity_ah || []);
+  draw("previewCapacityChart", capacity);
+  const firstValid = capacity.find((point) => point[1] > 0);
+  draw("previewRetentionChart", firstValid ? capacity.map(([cycle, value]) => [cycle, (value / firstValid[1]) * 100]) : []);
+  draw("previewEfficiencyChart", finitePairs(series.cycle || [], series.efficiency_pct || []));
+}
+
+async function runExtrapolation() {
+  if (!state.importedDataset?.id) {
+    showToast("请先导入或选用实验数据集");
+    return;
+  }
+  showToast("正在计算寿命外推");
+  const payload = await apiFetch(`/api/data/${state.importedDataset.id}/extrapolate?target_soh=65`);
+  state.extrapolation = payload;
+  renderRetentionExtrapolation();
+  showToast(`外推完成：预计第 ${payload.predicted_cycle} 圈到 ${payload.target_soh_pct}% SOH`);
+}
+
+function renderRetentionExtrapolation() {
+  const extra = state.extrapolation;
+  if (!extra) return;
+  const measured = finitePairs(extra.measured.cycle, extra.measured.retention_pct);
+  const extrapolated = finitePairs(extra.extrapolated.cycle, extra.extrapolated.retention_pct);
+  if (!measured.length) return;
+  const allPoints = measured.concat(extrapolated);
+  const xMax = Math.max(...allPoints.map((point) => point[0]));
+  const yValues = allPoints.map((point) => point[1]);
+  const xDomain = [0, xMax * 1.04];
+  const yDomain = [Math.min(...yValues, extra.target_soh_pct) - 3, Math.max(...yValues) + 2];
+  const { width, height, margin } = previewChartSpec;
+  drawLineChart("previewRetentionChart", {
+    ...previewChartSpec,
+    xDomain,
+    yDomain,
+    xTicks: ticksForDomain(xDomain, 3),
+    yTicks: ticksForDomain(yDomain, 3),
+    lines: [
+      { className: "chart-blue", points: measured },
+      ...(extrapolated.length > 1 ? [{ color: "#ef4444", dashed: true, points: extrapolated }] : []),
+    ],
+  });
+  const svg = document.getElementById("previewRetentionChart");
+  if (svg) {
+    const xScale = makeScale(xDomain, [margin.left, width - margin.right]);
+    const yScale = makeScale(yDomain, [height - margin.bottom, margin.top]);
+    if (extrapolated.length > 1) {
+      const x0 = xScale(extrapolated[0][0]);
+      const x1 = xScale(extrapolated.at(-1)[0]);
+      svg.insertAdjacentHTML(
+        "afterbegin",
+        `<rect x="${x0.toFixed(1)}" y="${margin.top}" width="${Math.max(0, x1 - x0).toFixed(1)}" height="${height - margin.top - margin.bottom}" fill="#fdeaea"></rect>`
+      );
+      svg.insertAdjacentHTML(
+        "beforeend",
+        `<text class="tick-label" x="${((x0 + x1) / 2).toFixed(1)}" y="${margin.top + 10}" text-anchor="middle" style="fill:#b91c1c">外推区间</text>`
+      );
+    }
+    svg.insertAdjacentHTML(
+      "beforeend",
+      `<path class="chart-dashed" stroke="#b91c1c" fill="none" d="M${margin.left} ${yScale(extra.target_soh_pct).toFixed(1)}H${width - margin.right}"></path>`
+    );
+  }
+  const note = document.getElementById("extrapolateNote");
+  if (note) {
+    note.hidden = false;
+    const r2 = extra.r_squared != null ? `，R²=${Number(extra.r_squared).toFixed(4)}` : "";
+    note.textContent = extra.method === "measured-crossing"
+      ? `实测数据已达 ${extra.target_soh_pct}% SOH：第 ${extra.predicted_cycle} 圈（无需外推）`
+      : `寿命外推（尾段线性拟合${r2}）：预计第 ${extra.predicted_cycle} 圈衰减至 ${extra.target_soh_pct}% SOH，红色虚线为外推段`;
+  }
 }
 
 function wireInteractions() {
@@ -1499,16 +1828,43 @@ function wireInteractions() {
       downloadUrl(`/api/data/${actionNode.dataset.datasetId}/export.csv`);
       showToast("正在下载数据集 CSV");
     }
+    if (action === "extrapolate") {
+      try {
+        await runExtrapolation();
+      } catch (error) {
+        showToast(error.message);
+      }
+    }
+    if (action === "run-compare") {
+      try {
+        await runCompare();
+      } catch (error) {
+        showToast(error.message);
+      }
+    }
   });
 
   document.getElementById("jobsModal")?.addEventListener("click", (event) => {
     if (event.target === event.currentTarget) closeJobsModal();
   });
 
-  document.querySelectorAll(".segmented button, .mini-tabs button, .result-tabs button").forEach((button) => {
+  document.querySelectorAll(".segmented button, .mini-tabs button").forEach((button) => {
     button.addEventListener("click", () => {
       button.parentElement.querySelectorAll("button").forEach((item) => item.classList.remove("active"));
       button.classList.add("active");
+    });
+  });
+
+  document.querySelectorAll(".result-tabs button").forEach((button) => {
+    button.addEventListener("click", () => setResultTab(button.dataset.resultTab));
+  });
+
+  window.addEventListener("resize", () => {
+    if (typeof echarts === "undefined") return;
+    ["mechanismChart", "thermalChart", "compareChart"].forEach((id) => {
+      const element = document.getElementById(id);
+      const chart = element ? echarts.getInstanceByDom(element) : null;
+      if (chart) chart.resize();
     });
   });
 

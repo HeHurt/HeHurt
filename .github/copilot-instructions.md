@@ -15,6 +15,7 @@
 - 编写代码后，列出可能出现的问题，并建议相应的测试用例来覆盖这些问题。
 - 当发现 bug 时，首先要编写一个能够重现该 bug 的测试，然后不断修复它，直到测试通过为止。
 - 每次我纠正你之后，就在 .github/copilot-instructions.md 文件中添加一条新规则，这样就不会再发生这种情况了。
+- 使用 `stock-value-analyzer` 做股票价值分析时，最终报告必须导出为 Markdown 文件并保存到 `D:\Users\hez\Desktop\hithium-外移`，最终回复必须给出该文件绝对路径，不得只在对话中输出。
 - 当 Notebook 重跑后现象未变化时，不要只看单元执行状态，必须核对 Notebook 当前绑定的函数对象是否已经切到最新模块实现，必要时显式 reload 模块并重新绑定符号。
 - 在工作区不同区域工作前，先阅读对应的 AGENTS.md harness 文件（根目录有分域指导表）。
 - 修改 PyBaMM 参数文件中的 OCP 时，必须同时覆盖基准键（`"Negative/Positive electrode OCP [V]"`）和分支键（`lithiation`/`delithiation`），因为 `ElectrodeSOHSolver` 内部只读基准键。

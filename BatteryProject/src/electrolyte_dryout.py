@@ -235,8 +235,6 @@ def _get_last_state(model, sol):
     将 "Porosity times concentration" 和 "Electrolyte potential" 拆
     成负极/隔膜/正极三个分区变量。
     """
-    import pybamm as pb
-
     dict_short = {}
     list_short = []
     for var, _ in model.initial_conditions.items():
@@ -299,10 +297,7 @@ def _cal_new_con_update(sol, params):
 
     cLi_Xavg = sol["X-averaged electrolyte concentration [mol.m-3]"].entries[-1]
 
-    # 孔隙体积（始末）
-    PoreVolNeg_0 = sol["X-averaged negative electrode porosity"].entries[0] * L_n * L_y * L_z
-    PoreVolSep_0 = sol["X-averaged separator porosity"].entries[0] * L_s * L_y * L_z
-    PoreVolPos_0 = sol["X-averaged positive electrode porosity"].entries[0] * L_p * L_y * L_z
+    # 孔隙体积（末态）
     PoreVolNeg_1 = sol["X-averaged negative electrode porosity"].entries[-1] * L_n * L_y * L_z
     PoreVolSep_1 = sol["X-averaged separator porosity"].entries[-1] * L_s * L_y * L_z
     PoreVolPos_1 = sol["X-averaged positive electrode porosity"].entries[-1] * L_p * L_y * L_z
@@ -592,14 +587,21 @@ def run_aging_with_dryout(
             var_pts=var_pts,
         )
 
-        if sol is not None:
-            sol = sim.solve(
-                starting_solution=sol,
-                showprogress=showprogress,
-                calc_esoh=False,
+        try:
+            if sol is not None:
+                sol = sim.solve(
+                    starting_solution=sol,
+                    showprogress=showprogress,
+                    calc_esoh=False,
+                )
+            else:
+                sol = sim.solve(showprogress=showprogress)
+        except pybamm.SolverError as exc:
+            print(
+                f"[run_aging_with_dryout] Block {i_block+1}/{n_blocks} 求解失败"
+                f"（寿命末期数值崩溃），提前停止，返回已完成的 {len(sol_list)} 块：{exc}"
             )
-        else:
-            sol = sim.solve(showprogress=showprogress)
+            break
 
         sol_list.append(sol)
 

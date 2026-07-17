@@ -12,7 +12,7 @@ from openpyxl import Workbook
 from openpyxl.formatting.rule import ColorScaleRule
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 
-from .analysis import compute_cycle_energies, extract_all_metrics_from_sol
+from .analysis import compute_cycle_energies, extract_all_metrics_from_sol, retention_from_capacity
 
 logger = logging.getLogger(__name__)
 
@@ -64,8 +64,7 @@ def export_cycle_metrics_report(
             continue
 
         cycles = np.arange(1, caps.size + 1, dtype=int) * int(cycle_step)
-        base_cap = caps[0]
-        soh = np.zeros_like(caps) if base_cap == 0 else caps / base_cap * 100
+        soh = retention_from_capacity(caps) * 100
         clean_label = str(label).strip() or f"Condition {idx}"
 
         df_single = pd.DataFrame(
@@ -173,8 +172,7 @@ def export_full_metrics_summary(sol_list, sim_labels_list, cycle_step=50, output
             continue
 
         cycles = np.arange(1, len(caps) + 1) * cycle_step
-        base_cap = caps[0]
-        retention = caps / base_cap if base_cap != 0 else np.zeros_like(caps)
+        retention = retention_from_capacity(caps)
 
         df_single = pd.DataFrame(
             {

@@ -96,3 +96,28 @@ skills/.system/
 # COMSOL/models/ 下按型号归档的模型导出和批处理产物由本机 DLP 保护，默认不进 Git。
 COMSOL/models/
 COMSOL/_sim_cli_trial/
+*.class
+*.status
+
+# --- Local VS Code notebook bridge source ---
+*.vsix
+!tools/vscode-notebook-bridge/package.json
+
+# --- 数据 registry（机器可查询的实验数据索引，必须进 Git）---
+!/datasets.json
+
+# --- Local environments and temporary workspaces ---
+/.agents/
+/.codex/
+/.codex_scratch/
+/.codex_tmp/
+/.sim/
+/.venv/
+/.venv-liionpack/
+/account/
+/scratch/
+/tmp_patent_preview/
+/personal-site/
+/BatteryProject/battery-sim-site/
+**/_codex_*
+.pytest_cache/

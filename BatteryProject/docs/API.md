@@ -70,6 +70,7 @@
 - `src/simulation_peak.py`：峰值电流/功率搜索
 - `src/simulation_rpt.py`：Branch-RPT 诊断
 - `src/simulation_frequency.py`：频率调节工况老化
+- `src/simulation_eis.py`：寿命老化 + SOH 节点 EIS 阻抗谱
 - `src/simulation_common.py`：跨子模块复用的公共参数构造（非公共 API）
 
 ### simulation_dcr
@@ -126,6 +127,42 @@
   - 返回 `{"scenarios", "scenario_table", "results", "summary_df"}`。
   - `parallel=True` 且 `return_solutions=False` 时使用 `ProcessPoolExecutor`；若显式要求返回解对象，则退回 `ThreadPoolExecutor`，避免在子进程之间搬运大 `Solution`。
   - `enabled_only=True` 时自动跳过 `enabled=False` 的场景。
+
+### simulation_eis
+
+> 寿命老化跑到指定 SOH 节点后，注入静置并做 EIS 阻抗谱测量与 Nyquist 后处理。
+
+- `build_lifecycle_power_experiment(...)`：构建 EIS 检查点前的严格恒功率寿命实验。
+- `build_lifecycle_soh_table(cycle_solutions, ...) -> pd.DataFrame`：从逐圈解构建每圈 SOH 表。
+- `pick_soh_checkpoints(soh_table, milestones) -> ...`：挑出最接近目标 SOH 里程碑的唯一检查点。
+- `prepare_eis_measurement_state(...)`：在某个寿命检查点准备 EIS 测量所需的电池状态。
+- `run_eis_from_checkpoint(...)`：从保存的寿命检查点状态运行 EIS。
+- `impedance_to_frame(eis_sol) -> pd.DataFrame`：把 EIS 解转成整洁 DataFrame。
+- `summarize_impedance_components(eis_sol) -> dict`：抽取紧凑的 Nyquist 特征。
+- `extract_frequency_slices(eis_sol, target_freqs) -> pd.DataFrame`：取若干目标频率最近的阻抗行。
+- `format_eis_state_label(...)`：返回 EIS 测量状态的可读描述。
+- `run_lifecycle_eis_study(...) -> dict`：一站式入口——寿命老化 + EIS 后处理一次跑完。
+- 常量 `DEFAULT_LIFECYCLE_EIS_MODEL_OPTIONS`：默认寿命+EIS 模型选项。
+
+## src/swelling_coupling.py
+
+> 膨胀力-孔隙率 单向准稳态耦合（电化学→力→双向耦合，路线 A）。每个老化 block 末尾：用
+> `calculate_cycle_swelling` 算 EOC 膨胀力 → 化为模组等效压力 P → 由压力反算孔隙率因子，
+> 低地更新 `params` 孔隙率参数，使下一 block 在受压收缩后的孔隙率下仿真；与
+> `apply_dryout_to_initial_conditions(..., porosity_factors=...)` 共享同一套孔隙率状态。
+
+### `SwellingCoupler`
+- `SwellingCoupler(params, ...)`：初始化时记录初始孔隙率参数与模组刚度/预紧设置。
+- `update(sol, params) -> dict`：由当前块解的 EOC 膨胀力算压力，更新 `params` 孔隙率参数并返回更新因子。
+- `summary() -> dict`：返回膨胀力-孔隙率耦合的最新状态摘要。
+- 经 `run_aging_with_dryout(..., swelling_coupler=SwellingCoupler(params, ...))` 接入。
+
+## src/runtime.py
+
+> Notebook 与示例入口的运行时辅助。
+
+- `apply_pybamm_runtime_limits(...)`：应用项目 Notebook 默认的 PyBaMM 运行时限制（线程/求解器上限等）。
+- `configure_notebook_environment(...)`：追加常用路径并应用默认 PyBaMM 运行时限制。
 
 ## src/plotting.py
 

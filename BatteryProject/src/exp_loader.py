@@ -13,7 +13,6 @@
 from __future__ import annotations
 
 import logging
-import os
 import re
 from pathlib import Path
 
@@ -21,6 +20,15 @@ import numpy as np
 import pandas as pd
 
 logger = logging.getLogger(__name__)
+
+
+def normalize_retention_scale(arr):
+    """保持率统一到 0–1 小数：均值 > 2 视为百分制并除以 100。"""
+    arr = np.asarray(arr, dtype=float)
+    if arr.size > 0 and np.nanmean(arr) > 2.0:
+        return arr / 100.0
+    return arr
+
 
 # ── 列名别名映射：标准键 → CSV 中可能出现的列名（按优先级排列） ──────────
 COLUMN_ALIASES: dict[str, list[str]] = {
@@ -161,9 +169,7 @@ def load_cycling_csv(
                     break
 
     # 归一化保持率：若 mean > 2 则认为是百分制，否则是小数制 → 统一到小数
-    ret = data["retention"]
-    if ret.size > 0 and np.nanmean(ret) > 2.0:
-        data["retention"] = ret / 100.0
+    data["retention"] = normalize_retention_scale(data["retention"])
 
     # 去除 NaN 行（以 cycle 列为准）
     cycle_arr = data["cycle"]

@@ -57,7 +57,7 @@ apply_pybamm_runtime_limits()
 # 库层已统一用 logging（不再 print）。notebook 入口在此给 src 包挂一个
 # INFO 级 StreamHandler（仅当用户尚未自行配置时），让 compare_all 等的
 # 匹配结果输出仍然可见；工程代码直接 import 子模块则不受影响。
-import logging as _logging
+import logging as _logging  # noqa: E402
 
 _pkg_logger = _logging.getLogger(__package__)
 if not _pkg_logger.handlers:
@@ -67,7 +67,7 @@ if not _pkg_logger.handlers:
     _pkg_logger.setLevel(_logging.INFO)
 
 # --- 子模块命名空间 ---------------------------------------------------
-from . import (
+from . import (  # noqa: E402
     analysis,
     compare,
     config,
@@ -75,6 +75,7 @@ from . import (
     electrolyte_dryout,
     exp_loader,
     experiment_utils,
+    lifecycle_exp,
     parameter_identification,
     plotting,
     psd_workflow,
@@ -83,7 +84,7 @@ from . import (
 )
 
 # --- 配置常量与参数获取（高频引用） -----------------------------------
-from .config import (
+from .config import (  # noqa: E402
     ACCELERATION_FACTOR,
     DATA_DIR,
     NOMINAL_CAPACITY,
@@ -96,15 +97,44 @@ from .config import (
 )
 
 # --- 仿真入口 ---------------------------------------------------------
-from .simulation import (
+from .simulation import (  # noqa: E402
+    DEFAULT_PULSE_LIFECYCLE_MODEL_OPTIONS,
+    LIGHT_PULSE_LIFECYCLE_MODEL_OPTIONS,
+    summarize_frequency_results,
+    run_frequency_scenarios,
+    run_frequency_scenario,
+    prepare_frequency_scenarios,
+    build_frequency_day_steps,
+    EQUIVALENT_FREQUENCY_PAIR_GROUP_SIZE,
+    FULL_PULSE_LIFECYCLE_MODEL_OPTIONS,
+    build_frequency_current_profile,
+    build_pulse_lifecycle_capacity_check_steps,
+    build_pulse_lifecycle_cycle_steps,
+    extract_cycle_voltage_curve,
+    p_rate_to_power_w,
+    ParallelSplitResult,
     perform_dcr_test,
+    prepare_pulse_lifecycle_scenarios,
+    RegionalCellState,
+    RegionalDFNConfig,
+    RegionalDFNCouplingResult,
+    RegionalPowerCycleResult,
+    aggregate_regional_capacity_ah,
+    build_area_scaled_regions,
+    run_regional_dfn_coupling,
+    run_regional_dfn_power_cycles,
     run_dcr_and_power_test,
+    solve_parallel_current_split,
+    solve_parallel_power_split,
     run_peak_current,
+    run_pulse_lifecycle_scenarios,
+    summarize_pulse_lifecycle_results,
+    trim_current_profile,
 )
-from .experiment_utils import build_power_step
+from .experiment_utils import build_power_step  # noqa: E402
 
 # --- 分析与指标 -------------------------------------------------------
-from .analysis import (
+from .analysis import (  # noqa: E402
     calc_rrmse,
     calculate_cycle_swelling,
     compute_cycle_energies,
@@ -112,30 +142,44 @@ from .analysis import (
     get_all_heat_components,
     get_discharge_capacity,
 )
+from .heat_calibration import (  # noqa: E402
+    build_calibrated_parameter_loader,
+    build_hysteresis_equilibrium_overrides,
+    compute_cycle_calibrated_heat,
+    compute_reference_reversible_heat,
+    fit_hysteresis_allocation,
+    load_branch_entropy_curves,
+)
 
 # --- 绘图核心 ---------------------------------------------------------
-from .plotting import (
+from .plotting import (  # noqa: E402
     BatteryPlotter,
     different_cycle_voltage,
     plot_efficiency_vs_cycle_all,
     plot_swelling,
+    plot_swelling_coupling,
     process_sol_list_for_all_heat_components,
 )
 
 # --- 数据 IO ----------------------------------------------------------
-from .utils import (
+from .utils import (  # noqa: E402
     BatteryDataLoader,
     export_cycle_data,
     load_dat_folder_to_plotter,
     load_excel_to_plotter,
     process_sol_list_with_custom_extractor,
 )
-from .exp_loader import (
+from .exp_loader import (  # noqa: E402
     load_cycling_csv,
     load_cycling_folder,
     parse_condition_from_filename,
 )
-from .data_cleaning import (
+from .lifecycle_exp import (  # noqa: E402
+    export_cycle_life_dat,
+    load_lifecycle_dat,
+    parse_cycle_life_excel,
+)
+from .data_cleaning import (  # noqa: E402
     clean_xy_curve,
     load_curve_file,
     load_experiment_data,
@@ -143,18 +187,26 @@ from .data_cleaning import (
 )
 
 # --- Sim-Exp 一站式对标 ----------------------------------------------
-from .compare import compare_all
+from .compare import compare_all  # noqa: E402
 
 # --- 老化 / 电解液干涸 -----------------------------------------------
-from .electrolyte_dryout import (
+from .electrolyte_dryout import (  # noqa: E402,F401
     DryoutTracker,
+    plot_dryout,
+    apply_dryout_to_initial_conditions,
     run_aging_with_dryout,
 )
-from .swelling_coupling import SwellingCoupler
+from .swelling_coupling import SwellingCoupler  # noqa: E402
 
 # --- PSD 工作流 ------------------------------------------------------
-from .psd_workflow import (
+from .psd_workflow import (  # noqa: E402
     analyze_materials,
+    evaluate_single_fit,
+    evaluate_bimodal_fit,
+    build_step_curve_frame,
+    build_material_summary_frame,
+    build_full_curve_frame,
+    DEFAULT_VAR_PTS,
     build_operation_cases,
     build_power_experiment,
     run_material_comparison_study,
@@ -162,7 +214,7 @@ from .psd_workflow import (
 )
 
 # --- 参数辨识 --------------------------------------------------------
-from .parameter_identification import (
+from .parameter_identification import (  # noqa: E402
     ParamSpec,
     build_aging_objective,
     compute_loss,
@@ -180,6 +232,7 @@ __all__ = [
     "electrolyte_dryout",
     "exp_loader",
     "experiment_utils",
+    "lifecycle_exp",
     "parameter_identification",
     "plotting",
     "psd_workflow",
@@ -198,10 +251,39 @@ __all__ = [
     "apply_pybamm_runtime_limits",
     "configure_notebook_environment",
     # 仿真
+    "EQUIVALENT_FREQUENCY_PAIR_GROUP_SIZE",
+    "summarize_frequency_results",
+    "run_frequency_scenarios",
+    "run_frequency_scenario",
+    "prepare_frequency_scenarios",
+    "build_frequency_day_steps",
     "build_power_step",
     "perform_dcr_test",
     "run_dcr_and_power_test",
     "run_peak_current",
+    "trim_current_profile",
+    "run_pulse_lifecycle_scenarios",
+    "prepare_pulse_lifecycle_scenarios",
+    "p_rate_to_power_w",
+    "extract_cycle_voltage_curve",
+    "build_pulse_lifecycle_capacity_check_steps",
+    "build_pulse_lifecycle_cycle_steps",
+    "build_frequency_current_profile",
+    "DEFAULT_PULSE_LIFECYCLE_MODEL_OPTIONS",
+    "FULL_PULSE_LIFECYCLE_MODEL_OPTIONS",
+    "LIGHT_PULSE_LIFECYCLE_MODEL_OPTIONS",
+    "summarize_pulse_lifecycle_results",
+    "ParallelSplitResult",
+    "RegionalCellState",
+    "RegionalDFNConfig",
+    "RegionalDFNCouplingResult",
+    "RegionalPowerCycleResult",
+    "aggregate_regional_capacity_ah",
+    "build_area_scaled_regions",
+    "run_regional_dfn_coupling",
+    "run_regional_dfn_power_cycles",
+    "solve_parallel_current_split",
+    "solve_parallel_power_split",
     # 分析
     "calc_rrmse",
     "calculate_cycle_swelling",
@@ -209,11 +291,18 @@ __all__ = [
     "extract_all_metrics_from_sol",
     "get_all_heat_components",
     "get_discharge_capacity",
+    "build_calibrated_parameter_loader",
+    "build_hysteresis_equilibrium_overrides",
+    "compute_cycle_calibrated_heat",
+    "compute_reference_reversible_heat",
+    "fit_hysteresis_allocation",
+    "load_branch_entropy_curves",
     # 绘图
     "BatteryPlotter",
     "different_cycle_voltage",
     "plot_efficiency_vs_cycle_all",
     "plot_swelling",
+    "plot_swelling_coupling",
     "process_sol_list_for_all_heat_components",
     # IO
     "BatteryDataLoader",
@@ -222,20 +311,30 @@ __all__ = [
     "load_curve_file",
     "load_cycling_csv",
     "load_cycling_folder",
+    "load_lifecycle_dat",
     "load_dat_folder_to_plotter",
     "load_excel_to_plotter",
     "load_experiment_data",
     "load_record_layer_csv",
     "parse_condition_from_filename",
+    "parse_cycle_life_excel",
     "process_sol_list_with_custom_extractor",
+    "export_cycle_life_dat",
     # 对标
     "compare_all",
     # 老化
     "DryoutTracker",
+    "plot_dryout",
     "run_aging_with_dryout",
     "SwellingCoupler",
     # PSD
     "analyze_materials",
+    "evaluate_single_fit",
+    "evaluate_bimodal_fit",
+    "build_step_curve_frame",
+    "build_material_summary_frame",
+    "build_full_curve_frame",
+    "DEFAULT_VAR_PTS",
     "build_operation_cases",
     "build_power_experiment",
     "run_material_comparison_study",
@@ -281,10 +380,23 @@ _LEGACY_REDIRECTS: dict[str, tuple[str, str]] = {
     "run_and_plot_all": ("simulation", "run_and_plot_all"),
     "peak_current_condition": ("simulation", "peak_current_condition"),
     "build_frequency_day_steps": ("simulation", "build_frequency_day_steps"),
+    "EQUIVALENT_FREQUENCY_PAIR_GROUP_SIZE": ("simulation", "EQUIVALENT_FREQUENCY_PAIR_GROUP_SIZE"),
     "prepare_frequency_scenarios": ("simulation", "prepare_frequency_scenarios"),
     "run_frequency_scenario": ("simulation", "run_frequency_scenario"),
     "run_frequency_scenarios": ("simulation", "run_frequency_scenarios"),
     "summarize_frequency_results": ("simulation", "summarize_frequency_results"),
+    "build_frequency_current_profile": ("simulation", "build_frequency_current_profile"),
+    "trim_current_profile": ("simulation", "trim_current_profile"),
+    "DEFAULT_PULSE_LIFECYCLE_MODEL_OPTIONS": ("simulation", "DEFAULT_PULSE_LIFECYCLE_MODEL_OPTIONS"),
+    "FULL_PULSE_LIFECYCLE_MODEL_OPTIONS": ("simulation", "FULL_PULSE_LIFECYCLE_MODEL_OPTIONS"),
+    "LIGHT_PULSE_LIFECYCLE_MODEL_OPTIONS": ("simulation", "LIGHT_PULSE_LIFECYCLE_MODEL_OPTIONS"),
+    "build_pulse_lifecycle_capacity_check_steps": ("simulation", "build_pulse_lifecycle_capacity_check_steps"),
+    "build_pulse_lifecycle_cycle_steps": ("simulation", "build_pulse_lifecycle_cycle_steps"),
+    "extract_cycle_voltage_curve": ("simulation", "extract_cycle_voltage_curve"),
+    "p_rate_to_power_w": ("simulation", "p_rate_to_power_w"),
+    "prepare_pulse_lifecycle_scenarios": ("simulation", "prepare_pulse_lifecycle_scenarios"),
+    "run_pulse_lifecycle_scenarios": ("simulation", "run_pulse_lifecycle_scenarios"),
+    "summarize_pulse_lifecycle_results": ("simulation", "summarize_pulse_lifecycle_results"),
     "build_rpt_steps": ("simulation", "build_rpt_steps"),
     "run_branch_rpt": ("simulation", "run_branch_rpt"),
     "snapshot_degradation_variables": ("simulation", "snapshot_degradation_variables"),

@@ -9,6 +9,8 @@
 - simulation_rpt   ：Branch-RPT 诊断（容量、能量、力学）
 - simulation_eis   ：生命周期 EIS 阻抗工作流
 - simulation_frequency：频率调节工况老化
+- simulation_regional_parallel：多区域并联电芯等压分流
+- simulation_regional_lifecycle：多区域并联恒功率循环老化
 """
 from .simulation_common import ensure_hysteresis_state_params
 from .simulation_dcr import (
@@ -48,11 +50,41 @@ from .simulation_eis import (
     run_lifecycle_eis_study,
 )
 from .simulation_frequency import (
+    EQUIVALENT_FREQUENCY_PAIR_GROUP_SIZE,
     build_frequency_day_steps,
+    build_frequency_current_profile,
     prepare_frequency_scenarios,
     run_frequency_scenario,
     run_frequency_scenarios,
     summarize_frequency_results,
+    trim_current_profile,
+)
+from .simulation_pulse_lifecycle import (
+    DEFAULT_PULSE_LIFECYCLE_MODEL_OPTIONS,
+    FULL_PULSE_LIFECYCLE_MODEL_OPTIONS,
+    LIGHT_PULSE_LIFECYCLE_MODEL_OPTIONS,
+    build_pulse_lifecycle_capacity_check_steps,
+    build_pulse_lifecycle_cycle_steps,
+    extract_cycle_voltage_curve,
+    p_rate_to_power_w,
+    prepare_pulse_lifecycle_scenarios,
+    run_pulse_lifecycle_scenarios,
+    summarize_pulse_lifecycle_results,
+)
+from .simulation_regional_parallel import (
+    ParallelSplitResult,
+    RegionalCellState,
+    RegionalDFNConfig,
+    RegionalDFNCouplingResult,
+    aggregate_regional_capacity_ah,
+    build_area_scaled_regions,
+    run_regional_dfn_coupling,
+    solve_parallel_current_split,
+)
+from .simulation_regional_lifecycle import (
+    RegionalPowerCycleResult,
+    run_regional_dfn_power_cycles,
+    solve_parallel_power_split,
 )
 
 __all__ = [
@@ -91,9 +123,36 @@ __all__ = [
     "extract_frequency_slices",
     "run_lifecycle_eis_study",
     # frequency
+    "EQUIVALENT_FREQUENCY_PAIR_GROUP_SIZE",
     "build_frequency_day_steps",
+    "trim_current_profile",
+    "build_frequency_current_profile",
     "prepare_frequency_scenarios",
     "run_frequency_scenario",
     "run_frequency_scenarios",
     "summarize_frequency_results",
+    # pulse lifecycle
+    "DEFAULT_PULSE_LIFECYCLE_MODEL_OPTIONS",
+    "FULL_PULSE_LIFECYCLE_MODEL_OPTIONS",
+    "LIGHT_PULSE_LIFECYCLE_MODEL_OPTIONS",
+    "build_pulse_lifecycle_capacity_check_steps",
+    "build_pulse_lifecycle_cycle_steps",
+    "extract_cycle_voltage_curve",
+    "p_rate_to_power_w",
+    "prepare_pulse_lifecycle_scenarios",
+    "run_pulse_lifecycle_scenarios",
+    "summarize_pulse_lifecycle_results",
+    # regional parallel
+    "ParallelSplitResult",
+    "RegionalCellState",
+    "RegionalDFNConfig",
+    "RegionalDFNCouplingResult",
+    "aggregate_regional_capacity_ah",
+    "build_area_scaled_regions",
+    "run_regional_dfn_coupling",
+    "solve_parallel_current_split",
+    # regional lifecycle
+    "RegionalPowerCycleResult",
+    "run_regional_dfn_power_cycles",
+    "solve_parallel_power_split",
 ]

@@ -14,6 +14,12 @@ description: 把电池仿真结果做成海辰储能(HiThium)企业模板的 PPT
 - 用公共 `pptx` skill 的 python-pptx 管线。
 本 skill 只规定"长什么样、放什么、怎么嵌图",引擎细节交给上面任一个。
 
+## 已提取企业模板
+- `references/report_ppt_template_20240910.md`: 从 `E:\Downloads\报告作图要求&PPT模版.pptx` 提取的人读版模板规范。
+- `references/report_ppt_template_20240910_spec.json`: 机器可读版式/坐标/色板规范。
+- `references/report_ppt_template_20240910_assets.json`: 关键 logo/背景图的 base64 资产。工作区 PNG 可能被 DLP 加密,生成 PPT 时优先从该 JSON 解码到临时目录。
+- `references/report_ppt_template_20240910_image_usages.json`: 原 PPT 中母版和正文页图片位置清单,用于核对图片来源。
+
 ---
 
 ## 品牌 Token(⚠️ 下列 hex 为合理默认值,首次使用请替换成公司官方色值后存档)

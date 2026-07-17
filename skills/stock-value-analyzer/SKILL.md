@@ -1,9 +1,13 @@
 ---
 name: stock-value-analyzer
-description: 基于邱国鹭《投资中最简单的事》方法论的股票价值分析器。通过"三好原则"（好行业、好公司、好价格）系统评估一只股票是否值得投资，结合逆向投资思维、定价权分析、估值陷阱识别，输出结构化的投资决策建议。所有分析强制前置 API 优先取数（yfinance + AkShare 双引擎，Tier 0 信源）+ 多信源数据校验（价格类数据至少 3 个独立权威源 + 数据类型防混淆 + 每个定量数据必须标注信源等级），并在报告初稿完成后强制执行交卷前自检（关键数据换源复验 + 核心结论反向 7 问验证 + 算术回验），未通过不得发布。
+description: 基于邱国鹭《投资中最简单的事》方法论的股票价值分析器。通过"三好原则"（好行业、好公司、好价格）系统评估一只股票是否值得投资，结合逆向投资思维、定价权分析、估值陷阱识别，输出结构化的投资决策建议。所有分析强制前置 API 优先取数（yfinance + AkShare 双引擎，Tier 0 信源）+ 多信源数据校验（价格类数据至少 3 个独立权威源 + 数据类型防混淆 + 每个定量数据必须标注信源等级），并在报告初稿完成后强制执行交卷前自检（关键数据换源复验 + 核心结论反向 7 问验证 + 算术回验），未通过不得发布；通过后必须导出 Markdown 报告到 D:\Users\hez\Desktop\hithium-外移。
 ---
 
-# 股票价值分析器（Stock Value Analyzer）v1.6
+# 股票价值分析器（Stock Value Analyzer）v1.8
+
+> **v1.8 更新（2026-07-02）**：**A 股取数实战兜底**——A 股分析中，`stock_individual_info_em` 或 Eastmoney 字段可能返回空、代理异常或缺少行情字段。脚本已内置新浪 quote + 腾讯 quote fallback；报告必须把 `quote_crosscheck` 写入 Step 0 校验表。A 股近 30 天事件扫描优先走巨潮资讯/CNINFO 官方公告 PDF，回购、分红、理财、股权激励等事项必须读公告原文，不得仅凭新闻标题判断用途或注销时点。
+
+> **v1.7 更新（2026-06-18）**：**Markdown 强制导出**——每次完成股票价值分析后，必须把最终报告导出为 `.md` 文件，保存到 `D:\Users\hez\Desktop\hithium-外移`；最终回复必须给出该 Markdown 文件的绝对路径。不得只在对话中输出报告。
 
 > **v1.6 更新（2026-05-05）**：**API 优先取数双引擎**——告别完全依赖网页抓取的旧时代：
 > 1. **新增 Step 0.0「API 优先取数」强制最前置环节**：所有分析必须先尝试调用 `${CLAUDE_SKILL_DIR}/scripts/fetch_stock_data.py`（yfinance + AkShare 双引擎），把结构化、机器可读的官方数据作为第一信源
@@ -50,6 +54,41 @@ description: 基于邱国鹭《投资中最简单的事》方法论的股票价�
 - 逆向思维检查——当前市场情绪是否创造了机会
 - 输出"能不能买、该不该买、什么价位买"的结构化结论
 
+## 🔴 强制导出协议（v1.7 新增，不可跳过）
+
+每次使用本 Skill 完成股票价值分析时，**必须同时完成 Markdown 文件导出**，不得只在对话中给出报告。
+
+### 导出目录
+
+固定保存到：
+
+```text
+D:\Users\hez\Desktop\hithium-外移
+```
+
+若目录不存在，先创建目录。
+
+### 文件命名
+
+使用可读且可排序的文件名：
+
+```text
+stock_<股票代码>_<公司简称>_value_analysis_<YYYY-MM-DD>.md
+```
+
+示例：
+
+```text
+stock_603444_吉比特_value_analysis_2026-06-18.md
+```
+
+### 导出时机与交付要求
+
+1. 先完成 Step 8 交卷前自检；未通过自检时，也要导出“草稿未通过自检”版 Markdown，并在文件开头标红说明。
+2. 将最终报告正文完整写入上述 `.md` 文件，报告内容必须包含分析概要、数据校验、三好评分、风险提示、Step 8 自检摘要、K 章完整信源索引。
+3. 最终回复必须包含导出文件的绝对路径，并简短说明是否通过自检。
+4. 若写入失败，不得假装已导出；必须说明失败原因，并给出已完成的报告正文。
+
 ## 方法论框架
 
 ### 核心公式
@@ -87,7 +126,7 @@ description: 基于邱国鹭《投资中最简单的事》方法论的股票价�
 | 市场 | 主引擎 | 兜底引擎 | 备注 |
 |---|---|---|---|
 | **港股**（HK） | yfinance | AkShare（`stock_hk_spot_em` / `stock_financial_hk_analysis_indicator_em`） | yfinance 偶有空数据，AkShare 兜底 |
-| **A 股** | AkShare（`stock_individual_info_em` / `stock_financial_abstract` / `stock_zh_a_spot_em`） | （无 API 兜底，直接走网页 fallback） | yfinance 对 A 股支持不稳定 |
+| **A 股** | AkShare（`stock_individual_info_em` / `stock_financial_abstract` / `stock_zh_a_spot_em`） | 新浪 quote / 腾讯 quote（脚本内置）+ CNINFO 官方 PDF | yfinance 对 A 股支持不稳定；Eastmoney 个股字段为空时不得卡住 |
 | **美股 / ADR** | yfinance | AkShare（基础行情） | yfinance 在美股最完整 |
 | **指数** | yfinance（`^HSI` / `^GSPC` / `^NDX` 等） | AkShare 指数接口 | — |
 
@@ -120,7 +159,7 @@ python ${CLAUDE_SKILL_DIR}/scripts/fetch_stock_data.py --symbol 600690 --market 
 ```
 Step 0.0  API 优先（必走）
   ├── HK/US：yfinance 主取 → 失败/缺失 → AkShare 港股接口（仅 HK） → 仍失败 → 走 Step 0.1 网页
-  ├── A 股：AkShare 主取 → 失败/缺失 → 走 Step 0.1 网页
+  ├── A 股：AkShare 主取 → 失败/缺失 → 脚本内置新浪 quote + 腾讯 quote → 仍缺失才走 Step 0.1 网页
   └── 跨市场标的：A/H/ADR 三端分别独立调用，禁止汇率换算
 
 Step 0.1  网页抓取（兜底）— 仅在 API 失败或需交叉验证时调用
@@ -189,8 +228,19 @@ API 解决不了的问题，必须 web_search / web_fetch 兜底：
 
 - **若 `engines_used = ["yfinance"]` 且无 `errors`** → 直接采用 API 数据，进入 Step 0.1 补充网页交叉验证
 - **若 yfinance 失败但 AkShare 成功** → 在校验记录表中显式标注"yfinance 失败，使用 AkShare 港股接口"
+- **若 A 股 AkShare/Eastmoney 个股字段为空** → 先看输出 JSON 的 `quote_crosscheck.sina` 与 `quote_crosscheck.tencent`，用两者补当前价/时间戳/PE/PB/市值参考；报告中写明"AkShare 财务摘要成功、个股行情字段由新浪/腾讯 quote 复验补齐"
 - **若两个引擎都失败** → 报告首页用 ⚠️ 标注"API 取数失败，全部数据来自网页抓取，置信度降级"，并在 K.4 章节披露
 - **若 API 返回值与网页源差异 > 5%** → 触发 Step 0.4 数据冲突处理协议，以交易所官方为准
+
+### 0.0.8A A 股固定兜底流程（山东威达 002026 案例沉淀）
+
+当分析 A 股且 `fetch_stock_data.py` 输出存在以下任一情况：`price.current = null`、`raw_individual_info` 为空、`stock_individual_info_em` 报错、Eastmoney 字段缺失/代理异常，按此顺序处理：
+
+1. 读取同一 JSON 中的 `quote_crosscheck.sina` 与 `quote_crosscheck.tencent`；两源价格一致或差异小于 0.5% 时，可采用为盘中现价。
+2. 价格类数据仍需在报告 Step 0 表中列出至少 3 源：AkShare hist/spot、Sina quote、Tencent quote；如可取 Yahoo `.SZ/.SS` chart，可作为第 4 源复验。
+3. 市值、PE、PB 可以先用腾讯 quote 字段作参考，但最终估值必须用"采用股价 × 总股本 / TTM 财报利润 / 最新归母权益"自算一遍，避免平台口径不透明。
+4. A 股财报和近 30 天事件以 CNINFO 官方 PDF 为一级信源；年报、季报、利润分配、回购、理财、管理层变动公告优先下载 PDF 并抽取原文，不得只看搜索摘要。
+5. 回购公告必须区分三种用途：即时注销、员工持股/股权激励、36 个月未用后注销。只有即时注销才可直接按减少股本处理；用于激励的回购只作为股东回报/治理事件小幅加分。
 
 ### 0.0.9 Step 8.1 复验时的引擎规则
 
@@ -476,6 +526,8 @@ Step 8 交卷前自检的复验信源**不得与 Step 0 完全重叠**：
 - 公司官网 investor relations / press release
 - 交易所公告（港交所披露易、SEC EDGAR、巨潮资讯）
 - 监管机构公告（SEC、证监会、SAMR、FTC、BIS 出口管制清单）
+
+**A 股补充规则**：近 30 天事件和财报原文优先用巨潮资讯/CNINFO PDF。搜索引擎或财经媒体只能用于发现公告线索，不能替代公告原文；尤其是回购完成、利润分配、委托理财、证券事务代表/高管变动等事项，必须读 PDF 并标注公告日期、公告名称、PDF 链接。
 
 **B 级信源（财经媒体 & 研报）**：
 - Bloomberg、Reuters、FT、WSJ、路透、财新、21 世纪、华尔街见闻
@@ -974,17 +1026,23 @@ Step 8 交卷前自检的复验信源**不得与 Step 0 完全重叠**：
     │   ├── 生成投资结论
     │   └── 输出完整分析报告（标记为\"初稿\"）
     │
-    └── Step 8：🔴 v1.4/v1.5 交卷前自检（强制后置、不可跳过）
-        ├── 8.1 关键数据复验（换源重取 8 项关键字段）
-        ├── 8.2 核心结论反验证（反向 7 问：v1.5 新增 Q6 算术回验 + Q7 信源等级回验）
-        ├── 8.2.3 🔴 v1.5 新增：算术回验专项表（所有 A+B=C 类公式二次独立计算）
-        ├── 8.3 反事实压力测试（选做）
-        └── 8.4 自检总闸 → 通过才能交付
+    ├── Step 8：🔴 v1.4/v1.5 交卷前自检（强制后置、不可跳过）
+    │   ├── 8.1 关键数据复验（换源重取 8 项关键字段）
+    │   ├── 8.2 核心结论反验证（反向 7 问：v1.5 新增 Q6 算术回验 + Q7 信源等级回验）
+    │   ├── 8.2.3 🔴 v1.5 新增：算术回验专项表（所有 A+B=C 类公式二次独立计算）
+    │   ├── 8.3 反事实压力测试（选做）
+    │   └── 8.4 自检总闸 → 判定是否可交付
+    │
+    └── Step 9：🔴 v1.7 Markdown 强制导出（不可跳过）
+        ├── 创建/确认 D:\Users\hez\Desktop\hithium-外移
+        ├── 写入 stock_<股票代码>_<公司简称>_value_analysis_<YYYY-MM-DD>.md
+        ├── 复查文件存在且非空
+        └── 最终回复给出 Markdown 绝对路径 + 自检状态
 ```
 
 ## 报告输出格式
 
-每次分析必须输出以下结构：
+每次分析必须输出以下结构，并按 v1.7 强制导出协议保存为 Markdown 文件：
 
 ### 📋 一、分析概要
 
@@ -1170,12 +1228,24 @@ Step 8 交卷前自检的复验信源**不得与 Step 0 完全重叠**：
 - `fetch_stock_data.py` — 一键取数脚本（yfinance + AkShare 双引擎），输出标准 JSON
   - 安装依赖：`pip install yfinance akshare pandas`
   - 用法：`python ${CLAUDE_SKILL_DIR}/scripts/fetch_stock_data.py --symbol 0700.HK --market HK`
+  - A 股输出含 `quote_crosscheck.sina` / `quote_crosscheck.tencent`，用于 AkShare/Eastmoney 行情字段缺失时自动补齐与复验
 
 ### templates/
 - `analysis-report.md` — 分析报告Markdown模板
 
 ## 版本记录
 
+- **v1.8（2026-07-02）** — A 股取数实战兜底与 CNINFO 公告口径校验：
+  - `fetch_stock_data.py` 新增新浪 quote + 腾讯 quote A 股 fallback；AkShare/Eastmoney 行情字段为空时自动补当前价，并输出 `quote_crosscheck`
+  - A 股价格校验固定为 AkShare + Sina + Tencent，必要时加 Yahoo `.SZ/.SS` chart；价格/市值/PE/PB 必须注明字段口径和时间戳
+  - A 股近 30 天事件扫描优先下载 CNINFO 官方 PDF；搜索摘要和财经新闻只作线索，不替代公告原文
+  - 回购事项必须区分即时注销、员工持股/股权激励、36 个月未用后注销，禁止把"回购完成"直接等同于"注销减少股本"
+- **v1.7（2026-06-18）** — 🔴 新增 **Markdown 强制导出协议**：
+  - 每次股票价值分析必须导出 `.md` 报告，不得只在对话中输出
+  - 固定导出目录：`D:\Users\hez\Desktop\hithium-外移`
+  - 文件名建议：`stock_<股票代码>_<公司简称>_value_analysis_<YYYY-MM-DD>.md`
+  - 最终回复必须给出 Markdown 文件绝对路径，并说明 Step 8 自检状态
+  - 若导出失败，必须披露失败原因，不得假装已保存
 - **v1.6（2026-05-05）** — 🟢🟢🟢🟢 **API 优先取数双引擎**：
   - 新增 **Step 0.0「API 优先取数」强制最前置环节**：取数顺序变为 API → 网页兜底
   - 引入 **yfinance + AkShare 双引擎**：港股/美股 yfinance 主取，A 股 AkShare 主取，港股 yfinance 失败时 AkShare 兜底

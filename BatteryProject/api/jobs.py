@@ -503,7 +503,113 @@ def build_cycle_curves(solution: Any, max_cycles: int = 30, seg_points: int = 10
     return curves
 
 
-def build_result(solution: Any, request: dict[str, Any], solver_name: str, elapsed_s: float, dcr_series: Any = None) -> dict[str, Any]:
+# 退化机理逐圈变量（“衰减机理分析” tab）。键名 -> PyBaMM 变量候选（新旧版本命名兼容）。
+DEGRADATION_VARIABLES = {
+    "lli_pct": ["Loss of lithium inventory [%]"],
+    "lam_neg_pct": ["Loss of active material in negative electrode [%]"],
+    "lam_pos_pct": ["Loss of active material in positive electrode [%]"],
+    "sei_ah": ["Loss of capacity to negative SEI [A.h]", "Loss of capacity to SEI [A.h]"],
+    "sei_cracks_ah": ["Loss of capacity to negative SEI on cracks [A.h]", "Loss of capacity to SEI on cracks [A.h]"],
+    "plating_ah": ["Loss of capacity to negative lithium plating [A.h]", "Loss of capacity to lithium plating [A.h]"],
+}
+
+
+def build_degradation_metrics(solution: Any, acceleration_factor: int = 1) -> dict[str, list] | None:
+    """逐圈取各退化变量的圈末值。变量全部缺失（未开老化）时返回 None。"""
+    try:
+        cycles = solution.cycles
+    except Exception:
+        return None
+    if not cycles:
+        return None
+    series: dict[str, list] = {key: [] for key in DEGRADATION_VARIABLES}
+    cycle_numbers = []
+    for index, cycle in enumerate(cycles):
+        cycle_numbers.append((index + 1) * acceleration_factor)
+        for key, names in DEGRADATION_VARIABLES.items():
+            values = get_solution_entries(cycle, names)
+            series[key].append(finite_or_none(values[-1]) if values.size else None)
+    kept = {key: values for key, values in series.items() if any(v is not None for v in values)}
+    if not kept:
+        return None
+    return {"cycle": cycle_numbers, **kept}
+
+
+def build_heat_metrics(solution: Any, request: dict[str, Any]) -> dict[str, list] | None:
+    """逐圈平均产热功率分量（不可逆/可逆 × 充/放）。
+
+    完整计算依赖熵数据（src.config 的 dU/dT 表），加载失败时降级为仅不可逆热；
+    再失败返回 None（前端显示“无产热数据”）。"""
+    accel = request.get("acceleration_factor", 1)
+    label = f"{request['temperature_c']}°C"
+    try:
+        from src.analysis import get_all_heat_components
+
+        heat = get_all_heat_components(solution, label_for_temp=label)
+    except Exception:
+        try:
+            from src.analysis import _collect_heat_components
+
+            heat = _collect_heat_components(solution, label_for_temp=label, include_reversible=False)
+        except Exception:
+            return None
+    cleaned: dict[str, list] = {}
+    count = 0
+    for key, values in heat.items():
+        row = [finite_or_none(value) for value in values]
+        if any(value is not None for value in row):
+            cleaned[key] = row
+            count = max(count, len(row))
+    if not cleaned:
+        return None
+    cleaned["cycle"] = [(index + 1) * accel for index in range(count)]
+    return cleaned
+
+
+# “参数分布” tab 展示的关键参数（存在才收录；函数型参数标记不展开）。
+KEY_PARAMETERS = [
+    "Nominal cell capacity [A.h]",
+    "Electrode height [m]",
+    "Electrode width [m]",
+    "Negative electrode thickness [m]",
+    "Positive electrode thickness [m]",
+    "Separator thickness [m]",
+    "Negative electrode porosity",
+    "Positive electrode porosity",
+    "Separator porosity",
+    "Negative particle radius [m]",
+    "Positive particle radius [m]",
+    "Maximum concentration in negative electrode [mol.m-3]",
+    "Maximum concentration in positive electrode [mol.m-3]",
+    "Initial concentration in negative electrode [mol.m-3]",
+    "Initial concentration in positive electrode [mol.m-3]",
+    "Initial concentration in electrolyte [mol.m-3]",
+    "Negative electrode active material volume fraction",
+    "Positive electrode active material volume fraction",
+    "Contact resistance [Ohm]",
+    "Ambient temperature [K]",
+    "Upper voltage cut-off [V]",
+    "Lower voltage cut-off [V]",
+]
+
+
+def snapshot_parameters(params: Any) -> list[dict[str, Any]]:
+    snapshot = []
+    for name in KEY_PARAMETERS:
+        try:
+            value = params[name]
+        except KeyError:
+            continue
+        if isinstance(value, (int, float)):
+            snapshot.append({"name": name, "value": float(value)})
+        elif callable(value):
+            snapshot.append({"name": name, "value": "函数（温度/浓度依赖）"})
+        else:
+            snapshot.append({"name": name, "value": str(value)})
+    return snapshot
+
+
+def build_result(solution: Any, request: dict[str, Any], solver_name: str, elapsed_s: float, dcr_series: Any = None, params: Any = None) -> dict[str, Any]:
     import numpy as np
 
     time_h = get_solution_entries(solution, ["Time [h]"])
@@ -548,6 +654,9 @@ def build_result(solution: Any, request: dict[str, Any], solver_name: str, elaps
         "cycle_curves": build_cycle_curves(solution, acceleration_factor=accel),
         "dcr_series": dcr_series,
         "cycle_metrics": cycle_metrics,
+        "degradation_metrics": build_degradation_metrics(solution, accel) if request.get("aging_enabled") else None,
+        "heat_metrics": build_heat_metrics(solution, request),
+        "parameters": snapshot_parameters(params) if params is not None else [],
         "summary": {
             "cycle_count": len(cycle_metrics["cycle"]),
             "initial_capacity_ah": initial_capacity,
@@ -674,7 +783,7 @@ def run_cycle_worker(job_dir_raw: str, request: dict[str, Any]) -> None:
                 pybamm, model, params, request, solver, solver_name, job_dir, start
             )
             elapsed_s = round(time.perf_counter() - start, 1)
-            result = build_result(solution, request, solver_name, elapsed_s, dcr_series)
+            result = build_result(solution, request, solver_name, elapsed_s, dcr_series, params=params)
             atomic_write_json(job_dir / "result.json", result)
             log_status(
                 job_dir, "INFO",
@@ -718,7 +827,7 @@ def run_cycle_worker(job_dir_raw: str, request: dict[str, Any]) -> None:
 
         elapsed_s = round(time.perf_counter() - start, 1)
         log_status(job_dir, "INFO", "仿真求解完成，正在整理结果", progress=94, elapsed_s=elapsed_s)
-        result = build_result(solution, request, solver_name, elapsed_s)
+        result = build_result(solution, request, solver_name, elapsed_s, params=params)
         atomic_write_json(job_dir / "result.json", result)
         log_status(
             job_dir,
@@ -744,6 +853,26 @@ def run_cycle_worker(job_dir_raw: str, request: dict[str, Any]) -> None:
         )
 
 
+# 任务类型注册表：每类仿真在此登记 normalize（请求规范化）+ worker（子进程入口）。
+# 新增仿真类型（干涸/RPT/EIS/峰值电流…）时在此注册新条目，
+# worker 必须是模块级函数（spawn 进程要求可 pickle），不要往 run_cycle_worker 里加分支。
+JOB_TYPES: dict[str, dict[str, Any]] = {
+    "cycle": {
+        "label": "循环老化仿真",
+        "normalize": normalize_request,
+        "worker": run_cycle_worker,
+    },
+}
+
+
+def resolve_job_type(request: dict[str, Any]) -> tuple[str, dict[str, Any]]:
+    job_type = str(request.get("job_type", "cycle")).lower()
+    spec = JOB_TYPES.get(job_type)
+    if spec is None:
+        raise ValueError(f"未知任务类型: {job_type}（可用: {', '.join(sorted(JOB_TYPES))}）")
+    return job_type, spec
+
+
 class JobManager:
     def __init__(self, job_root: Path = JOB_ROOT) -> None:
         self.job_root = job_root
@@ -752,12 +881,15 @@ class JobManager:
         self.context = mp.get_context("spawn")
 
     def create_job(self, request: dict[str, Any]) -> dict[str, Any]:
-        normalized = normalize_request(request)
+        job_type, spec = resolve_job_type(request)
+        normalized = spec["normalize"](request)
+        normalized["job_type"] = job_type
         job_id = uuid.uuid4().hex[:12]
         job_dir = self.job_root / job_id
         job_dir.mkdir(parents=True, exist_ok=True)
         status = {
             "job_id": job_id,
+            "job_type": job_type,
             "status": "queued",
             "progress": 0,
             "current_cycle": 0,
@@ -772,7 +904,7 @@ class JobManager:
         }
         append_log(status, "INFO", "仿真任务已创建")
         atomic_write_json(job_dir / "status.json", status)
-        process = self.context.Process(target=run_cycle_worker, args=(str(job_dir), normalized), daemon=False)
+        process = self.context.Process(target=spec["worker"], args=(str(job_dir), normalized), daemon=False)
         process.start()
         self.processes[job_id] = process
         update_status(job_dir, status="running", worker_pid=process.pid)

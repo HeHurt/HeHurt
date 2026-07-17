@@ -122,5 +122,11 @@ def get_hithium_params(t_factor=1, temperature=298.15):
         "Exchange-current density for stripping [A.m-2]": 1.5e-3,
         "Exchange-current density for plating [A.m-2]": 1.5e-3,
 
+        # 电解液干涸相关参数（按 CW391 电解液体积 3.03/314 缩放，与 CW511 结构对齐）
+        "Current solvent concentration in the reservoir [mol.m-3]": 1000,
+        "Current electrolyte concentration in the reservoir [mol.m-3]": 1000,
+        "Initial total electrolyte volume in whole cell [m3]": 3e-3 * electrolyte_volume_scale,
+        "Initial total electrolyte volume in jelly roll [m3]": 0.0027387 * electrolyte_volume_scale,
+        "Electrolyte dry out rate [m3.s-1]": 2e-14,
     })
     return hithium_params

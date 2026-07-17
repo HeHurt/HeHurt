@@ -79,6 +79,23 @@ class ValidateRptSummaryTests(unittest.TestCase):
                 }
             )
 
+    def test_validate_rpt_summary_can_require_discharge_only(self):
+        summary = {
+            "rpt_charge_capacity_ah": np.nan,
+            "rpt_discharge_capacity_ah": 100.0,
+            "rpt_charge_energy_wh": np.nan,
+            "rpt_discharge_energy_wh": 320.0,
+            "rpt_efficiency": np.nan,
+        }
+        result = simulation_rpt_module.validate_rpt_summary(
+            summary,
+            required_finite_fields=(
+                "rpt_discharge_capacity_ah",
+                "rpt_discharge_energy_wh",
+            ),
+        )
+        self.assertIs(result, summary)
+
 
 if __name__ == "__main__":
     unittest.main()

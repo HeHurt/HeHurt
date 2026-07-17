@@ -47,7 +47,7 @@ def get_hithium_params(t_factor=1,temperature=298.15):
         D_sei = 3.5
     else:
         k_sei = .1
-        D_sei = 0.6
+        D_sei = .5
     
     hithium_params = build_lfp_cell_params(temperature, {
         # 电池几何参数
@@ -111,7 +111,7 @@ def get_hithium_params(t_factor=1,temperature=298.15):
         "EC diffusivity [m2.s-1]": 3.5e-22 * D_sei * t_factor,
         "Negative electrode cracking rate": cracking_rate_Ai2020,
         "Lithium plating kinetic rate constant [m.s-1]": 0.00003181158194366325 * t_factor,
-        "SEI growth activation energy [J.mol-1]": 49887.19876117447 * 0.5,
+        "SEI growth activation energy [J.mol-1]": 49887.19876117447 * 0.6,
         "Exchange-current density for stripping [A.m-2]": 2e-3,
         "Exchange-current density for plating [A.m-2]": 2e-3,
 

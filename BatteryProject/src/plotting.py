@@ -922,6 +922,122 @@ def plot_swelling(
         logger.warning("未找到匹配过滤条件的数据（filter_total=%s），已跳过总包络图。", filter_total)
 
 
+def plot_swelling_coupling(
+    sol,
+    label,
+    params,
+    x_axis="cycle",
+    acceleration_factor=50,
+    pressure_history=None,
+    cycles_per_block=None,
+    **swelling_kwargs,
+):
+    """绘制膨胀力-孔隙率耦合总览：左=力包络（max/min/EOC），右=真实孔隙率+面压。
+
+    横轴支持 ``x_axis="cycle"``（圈数 × acceleration_factor）或 ``"soh"``，
+    与 :func:`plot_swelling_for_condition` 同款切换（SOH 模式自动反转横轴）。
+
+    右图实线为仿真**真实**孔隙率状态量（``X-averaged ... porosity``，随
+    SEI/析锂堵孔下跌——孔隙率损失主因）；红虚线为耦合面压（力学，二阶量）。
+
+    Parameters
+    ----------
+    pressure_history : array-like or None
+        ``SwellingCoupler.history["pressure_pa"]``（逐 block 面压，Pa）。
+        None 时右图只画孔隙率。
+    cycles_per_block : int or None
+        每 block 仿真圈数，用于把面压点映射到横轴；提供 pressure_history 时必填。
+    **swelling_kwargs :
+        透传给 :func:`calculate_cycle_swelling` 的力模型参数
+        （如 ``**coupler.swelling_kwargs``，保证与耦合器一致）。
+
+    Returns
+    -------
+    (fig, (ax1, ax2)) 或 None（无有效数据时）。
+    """
+    from .analysis import calculate_cycle_swelling
+
+    if pressure_history is not None and cycles_per_block is None:
+        raise ValueError("提供 pressure_history 时必须同时给 cycles_per_block")
+
+    max_f, min_f, eoc_f, _ = calculate_cycle_swelling(
+        sol, params, return_components=True, **swelling_kwargs
+    )
+    if len(max_f) == 0:
+        return None
+
+    x_vals, x_label, valid_count = _resolve_swelling_x(
+        sol, len(max_f), x_axis=x_axis, acceleration_factor=acceleration_factor
+    )
+    x_vals = np.asarray(x_vals)[:valid_count]
+    max_f = max_f[:valid_count]
+    min_f = min_f[:valid_count]
+    eoc_f = eoc_f[:valid_count]
+    invert = str(x_axis).strip().lower() == "soh"
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 4))
+
+    # 左：膨胀力包络
+    ax1.plot(x_vals, max_f, "o-", lw=2, ms=4, label=f"{label} Max force")
+    ax1.plot(x_vals, min_f, "s-", lw=2, ms=4, label=f"{label} Min force")
+    ax1.plot(x_vals, eoc_f, "^--", lw=1.5, ms=3, label=f"{label} EOC force")
+    ax1.fill_between(x_vals, min_f, max_f, alpha=0.1)
+    ax1.set_xlabel(x_label)
+    ax1.set_ylabel("Force (N)")
+    ax1.set_title("Swelling Force Envelope")
+    ax1.legend(fontsize=9)
+    ax1.grid(True, linestyle="--", alpha=0.4)
+
+    # 右：真实孔隙率状态量（每圈末）
+    porosity_vars = (
+        ("X-averaged negative electrode porosity", "eps_n", "tab:blue", "o-"),
+        ("X-averaged separator porosity", "eps_s", "tab:orange", "s-"),
+        ("X-averaged positive electrode porosity", "eps_p", "tab:green", "^-"),
+    )
+    legend_lines = []
+    for var, lbl, color, style in porosity_vars:
+        try:
+            eps = np.array(
+                [float(c[var].entries[-1]) for c in sol.cycles]
+            )[:valid_count]
+        except Exception:
+            continue
+        ln, = ax2.plot(x_vals, eps, style, color=color, lw=1.6, ms=4, label=lbl)
+        legend_lines.append(ln)
+    ax2.set_xlabel(x_label)
+    ax2.set_ylabel("Porosity (-)")
+    ax2.grid(True, linestyle="--", alpha=0.4)
+
+    # 右轴：面压（逐 block 映射到同一横轴）
+    if pressure_history is not None:
+        pressure = np.asarray(pressure_history, dtype=float)
+        ax2b = ax2.twinx()
+
+        def _block_x(k):
+            ci = k * cycles_per_block - 1
+            if ci < 0:
+                return x_vals[0]
+            return x_vals[min(ci, valid_count - 1)]
+
+        block_x = np.array([_block_x(k) for k in range(len(pressure))])
+        ln_pr, = ax2b.plot(block_x, pressure / 1e3, "--", color="tab:red",
+                           lw=2, label="Pressure (kPa)")
+        ax2b.set_ylabel("Pressure (kPa)", color="tab:red")
+        ax2b.tick_params(axis="y", labelcolor="tab:red")
+        legend_lines.append(ln_pr)
+
+    ax2.legend(legend_lines, [ln.get_label() for ln in legend_lines],
+               loc="best", fontsize=8)
+    ax2.set_title("Porosity (SEI clogging) & Stack Pressure")
+
+    if invert:
+        ax1.invert_xaxis()
+        ax2.invert_xaxis()
+
+    plt.tight_layout()
+    return fig, (ax1, ax2)
+
+
 def process_sol_list_for_all_heat_components(
     plotter_instance,
     sol_list,

@@ -22,23 +22,19 @@ authors = [{name = "Hithium / Hez"}]
 dependencies = [
   # PyBaMM 是最敏感的，精确锁定当前验证过的版本，避免 uv 环境和系统环境结果漂移
   "pybamm==26.4.2",
-
   # NumPy 2 对 PyBaMM/SciPy 兼容性还在收敛期，先不放上 2.x
   "numpy>=1.26,<2",
-
   # SciPy 16 已稳定，但放宽到 17 之前先关
   "scipy>=1.13,<2",
-
   # Pandas 2.x 内部 dtype 改动较大，锁住主版本
   "pandas>=2.2,<3",
-
   # Matplotlib / openpyxl 影响小，只设下限
   "matplotlib>=3.8",
   "openpyxl>=3.1",
-
   # Battery Sim Studio 本地 API 服务
   "fastapi>=0.115,<1",
   "uvicorn[standard]>=0.34,<1",
+  "emcee>=3.1.6",
 ]
 
 

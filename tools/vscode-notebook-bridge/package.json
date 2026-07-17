@@ -1,0 +1,89 @@
+{
+  "name": "notebook-bridge",
+  "displayName": "Hithium Notebook Bridge",
+  "description": "Local VS Code notebook bridge for Codex and Claude Code sidebars.",
+  "version": "0.1.0",
+  "publisher": "hithium",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:hithiumNotebookBridge.start",
+    "onCommand:hithiumNotebookBridge.stop",
+    "onCommand:hithiumNotebookBridge.restart",
+    "onCommand:hithiumNotebookBridge.showStatus",
+    "onCommand:hithiumNotebookBridge.copyConnection"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "hithiumNotebookBridge.start",
+        "title": "Notebook Bridge: Start"
+      },
+      {
+        "command": "hithiumNotebookBridge.stop",
+        "title": "Notebook Bridge: Stop"
+      },
+      {
+        "command": "hithiumNotebookBridge.restart",
+        "title": "Notebook Bridge: Restart"
+      },
+      {
+        "command": "hithiumNotebookBridge.showStatus",
+        "title": "Notebook Bridge: Show Status"
+      },
+      {
+        "command": "hithiumNotebookBridge.copyConnection",
+        "title": "Notebook Bridge: Copy Connection"
+      }
+    ],
+    "configuration": {
+      "title": "Hithium Notebook Bridge",
+      "properties": {
+        "hithiumNotebookBridge.autoStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Start the local notebook bridge when VS Code finishes startup."
+        },
+        "hithiumNotebookBridge.port": {
+          "type": "number",
+          "default": 45451,
+          "minimum": 0,
+          "maximum": 65535,
+          "description": "Localhost port for the bridge. Use 0 to let the OS choose a free port."
+        },
+        "hithiumNotebookBridge.connectionFile": {
+          "type": "string",
+          "default": ".codex_scratch/vscode-notebook-bridge.json",
+          "description": "Workspace-relative file where the bridge writes its endpoint and bearer token."
+        },
+        "hithiumNotebookBridge.workspaceOnly": {
+          "type": "boolean",
+          "default": true,
+          "description": "Allow notebook edits only inside the current VS Code workspace."
+        },
+        "hithiumNotebookBridge.editActiveNotebookOnly": {
+          "type": "boolean",
+          "default": true,
+          "description": "Allow edits only to the currently active notebook editor."
+        },
+        "hithiumNotebookBridge.maxBodyBytes": {
+          "type": "number",
+          "default": 10485760,
+          "minimum": 1024,
+          "description": "Maximum request body size in bytes."
+        },
+        "hithiumNotebookBridge.saveAfterEdit": {
+          "type": "boolean",
+          "default": false,
+          "description": "Save the notebook after a successful edit unless the request overrides save."
+        }
+      }
+    }
+  }
+}

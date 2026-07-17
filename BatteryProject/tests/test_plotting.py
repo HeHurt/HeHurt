@@ -82,5 +82,84 @@ class RetentionNormalizationTests(unittest.TestCase):
         self.assertTrue(np.isnan(bp.exp_db["A"]["ret"]).all())
 
 
+
+
+class _FakeVariable:
+    def __init__(self, entries):
+        self.entries = np.asarray(entries, dtype=float)
+
+
+class _FakeCycle:
+    def __init__(self, data):
+        self._data = data
+
+    def __getitem__(self, key):
+        return self._data[key]
+
+
+class _FakeSolution:
+    def __init__(self, cycles):
+        self.cycles = cycles
+
+
+def _coupling_cycle(cn_end, eps_n):
+    return _FakeCycle({
+        "X-averaged negative particle concentration [mol.m-3]": _FakeVariable([0.0, cn_end]),
+        "X-averaged positive particle concentration [mol.m-3]": _FakeVariable([0.0, 0.0]),
+        "X-averaged negative electrode porosity": _FakeVariable([eps_n, eps_n]),
+        "X-averaged separator porosity": _FakeVariable([0.4, 0.4]),
+        "X-averaged positive electrode porosity": _FakeVariable([0.23, 0.23]),
+    })
+
+
+class PlotSwellingCouplingTests(unittest.TestCase):
+    """plot_swelling_coupling 冒烟：力包络 + 孔隙率 + 面压，cycle 横轴。"""
+
+    def _params(self):
+        return {
+            "Negative electrode thickness [m]": 1.0,
+            "Positive electrode thickness [m]": 1.0,
+            "Initial concentration in negative electrode [mol.m-3]": 0.0,
+            "Initial concentration in positive electrode [mol.m-3]": 0.0,
+        }
+
+    def test_smoke_with_pressure_history(self):
+        from src.plotting import plot_swelling_coupling
+
+        sol = _FakeSolution([_coupling_cycle(3.0, 0.32), _coupling_cycle(4.0, 0.30)])
+        result = plot_swelling_coupling(
+            sol, "demo", self._params(),
+            x_axis="cycle", acceleration_factor=50,
+            pressure_history=[43000.0, 45000.0],
+            cycles_per_block=1,
+            omega_n=3.0, k_stiffness=1.0, preload_force=0.0,
+            expansion_function_n=None, expansion_function_p=None,
+        )
+        self.assertIsNotNone(result)
+        fig, (ax1, ax2) = result
+        # 左图三条力线，右图三条孔隙率线
+        self.assertEqual(len(ax1.get_lines()), 3)
+        self.assertEqual(len(ax2.get_lines()), 3)
+
+    def test_pressure_requires_cycles_per_block(self):
+        from src.plotting import plot_swelling_coupling
+
+        sol = _FakeSolution([_coupling_cycle(3.0, 0.32)])
+        with self.assertRaises(ValueError):
+            plot_swelling_coupling(
+                sol, "demo", self._params(),
+                pressure_history=[43000.0],
+                omega_n=3.0, k_stiffness=1.0,
+                expansion_function_n=None, expansion_function_p=None,
+            )
+
+    def test_none_when_empty_solution(self):
+        from src.plotting import plot_swelling_coupling
+
+        self.assertIsNone(
+            plot_swelling_coupling(_FakeSolution([]), "demo", self._params())
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

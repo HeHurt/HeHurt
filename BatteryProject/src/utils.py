@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from .analysis import get_discharge_capacity
+from .exp_loader import normalize_retention_scale
 
 logger = logging.getLogger(__name__)
 
@@ -103,9 +104,7 @@ def load_excel_to_plotter(plotter_instance, file_path, sheet_names=None):
                     temp_storage[label]["cap"] = col_data
                 elif "容量保持率" in str(col_name):
                     # 统一为 0–1 小数（百分制自动 /100），与 exp_loader 契约一致
-                    if np.nanmean(col_data) > 2.0:
-                        col_data = col_data / 100.0
-                    temp_storage[label]["ret"] = col_data
+                    temp_storage[label]["ret"] = normalize_retention_scale(col_data)
             count = 0
             for lbl, vals in temp_storage.items():
                 if "cap" in vals and "ret" in vals:
@@ -259,4 +258,3 @@ def export_cycle_data(sol, filename="cycle_analysis.xlsx", step=100):
             pd.concat(all_charge).to_excel(writer, sheet_name="Charge", index=False)
         if all_discharge:
             pd.concat(all_discharge).to_excel(writer, sheet_name="Discharge", index=False)
-

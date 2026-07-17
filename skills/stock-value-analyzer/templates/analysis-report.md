@@ -2,6 +2,8 @@
 
 > 基于邱国鹭《投资中最简单的事》方法论
 
+> 导出要求：本报告生成后必须保存为 Markdown 文件，目录固定为 `D:\Users\hez\Desktop\hithium-外移`，文件名建议为 `stock_{股票代码}_{公司简称}_value_analysis_{YYYY-MM-DD}.md`。最终回复必须给出该文件的绝对路径。
+
 ---
 
 ## 📋 一、分析概要

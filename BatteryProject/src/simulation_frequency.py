@@ -263,6 +263,45 @@ def build_frequency_day_steps(current_a, pulse_seconds, total_pulses_per_day, sa
     return steps
 
 
+def build_frequency_current_profile(segment_seconds, pair_count, current_a):
+    """Build time/current arrays for a symmetric square-wave frequency profile."""
+    segment_seconds = float(segment_seconds)
+    pair_count = int(pair_count)
+    current_a = float(current_a)
+    if segment_seconds <= 0:
+        raise ValueError("segment_seconds must be positive")
+    if pair_count <= 0:
+        raise ValueError("pair_count must be positive")
+    if current_a <= 0:
+        raise ValueError("current_a must be positive")
+
+    time_points = [0.0]
+    current_points = []
+    elapsed_seconds = 0.0
+    for _ in range(pair_count):
+        for signed_current in (current_a, -current_a):
+            current_points.extend([signed_current, signed_current])
+            time_points.extend([elapsed_seconds, elapsed_seconds + segment_seconds])
+            elapsed_seconds += segment_seconds
+    return np.asarray(time_points[1:], dtype=float), np.asarray(current_points, dtype=float)
+
+
+def trim_current_profile(time_points, current_points, max_seconds):
+    """Trim a time/current profile to a maximum display time."""
+    time_points = np.asarray(time_points, dtype=float)
+    current_points = np.asarray(current_points, dtype=float)
+    max_seconds = float(max_seconds)
+    if time_points.shape != current_points.shape:
+        raise ValueError("time_points and current_points must have the same shape")
+    if time_points.size == 0:
+        return time_points, current_points
+    if max_seconds <= 0:
+        raise ValueError("max_seconds must be positive")
+    point_count = int(np.sum(time_points <= max_seconds))
+    point_count = max(2, min(point_count, time_points.size))
+    return time_points[:point_count], current_points[:point_count]
+
+
 def _build_equivalent_frequency_day_steps(
     scenario,
     current_a,

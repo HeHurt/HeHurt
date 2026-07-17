@@ -33,6 +33,17 @@ def calc_rrmse(y_true, y_pred):
     return rmse, rrmse
 
 
+def retention_from_capacity(caps):
+    """按首圈容量归一为保持率（0–1 小数）；首圈为 0 或无效时返回全 0。"""
+    caps = np.asarray(caps, dtype=float)
+    if caps.size == 0:
+        return caps
+    base = caps[0]
+    if base == 0 or not np.isfinite(base):
+        return np.zeros_like(caps)
+    return caps / base
+
+
 def calculate_rrmse_from_sol(df, x_columns, y_columns, sol_list, labels, charge_or_discharge):
     """纯分析：对比仿真/实验电压曲线，返回每条曲线的 RMSE/RRMSE 以及绘图所需数据。
 
@@ -76,7 +87,7 @@ def calculate_rrmse_from_sol(df, x_columns, y_columns, sol_list, labels, charge_
 
 
 def get_discharge_capacity(sol):
-    """提取每圈放电容量（Ah），取每圈首个放电步的容量绝对增量。
+    """提取每圈放电容量（Ah），累计每圈内所有放电步的容量绝对增量。
 
     返回 {'discharge_capacity': np.array([...])}
     """
@@ -84,19 +95,30 @@ def get_discharge_capacity(sol):
         return {"discharge_capacity": np.array([])}
     caps = []
     for cycle in sol.cycles:
-        step_cap = np.nan
-        for step in cycle.steps:
-            current = step["Current [A]"].entries
+        cycle_cap = 0.0
+        has_discharge_step = False
+        for step in getattr(cycle, "steps", []):
+            try:
+                current = np.asarray(step["Current [A]"].entries, dtype=float)
+            except (AttributeError, KeyError, TypeError):
+                # PyBaMM may keep EmptySolution placeholders in cycle.steps.
+                continue
+            if current.size == 0:
+                continue
             mean_I = np.mean(current)
             # 放电步判断：平均电流为正，且超过峰值电流的 1% 或绝对 0.01A（取较大者）
-            peak_I = np.max(np.abs(current)) if current.size > 0 else 0
+            peak_I = np.max(np.abs(current))
             threshold = max(peak_I * 0.01, 0.01)
             if mean_I > threshold:
-                Q = step["Throughput capacity [A.h]"].entries
-                delta_Q = np.abs(Q[-1] - Q[0]) if len(Q) > 0 else np.nan
-                step_cap = delta_Q
-                break
-        caps.append(step_cap)
+                try:
+                    Q = np.asarray(step["Throughput capacity [A.h]"].entries, dtype=float)
+                except (AttributeError, KeyError, TypeError):
+                    continue
+                delta_Q = np.abs(Q[-1] - Q[0]) if Q.size > 0 else np.nan
+                if np.isfinite(delta_Q):
+                    cycle_cap += float(delta_Q)
+                    has_discharge_step = True
+        caps.append(cycle_cap if has_discharge_step else np.nan)
     return {"discharge_capacity": np.array(caps)}
 
 # 下面的函数实现了热量分量的提取与平均，支持可逆热项的计算与容量轴插值。
@@ -165,7 +187,11 @@ def _collect_heat_components(sol, label_for_temp=None, include_reversible=False,
         inst_rev_chg, inst_rev_dchg = [], []
 
         for step in cycle.steps:
-            current = step["Current [A]"].entries
+            try:
+                current = step["Current [A]"].entries
+            except TypeError:
+                # EmptySolution：实验提前截止/未执行的步骤，无数据可取
+                continue
             mean_I = np.mean(current)
             # 跳过静置步（电流过小，热量贡献可忽略）
             if np.abs(mean_I) < 0.05:
@@ -365,6 +391,15 @@ def _get_engineering_swelling_params(params):
     pack["c_n_max"] = _optional("Maximum concentration in negative electrode [mol.m-3]")
     pack["c_p_max"] = _optional("Maximum concentration in positive electrode [mol.m-3]")
     pack["a_n"] = _optional("Negative electrode surface area to volume ratio [m-1]")
+    if pack["a_n"] is None:
+        # PyBaMM 参数集常不直接提供比表面积：用 a = 3·ε_act/R 估算
+        eps_act = _optional("Negative electrode active material volume fraction")
+        r_n = _optional("Negative particle radius [m]")
+        try:
+            if eps_act is not None and r_n:
+                pack["a_n"] = 3.0 * float(eps_act) / float(r_n)
+        except Exception:
+            pass
     return pack
 
 

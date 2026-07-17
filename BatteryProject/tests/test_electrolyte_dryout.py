@@ -9,7 +9,9 @@ import contextlib
 import io
 import unittest
 
-from src.electrolyte_dryout import DryoutTracker
+import numpy as np
+
+from src.electrolyte_dryout import DryoutTracker, _apply_porosity_factors_to_state
 
 
 def _make_stub_params(**overrides):
@@ -89,6 +91,30 @@ class DryoutTrackerInitTests(unittest.TestCase):
         params = _make_stub_params()
         tracker = _silent_init(params)
         self.assertAlmostEqual(tracker.history["c_EC_reservoir"][0], 4541.0)
+
+
+class ApplyPorosityFactorsTests(unittest.TestCase):
+    def test_scales_porosity_times_concentration_states(self):
+        state = {
+            "Negative electrode porosity times concentration [mol.m-3]": np.array([1000.0, 1000.0]),
+            "Separator porosity times concentration [mol.m-3]": np.array([1000.0]),
+            "Negative electrolyte potential [V]": np.array([0.1]),
+        }
+
+        _apply_porosity_factors_to_state(
+            state,
+            {"negative electrode": 0.9, "separator": 0.8, "positive electrode": 0.7},
+        )
+
+        np.testing.assert_allclose(
+            state["Negative electrode porosity times concentration [mol.m-3]"],
+            [900.0, 900.0],
+        )
+        np.testing.assert_allclose(
+            state["Separator porosity times concentration [mol.m-3]"], [800.0]
+        )
+        # 不在状态里的正极键被跳过；无关键不受影响
+        np.testing.assert_allclose(state["Negative electrolyte potential [V]"], [0.1])
 
 
 if __name__ == "__main__":

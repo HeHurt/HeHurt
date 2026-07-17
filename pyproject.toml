@@ -1,0 +1,12 @@
+[project]
+name = "hithium-agent-tools"
+version = "0.1.0"
+description = "Project-local agent tooling for Hithium COMSOL automation."
+requires-python = ">=3.11"
+dependencies = [
+  "sim-cli-core==0.3.7",
+  "sim-plugin-comsol==0.1.14",
+]
+
+[tool.uv]
+package = false

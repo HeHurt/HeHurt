@@ -1,6 +1,6 @@
 """BatteryProject package init."""
 import os as _os
-_os.environ.setdefault("PYBAMM_DISABLE_TELEMETRY", "true") 
+_os.environ.setdefault("PYBAMM_DISABLE_TELEMETRY", "true")
 __all__ = [
     "config",
     "analysis",

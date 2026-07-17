@@ -175,7 +175,9 @@
                 <button type="button"><span class="icon" data-icon="wave"></span>平滑滤波</button>
                 <button type="button"><span class="icon" data-icon="repeat"></span>重采样</button>
                 <button type="button"><span class="icon" data-icon="pin"></span>特征提取</button>
+                <button type="button" data-action="extrapolate"><span class="icon" data-icon="pulse"></span>寿命外推</button>
               </div>
+              <p class="small-note" id="extrapolateNote" hidden></p>
 
               <h3>特征指标</h3>
               <dl class="metric-list">
@@ -304,17 +306,42 @@
               <header class="panel-header"><h2>5. 结果后处理与分析</h2></header>
               <div class="panel-body results-layout">
                 <aside class="result-tabs" aria-label="结果类型">
-                  <button class="active" type="button">性能分析</button>
-                  <button type="button">寿命预测</button>
-                  <button type="button">衰减机理分析</button>
-                  <button type="button">热分析</button>
-                  <button type="button">参数分布</button>
-                  <button type="button">对比分析</button>
+                  <button class="active" type="button" data-result-tab="performance">性能分析</button>
+                  <button type="button" data-result-tab="mechanism">衰减机理分析</button>
+                  <button type="button" data-result-tab="thermal">热分析</button>
+                  <button type="button" data-result-tab="params">参数分布</button>
+                  <button type="button" data-result-tab="compare">对比分析</button>
                 </aside>
-                <div class="result-charts">
-                  <figure><figcaption>容量衰减</figcaption><svg id="capacityChart" viewBox="0 0 300 210"></svg></figure>
-                  <figure><figcaption>内阻增长</figcaption><svg id="resistanceChart" viewBox="0 0 300 210"></svg></figure>
-                  <figure><figcaption>能量效率</figcaption><svg id="efficiencyChart" viewBox="0 0 300 210"></svg></figure>
+                <div class="result-panes">
+                  <div class="result-charts result-pane" data-result-pane="performance">
+                    <figure><figcaption>容量衰减</figcaption><svg id="capacityChart" viewBox="0 0 300 210"></svg></figure>
+                    <figure><figcaption>内阻增长</figcaption><svg id="resistanceChart" viewBox="0 0 300 210"></svg></figure>
+                    <figure><figcaption>能量效率</figcaption><svg id="efficiencyChart" viewBox="0 0 300 210"></svg></figure>
+                  </div>
+                  <div class="result-pane" data-result-pane="mechanism" hidden>
+                    <div id="mechanismChart" class="echart-box"></div>
+                    <p class="small-note" id="mechanismNote">运行开启老化接口的仿真后，显示 LLI / LAM / SEI / 析锂逐圈演化</p>
+                  </div>
+                  <div class="result-pane" data-result-pane="thermal" hidden>
+                    <div id="thermalChart" class="echart-box"></div>
+                    <p class="small-note" id="thermalNote">运行仿真后显示逐圈平均产热功率分量（不可逆/可逆 × 充/放）</p>
+                  </div>
+                  <div class="result-pane" data-result-pane="params" hidden>
+                    <div class="table-wrap param-table">
+                      <table>
+                        <thead><tr><th>参数</th><th>数值</th></tr></thead>
+                        <tbody id="paramRows"><tr><td colspan="2">运行仿真后显示该任务使用的关键参数</td></tr></tbody>
+                      </table>
+                    </div>
+                  </div>
+                  <div class="result-pane" data-result-pane="compare" hidden>
+                    <div class="input-row compare-controls">
+                      <select id="compareDataset" aria-label="对比数据集"><option value="">选择实验数据集...</option></select>
+                      <button class="btn compact primary" type="button" data-action="run-compare">开始对比</button>
+                      <span class="small-note" id="compareRrmse"></span>
+                    </div>
+                    <div id="compareChart" class="echart-box"></div>
+                  </div>
                 </div>
                 <aside class="rul-card">
                   <div class="rul-title" id="summaryTitle">仿真摘要</div>
@@ -322,7 +349,6 @@
                   <span id="summaryUnit">Ah</span>
                   <p id="summaryLine1">运行仿真后显示真实摘要</p>
                   <p id="summaryLine2"></p>
-                  <button class="btn outline compact" type="button">查看寿命预测详情</button>
                 </aside>
                 <div class="export-strip">
                   <button class="btn outline" type="button" data-action="export"><span class="icon" data-icon="download"></span>数据导出 (CSV)</button>
@@ -397,6 +423,7 @@
     </div>
     <div class="toast" role="status" aria-live="polite"></div>
   </div>
+  <script src="./vendor/echarts.min.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>

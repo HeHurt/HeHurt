@@ -244,6 +244,25 @@ class GetDischargeCapacityTests(unittest.TestCase):
         result = get_discharge_capacity(None)
         self.assertEqual(result["discharge_capacity"].size, 0)
 
+    def test_sums_multiple_discharge_steps_in_one_cycle(self):
+        def step(current, throughput):
+            return _FakeCycle({
+                "Current [A]": _FakeVariable(current),
+                "Throughput capacity [A.h]": _FakeVariable(throughput),
+            })
+
+        cycle = _FakeCycle({})
+        cycle.steps = [
+            object(),
+            step([1.0, 1.0], [0.0, 2.0]),
+            step([-1.0, -1.0], [2.0, 4.0]),
+            step([0.0, 0.0], [4.0, 4.0]),
+            step([0.8, 0.8], [4.0, 7.5]),
+        ]
+        result = get_discharge_capacity(_FakeSolution([cycle]))
+
+        np.testing.assert_allclose(result["discharge_capacity"], [5.5])
+
 
 class ComputeCycleEnergiesTests(unittest.TestCase):
     def test_none_sol_returns_empty(self):

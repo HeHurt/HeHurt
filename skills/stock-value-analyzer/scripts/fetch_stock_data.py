@@ -24,11 +24,13 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import time
 import traceback
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
+from urllib import request
 
 # Windows 控制台 GBK 兼容：把 stdout/stderr 切成 UTF-8，避免 ✅⚠️ 这种 emoji 报 UnicodeEncodeError
 try:
@@ -51,6 +53,109 @@ def _safe_get(d: Any, key: str, default: Any = None) -> Any:
         return v
     except Exception:
         return default
+
+
+def _to_float(value: Any) -> Optional[float]:
+    try:
+        if value is None:
+            return None
+        s = str(value).strip()
+        if s in ("", "-", "--", "None", "nan"):
+            return None
+        v = float(s)
+        if v != v:
+            return None
+        return v
+    except Exception:
+        return None
+
+
+def _a_share_quote_code(symbol: str) -> str:
+    num = symbol.strip().zfill(6)
+    prefix = "sh" if num.startswith(("60", "68", "9")) else "sz"
+    return f"{prefix}{num}"
+
+
+def _http_get_text(url: str, encoding: str = "utf-8", timeout: int = 8) -> str:
+    req = request.Request(
+        url,
+        headers={
+            "User-Agent": "Mozilla/5.0",
+            "Referer": "https://finance.sina.com.cn/",
+        },
+    )
+    with request.urlopen(req, timeout=timeout) as resp:
+        raw = resp.read()
+    return raw.decode(encoding, errors="replace")
+
+
+def fetch_via_sina_a_quote(symbol: str) -> Dict[str, Any]:
+    """新浪 A 股实时 quote 兜底。symbol 为 6 位代码。"""
+    quote_code = _a_share_quote_code(symbol)
+    url = f"https://hq.sinajs.cn/list={quote_code}"
+    try:
+        text = _http_get_text(url, encoding="gbk")
+        match = re.search(r'="(.*)"', text)
+        if not match:
+            return {"_error": "新浪 quote 返回格式无法解析", "source": "sina_quote", "source_url": url}
+        parts = match.group(1).split(",")
+        if len(parts) < 32 or not parts[0]:
+            return {"_error": "新浪 quote 返回字段为空或数量不足", "source": "sina_quote", "source_url": url}
+        return {
+            "source": "sina_quote",
+            "source_url": url,
+            "symbol": quote_code,
+            "name": parts[0],
+            "open": _to_float(parts[1]),
+            "previous_close": _to_float(parts[2]),
+            "current": _to_float(parts[3]),
+            "high": _to_float(parts[4]),
+            "low": _to_float(parts[5]),
+            "volume": _to_float(parts[8]),
+            "turnover": _to_float(parts[9]),
+            "trade_date": parts[30],
+            "trade_time": parts[31],
+            "data_type": "regular_market_price",
+        }
+    except Exception as e:
+        return {"_error": f"新浪 quote 失败: {e}", "source": "sina_quote", "source_url": url}
+
+
+def fetch_via_tencent_a_quote(symbol: str) -> Dict[str, Any]:
+    """腾讯 A 股实时 quote 兜底。symbol 为 6 位代码。"""
+    quote_code = _a_share_quote_code(symbol)
+    url = f"https://qt.gtimg.cn/q={quote_code}"
+    try:
+        text = _http_get_text(url, encoding="gbk")
+        match = re.search(r'="(.*)"', text)
+        if not match:
+            return {"_error": "腾讯 quote 返回格式无法解析", "source": "tencent_quote", "source_url": url}
+        parts = match.group(1).split("~")
+        if len(parts) < 35 or not parts[1]:
+            return {"_error": "腾讯 quote 返回字段为空或数量不足", "source": "tencent_quote", "source_url": url}
+        return {
+            "source": "tencent_quote",
+            "source_url": url,
+            "symbol": quote_code,
+            "name": parts[1],
+            "code": parts[2],
+            "current": _to_float(parts[3]),
+            "previous_close": _to_float(parts[4]),
+            "open": _to_float(parts[5]),
+            "quote_time": parts[30] if len(parts) > 30 else None,
+            "change": _to_float(parts[31]) if len(parts) > 31 else None,
+            "change_pct": _to_float(parts[32]) if len(parts) > 32 else None,
+            "high": _to_float(parts[33]) if len(parts) > 33 else None,
+            "low": _to_float(parts[34]) if len(parts) > 34 else None,
+            "pe_ttm": _to_float(parts[39]) if len(parts) > 39 else None,
+            "market_cap_total_yi": _to_float(parts[45]) if len(parts) > 45 else None,
+            "market_cap_float_yi": _to_float(parts[44]) if len(parts) > 44 else None,
+            "price_to_book": _to_float(parts[46]) if len(parts) > 46 else None,
+            "data_type": "regular_market_price",
+            "raw_fields_first_60": parts[:60],
+        }
+    except Exception as e:
+        return {"_error": f"腾讯 quote 失败: {e}", "source": "tencent_quote", "source_url": url}
 
 
 # ---------------------------------------------------------------------------
@@ -251,6 +356,50 @@ def fetch_via_akshare_a(symbol: str) -> Dict[str, Any]:
     except Exception as e:
         spot["_error"] = f"stock_zh_a_spot_em 失败: {e}"
 
+    # A 股实战兜底：AkShare/Eastmoney 个股字段有时为空或代理异常，补新浪/腾讯 quote。
+    quote_crosscheck: Dict[str, Any] = {
+        "sina": fetch_via_sina_a_quote(symbol),
+        "tencent": fetch_via_tencent_a_quote(symbol),
+    }
+    if not spot.get("current"):
+        for q in (quote_crosscheck.get("sina", {}), quote_crosscheck.get("tencent", {})):
+            if q.get("current"):
+                spot.update({
+                    "current": q.get("current"),
+                    "previous_close": q.get("previous_close"),
+                    "change_pct": q.get("change_pct"),
+                    "high_52w": spot.get("high_52w"),
+                    "low_52w": spot.get("low_52w"),
+                    "pe_ttm": spot.get("pe_ttm") or q.get("pe_ttm"),
+                    "pb": spot.get("pb") or q.get("price_to_book"),
+                    "market_cap_total": spot.get("market_cap_total") or (
+                        q.get("market_cap_total_yi") * 100000000 if q.get("market_cap_total_yi") else None
+                    ),
+                    "market_cap_float": spot.get("market_cap_float") or (
+                        q.get("market_cap_float_yi") * 100000000 if q.get("market_cap_float_yi") else None
+                    ),
+                    "_source": q.get("source"),
+                })
+                break
+
+    tencent_quote = quote_crosscheck.get("tencent", {})
+    if tencent_quote and not tencent_quote.get("_error"):
+        spot["change_pct"] = spot.get("change_pct") or tencent_quote.get("change_pct")
+        spot["pe_ttm"] = spot.get("pe_ttm") or tencent_quote.get("pe_ttm")
+        spot["pb"] = spot.get("pb") or tencent_quote.get("price_to_book")
+        spot["market_cap_total"] = spot.get("market_cap_total") or (
+            tencent_quote.get("market_cap_total_yi") * 100000000
+            if tencent_quote.get("market_cap_total_yi") else None
+        )
+        spot["market_cap_float"] = spot.get("market_cap_float") or (
+            tencent_quote.get("market_cap_float_yi") * 100000000
+            if tencent_quote.get("market_cap_float_yi") else None
+        )
+
+    price_source = "akshare"
+    if spot.get("_source") and spot.get("_source") != "akshare":
+        price_source = f"akshare+{spot.get('_source')}_fallback"
+
     return {
         "price": {
             "current": spot.get("current"),
@@ -260,7 +409,7 @@ def fetch_via_akshare_a(symbol: str) -> Dict[str, Any]:
             "fifty_two_week_low": spot.get("low_52w"),
             "change_pct": spot.get("change_pct"),
             "data_type": "regular_market_price",
-            "source": "akshare",
+            "source": price_source,
         },
         "valuation": {
             "market_cap": spot.get("market_cap_total") or indiv.get("总市值"),
@@ -279,6 +428,7 @@ def fetch_via_akshare_a(symbol: str) -> Dict[str, Any]:
         },
         "financials_abstract": fin,
         "raw_individual_info": indiv,
+        "quote_crosscheck": quote_crosscheck,
     }
 
 

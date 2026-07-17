@@ -68,5 +68,35 @@ class AutoMatchTests(unittest.TestCase):
         self.assertIn("25°C", exp_data[ei]["label"])
 
 
+class PlotSimExpTests(unittest.TestCase):
+    def test_plots_sim_and_exp_per_panel_with_bias(self):
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        import numpy as np
+        from src.compare import _plot_sim_exp
+
+        fig, (ax_a, ax_b) = plt.subplots(1, 2)
+        panels = [(ax_a, "x", "ya", "A"), (ax_b, "x", "yb", "B")]
+        pairs = [(0, 0)]
+
+        def sim_series(sol):
+            return [(np.array([0, 1]), np.array([1.0, 0.9])),
+                    (np.array([0, 1]), np.array([0.5, 0.4]))]
+
+        def exp_series(exp):
+            return [(np.array([0, 1]), np.array([1.0, 0.95])), None]
+
+        _plot_sim_exp(panels, pairs, ["sol0"], ["25°C 0.5P"], [{"label": "exp"}],
+                      sim_series, exp_series, sim_bias=0.1, exp_bias=0.0)
+
+        self.assertEqual(len(ax_a.get_lines()), 2)
+        self.assertEqual(len(ax_b.get_lines()), 1)
+        labels = [ln.get_label() for ln in ax_a.get_lines()]
+        self.assertTrue(any("bias=+0.1" in lb for lb in labels))
+        self.assertTrue(any("(Sim)" in lb for lb in labels))
+        plt.close(fig)
+
+
 if __name__ == "__main__":
     unittest.main()

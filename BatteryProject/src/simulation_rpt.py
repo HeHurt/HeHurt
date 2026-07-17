@@ -172,14 +172,15 @@ def summarize_rpt_solution(sol, rpt_params, calculate_cycle_swelling_func=None):
     return summary
 
 
-def validate_rpt_summary(summary):
-    """Raise when an RPT summary is incomplete or numerically unusable."""
-    required_finite_fields = (
-        "rpt_charge_capacity_ah",
-        "rpt_discharge_capacity_ah",
-        "rpt_charge_energy_wh",
-        "rpt_discharge_energy_wh",
-    )
+def validate_rpt_summary(summary, required_finite_fields=None):
+    """Raise when selected RPT summary fields are incomplete or numerically unusable."""
+    if required_finite_fields is None:
+        required_finite_fields = (
+            "rpt_charge_capacity_ah",
+            "rpt_discharge_capacity_ah",
+            "rpt_charge_energy_wh",
+            "rpt_discharge_energy_wh",
+        )
     invalid_fields = []
     for field_name in required_finite_fields:
         value = summary.get(field_name, np.nan)

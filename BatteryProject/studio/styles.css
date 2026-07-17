@@ -1323,6 +1323,60 @@ figcaption {
   font-weight: 700;
 }
 
+.result-panes {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.result-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+  min-height: 0;
+}
+
+.result-pane[hidden] {
+  display: none;
+}
+
+.echart-box {
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 180px;
+}
+
+.param-table {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.param-table table {
+  width: 100%;
+}
+
+.param-table td:first-child {
+  white-space: normal;
+  word-break: break-word;
+}
+
+.param-table td:last-child,
+.param-table th:last-child {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.compare-controls {
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.compare-controls select {
+  min-width: 220px;
+}
+
 .result-charts {
   display: grid;
   grid-template-columns: repeat(3, minmax(130px, 1fr));
@@ -1666,7 +1720,7 @@ body.light-alt {
     text-align: center;
   }
 
-  .result-charts,
+  .result-panes,
   .rul-card,
   .export-strip {
     grid-column: 1;

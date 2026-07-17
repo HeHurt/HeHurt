@@ -14,6 +14,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
+from api.compare import compare_job_to_dataset
 from api.jobs import JobManager
 from api.studio_db import StudioDatabase
 from api.studio_io import StudioDataManager, StudioProjectStore
@@ -122,6 +123,30 @@ def create_app() -> FastAPI:
         payload = await request.json()
         try:
             return project_store.switch_project(str(payload.get("project_name", "")))
+        except ValueError as exc:
+            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=str(exc)) from exc
+
+    @app.get("/api/data/{dataset_id}/extrapolate")
+    def extrapolate_dataset(dataset_id: str, target_soh: float = 65.0) -> dict[str, Any]:
+        try:
+            return data_manager.extrapolate(dataset_id, target_soh)
+        except KeyError as exc:
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Dataset not found.") from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=str(exc)) from exc
+
+    @app.get("/api/jobs/{job_id}/compare")
+    def compare_job(job_id: str, dataset_id: str) -> dict[str, Any]:
+        try:
+            result = job_manager.get_result(job_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Job not found.") from exc
+        try:
+            records = data_manager.load_records(dataset_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Dataset not found.") from exc
+        try:
+            return compare_job_to_dataset(result, records)
         except ValueError as exc:
             raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=str(exc)) from exc
 

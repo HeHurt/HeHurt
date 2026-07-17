@@ -240,6 +240,89 @@ def build_metrics(records: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def records_series(records: list[dict[str, Any]]) -> dict[str, list]:
+    """数据集逐圈序列（容量/能效），供前端“数据可视化”画真实曲线。"""
+    series: dict[str, list] = {"cycle": [], "capacity_ah": [], "efficiency_pct": []}
+    for record in records:
+        cycle = numeric_or_none(record.get("cycle"))
+        if cycle is None:
+            continue
+        series["cycle"].append(cycle)
+        series["capacity_ah"].append(numeric_or_none(record.get("capacity_ah")))
+        series["efficiency_pct"].append(numeric_or_none(record.get("efficiency_pct")))
+    return series
+
+
+def extrapolate_retention(records: list[dict[str, Any]], target_soh_pct: float = 65.0) -> dict[str, Any]:
+    """实测容量→保持率的寿命外推：对尾段（后半数据，至少 5 点）线性拟合，外推到目标 SOH。
+
+    实测已跌破目标时直接返回首个越过点（method="measured-crossing"，不拟合）。
+    数据点不足或尾段无下降趋势时抛 ValueError。
+    """
+    import numpy as np
+
+    points = sorted(
+        (float(record["cycle"]), float(record["capacity_ah"]))
+        for record in records
+        if numeric_or_none(record.get("cycle")) is not None
+        and numeric_or_none(record.get("capacity_ah")) is not None
+    )
+    if len(points) < 5:
+        raise ValueError("容量数据点不足 5 个，无法外推。")
+    cycles = np.array([cycle for cycle, _cap in points])
+    capacities = np.array([cap for _cycle, cap in points])
+    initial = capacities[0]
+    if not np.isfinite(initial) or initial <= 0:
+        raise ValueError("首圈容量无效，无法归一化保持率。")
+    retention = capacities / initial * 100.0
+    target = float(target_soh_pct)
+    measured = {"cycle": cycles.tolist(), "retention_pct": retention.tolist()}
+
+    below = np.where(retention <= target)[0]
+    if below.size:
+        return {
+            "ok": True,
+            "target_soh_pct": target,
+            "method": "measured-crossing",
+            "fit_window_cycles": None,
+            "slope_pct_per_cycle": None,
+            "r_squared": None,
+            "predicted_cycle": int(round(float(cycles[below[0]]))),
+            "measured": measured,
+            "extrapolated": {"cycle": [], "retention_pct": []},
+            "note": "实测数据已达到目标 SOH，直接取实测越过点。",
+        }
+
+    window = max(5, len(points) // 2)
+    fit_cycles = cycles[-window:]
+    fit_retention = retention[-window:]
+    slope, intercept = np.polyfit(fit_cycles, fit_retention, 1)
+    if slope >= 0:
+        raise ValueError("尾段容量未呈下降趋势，线性外推不适用。")
+    fitted = slope * fit_cycles + intercept
+    ss_res = float(np.sum((fit_retention - fitted) ** 2))
+    ss_tot = float(np.sum((fit_retention - np.mean(fit_retention)) ** 2))
+    r_squared = (1.0 - ss_res / ss_tot) if ss_tot > 0 else None
+
+    last_cycle = float(cycles[-1])
+    target_cycle = (target - intercept) / slope
+    extrap_cycles = np.linspace(last_cycle, target_cycle, 60)
+    return {
+        "ok": True,
+        "target_soh_pct": target,
+        "method": "linear-tail-fit",
+        "fit_window_cycles": [float(fit_cycles[0]), float(fit_cycles[-1])],
+        "slope_pct_per_cycle": float(slope),
+        "r_squared": r_squared,
+        "predicted_cycle": int(round(target_cycle)),
+        "measured": measured,
+        "extrapolated": {
+            "cycle": extrap_cycles.tolist(),
+            "retention_pct": (slope * extrap_cycles + intercept).tolist(),
+        },
+    }
+
+
 class StudioDataManager:
     def __init__(
         self,
@@ -301,6 +384,7 @@ class StudioDataManager:
                 "rows": preview_rows(records),
             },
             "metrics": build_metrics(records),
+            "series": records_series(records),
         }
 
     def write_records_csv(self, path: Path, records: list[dict[str, Any]]) -> None:
@@ -328,6 +412,9 @@ class StudioDataManager:
                 records.append({key: numeric_or_none(value) for key, value in row.items()})
         return records
 
+    def extrapolate(self, dataset_id: str, target_soh_pct: float = 65.0) -> dict[str, Any]:
+        return extrapolate_retention(self.load_records(dataset_id), target_soh_pct)
+
     def dataset_detail(self, dataset_id: str) -> dict[str, Any]:
         metadata = read_json(self.dataset_root / dataset_id / "metadata.json", None)
         if metadata is None and self.db:
@@ -343,6 +430,7 @@ class StudioDataManager:
                 "rows": preview_rows(records),
             },
             "metrics": build_metrics(records),
+            "series": records_series(records),
         }
 
 

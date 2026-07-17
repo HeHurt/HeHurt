@@ -23,7 +23,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from .exp_loader import load_cycling_folder
-from .analysis import get_discharge_capacity, compute_cycle_energies, calculate_cycle_swelling
+from .analysis import (
+    get_discharge_capacity,
+    compute_cycle_energies,
+    calculate_cycle_swelling,
+    retention_from_capacity,
+)
 from .plotting import _apply_default_style
 
 logger = logging.getLogger(__name__)
@@ -150,6 +155,42 @@ def _auto_match(sim_labels: list[str], exp_data_list: list[dict],
 
 # ── 单指标对标函数 ────────────────────────────────────────────────────────
 
+def _plot_sim_exp(panels, pairs, sol_list, sim_labels, exp_data_list,
+                  sim_series, exp_series, sim_bias, exp_bias):
+    """通用配对绘图：sim 虚线 + exp 实线，按 pairs 遍历，bias 直接叠加到 y。
+
+    panels     : list[(ax, xlabel, ylabel, title)]，每个面板一条 y 轴。
+    sim_series : f(sol) -> list[(x, y) | None]，长度与 panels 一致。
+    exp_series : f(exp_dict) -> list[(x, y) | None]，长度与 panels 一致。
+    """
+    color_pool = plt.cm.tab10(np.linspace(0, 1, 10))
+    sim_tag = f" (bias={sim_bias:+g})" if sim_bias != 0 else ""
+    exp_tag = f" (bias={exp_bias:+g})" if exp_bias != 0 else ""
+
+    for idx, (si, ei) in enumerate(pairs):
+        color = color_pool[idx % 10]
+        sims = sim_series(sol_list[si])
+        exps = exp_series(exp_data_list[ei])
+        sim_lbl = sim_labels[si]
+        exp_lbl = exp_data_list[ei]["label"]
+        for p_idx, (ax, _xl, _yl, _title) in enumerate(panels):
+            if sims[p_idx] is not None:
+                sx, sy = sims[p_idx]
+                ax.plot(sx, np.asarray(sy, dtype=float) + sim_bias, ls="--", lw=2.5,
+                        color=color, label=f"{sim_lbl} (Sim){sim_tag}")
+            if exps[p_idx] is not None:
+                ex, ey = exps[p_idx]
+                ax.plot(ex, np.asarray(ey, dtype=float) + exp_bias, ls="-", lw=2,
+                        color=color, alpha=0.7, label=f"{exp_lbl} (Exp){exp_tag}")
+
+    for ax, xlabel, ylabel, title in panels:
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_title(title)
+        ax.grid(True, ls="--", alpha=0.4)
+        ax.legend(fontsize=9)
+
+
 def compare_retention(
     sol_list,
     sim_labels: list[str],
@@ -175,38 +216,26 @@ def compare_retention(
     _apply_default_style()
     if ax is None:
         fig, ax = plt.subplots(1, 1, figsize=figsize)
-
     pairs = _auto_match(sim_labels, exp_data_list, filter_conditions)
-    color_pool = plt.cm.tab10(np.linspace(0, 1, 10))
 
-    for idx, (si, ei) in enumerate(pairs):
-        color = color_pool[idx % 10]
-        sol = sol_list[si]
-        exp = exp_data_list[ei]
-        lbl = sim_labels[si]
-
-        # 仿真
+    def sim_series(sol):
         caps = get_discharge_capacity(sol).get("discharge_capacity", np.array([]))
         valid_idx = np.flatnonzero(~np.isnan(caps))
         caps = caps[valid_idx]
         if caps.size > 0 and caps[0] != 0:
-            sim_cycle = valid_idx * acceleration_factor
-            sim_ret = caps / caps[0] + sim_bias
-            bias_tag = f" (bias={sim_bias:+g})" if sim_bias != 0 else ""
-            ax.plot(sim_cycle, sim_ret, ls="--", lw=2.5, color=color, label=f"{lbl} (Sim){bias_tag}")
+            return [(valid_idx * acceleration_factor, retention_from_capacity(caps))]
+        return [None]
 
-        # 实验
-        exp_cycle = exp.get("cycle", np.array([]))
-        exp_ret = exp.get("retention", np.array([]))
-        if exp_cycle.size > 0 and exp_ret.size > 0:
-            exp_bias_tag = f" (bias={exp_bias:+g})" if exp_bias != 0 else ""
-            ax.plot(exp_cycle, exp_ret + exp_bias, ls="-", lw=2, color=color, alpha=0.7, label=f"{exp['label']} (Exp){exp_bias_tag}")
+    def exp_series(exp):
+        cyc = exp.get("cycle", np.array([]))
+        ret = exp.get("retention", np.array([]))
+        return [(cyc, ret)] if cyc.size > 0 and ret.size > 0 else [None]
 
-    ax.set_xlabel("Cycle Number")
-    ax.set_ylabel("Capacity Retention")
-    ax.set_title("容量保持率对标")
-    ax.grid(True, ls="--", alpha=0.4)
-    ax.legend(fontsize=9)
+    _plot_sim_exp(
+        [(ax, "Cycle Number", "Capacity Retention", "容量保持率对标")],
+        pairs, sol_list, sim_labels, exp_data_list,
+        sim_series, exp_series, sim_bias, exp_bias,
+    )
     return ax
 
 
@@ -235,37 +264,26 @@ def compare_efficiency(
     _apply_default_style()
     if ax is None:
         fig, ax = plt.subplots(1, 1, figsize=figsize)
-
     pairs = _auto_match(sim_labels, exp_data_list, filter_conditions)
-    color_pool = plt.cm.tab10(np.linspace(0, 1, 10))
 
-    for idx, (si, ei) in enumerate(pairs):
-        color = color_pool[idx % 10]
-        sol = sol_list[si]
-        exp = exp_data_list[ei]
-        lbl = sim_labels[si]
-
-        # 仿真
+    def sim_series(sol):
         res = compute_cycle_energies(sol)
         eff = res.get("efficiency", np.array([]))
         if len(eff) > 0:
-            sim_cycle = res.get("cycle_index", np.arange(len(eff))) * acceleration_factor
-            eff_biased = np.array(eff) + sim_bias
-            bias_tag = f" (bias={sim_bias:+g})" if sim_bias != 0 else ""
-            ax.plot(sim_cycle, eff_biased, ls="--", lw=2.5, color=color, label=f"{lbl} (Sim){bias_tag}")
+            cyc = res.get("cycle_index", np.arange(len(eff))) * acceleration_factor
+            return [(cyc, np.asarray(eff, dtype=float))]
+        return [None]
 
-        # 实验
-        exp_cycle = exp.get("cycle", np.array([]))
-        exp_eff = exp.get("efficiency", np.array([]))
-        if exp_cycle.size > 0 and exp_eff.size > 0:
-            exp_bias_tag = f" (bias={exp_bias:+g})" if exp_bias != 0 else ""
-            ax.plot(exp_cycle, np.array(exp_eff) + exp_bias, ls="-", lw=2, color=color, alpha=0.7, label=f"{exp['label']} (Exp){exp_bias_tag}")
+    def exp_series(exp):
+        cyc = exp.get("cycle", np.array([]))
+        eff = exp.get("efficiency", np.array([]))
+        return [(cyc, np.asarray(eff, dtype=float))] if cyc.size > 0 and eff.size > 0 else [None]
 
-    ax.set_xlabel("Cycle Number")
-    ax.set_ylabel("Energy Efficiency")
-    ax.set_title("能量效率对标")
-    ax.grid(True, ls="--", alpha=0.4)
-    ax.legend(fontsize=9)
+    _plot_sim_exp(
+        [(ax, "Cycle Number", "Energy Efficiency", "能量效率对标")],
+        pairs, sol_list, sim_labels, exp_data_list,
+        sim_series, exp_series, sim_bias, exp_bias,
+    )
     return ax
 
 
@@ -307,17 +325,9 @@ def compare_swelling(
     _apply_default_style()
     if ax_max is None or ax_min is None:
         fig, (ax_max, ax_min) = plt.subplots(1, 2, figsize=figsize)
-
     pairs = _auto_match(sim_labels, exp_data_list, filter_conditions)
-    color_pool = plt.cm.tab10(np.linspace(0, 1, 10))
 
-    for idx, (si, ei) in enumerate(pairs):
-        color = color_pool[idx % 10]
-        sol = sol_list[si]
-        exp = exp_data_list[ei]
-        lbl = sim_labels[si]
-
-        # 仿真
+    def sim_series(sol):
         max_f, min_f = calculate_cycle_swelling(
             sol, params,
             omega_n=omega_n, omega_p=omega_p,
@@ -326,32 +336,24 @@ def compare_swelling(
             **swelling_kwargs,
         )
         if len(max_f) > 0:
-            sim_cycle = np.arange(1, len(max_f) + 1) * acceleration_factor
-            bias_tag = f" (bias={sim_bias:+g})" if sim_bias != 0 else ""
-            ax_max.plot(sim_cycle, max_f + sim_bias, ls="--", lw=2.5, color=color, label=f"{lbl} (Sim){bias_tag}")
-            ax_min.plot(sim_cycle, min_f + sim_bias, ls="--", lw=2.5, color=color, label=f"{lbl} (Sim){bias_tag}")
+            cyc = np.arange(1, len(max_f) + 1) * acceleration_factor
+            return [(cyc, max_f), (cyc, min_f)]
+        return [None, None]
 
-        # 实验
-        exp_cycle = exp.get("cycle", np.array([]))
+    def exp_series(exp):
+        cyc = exp.get("cycle", np.array([]))
         exp_max = exp.get("max_force", np.array([]))
         exp_min = exp.get("min_force", np.array([]))
-        exp_bias_tag = f" (bias={exp_bias:+g})" if exp_bias != 0 else ""
-        if exp_cycle.size > 0 and exp_max.size > 0:
-            ax_max.plot(exp_cycle, exp_max + exp_bias, ls="-", lw=2, color=color, alpha=0.7, label=f"{exp['label']} (Exp){exp_bias_tag}")
-        if exp_cycle.size > 0 and exp_min.size > 0:
-            ax_min.plot(exp_cycle, exp_min + exp_bias, ls="-", lw=2, color=color, alpha=0.7, label=f"{exp['label']} (Exp){exp_bias_tag}")
+        s_max = (cyc, exp_max) if cyc.size > 0 and exp_max.size > 0 else None
+        s_min = (cyc, exp_min) if cyc.size > 0 and exp_min.size > 0 else None
+        return [s_max, s_min]
 
-    ax_max.set_xlabel("Cycle Number")
-    ax_max.set_ylabel("Force (N)")
-    ax_max.set_title("最大膨胀力对标")
-    ax_max.grid(True, ls="--", alpha=0.4)
-    ax_max.legend(fontsize=9)
-
-    ax_min.set_xlabel("Cycle Number")
-    ax_min.set_ylabel("Force (N)")
-    ax_min.set_title("最小膨胀力对标")
-    ax_min.grid(True, ls="--", alpha=0.4)
-    ax_min.legend(fontsize=9)
+    _plot_sim_exp(
+        [(ax_max, "Cycle Number", "Force (N)", "最大膨胀力对标"),
+         (ax_min, "Cycle Number", "Force (N)", "最小膨胀力对标")],
+        pairs, sol_list, sim_labels, exp_data_list,
+        sim_series, exp_series, sim_bias, exp_bias,
+    )
     return ax_max, ax_min
 
 

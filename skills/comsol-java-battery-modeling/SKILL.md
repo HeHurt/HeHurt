@@ -1,11 +1,11 @@
 ---
 name: comsol-java-battery-modeling
-description: Use this skill whenever working with COMSOL Multiphysics 6.4 battery models exported as .java files. Two modes supported - Snippet Mode for read+modify (AI generates Java code snippets), and Autonomous Mode for full closed-loop simulation (AI writes complete .java, compiles via comsolcompile.exe, runs via comsolbatch.exe, auto-debugs until acceptance criteria pass, then generates .mph file plus a Word simulation report). Trigger on any mention of COMSOL Java files (.java), Li-ion battery models in COMSOL, liion physics interface, P2D models, electrochemical-thermal coupling (liion + ht), 1D-3D multiscale battery models, CC or CP operating conditions, COMSOL parameter sweeps, MATLAB LiveLink, automated COMSOL simulation, COMSOL batch execution, comsolbatch, comsolcompile, auto-debugging COMSOL models, or generating simulation reports. Use especially when the original .mph file is encrypted and the user is working with .java exports.
+description: Use this skill whenever working with COMSOL Multiphysics 6.4 battery models exported as .java files. Two delivery modes supported - Snippet Mode for read+modify (AI generates Java code snippets), and Autonomous Mode for full closed-loop simulation (AI writes complete .java, compiles via comsolcompile.exe, runs via comsolbatch.exe, auto-debugs until acceptance criteria pass, then generates .mph file plus a Word simulation report). Also supports Hybrid tool routing with sim-cli/sim-plugin-comsol and configured COMSOL MCP tools for .mph inspection, shared Desktop workflows, structured model queries, boundary/dataset/result extraction, and ad-hoc postprocessing. Trigger on any mention of COMSOL Java files (.java), Li-ion battery models in COMSOL, liion physics interface, P2D models, electrochemical-thermal coupling (liion + ht), 1D-3D multiscale battery models, CC or CP operating conditions, COMSOL parameter sweeps, MATLAB LiveLink, automated COMSOL simulation, COMSOL batch execution, comsolbatch, comsolcompile, auto-debugging COMSOL models, sim-cli, sim-plugin-comsol, COMSOL_Multiphysics_MCP, or generating simulation reports. Use especially when the original .mph file is encrypted and the user is working with .java exports.
 ---
 
-# COMSOL Java电池建模 v3.0 — 双模式 (Snippet + Autonomous)
+# COMSOL Java电池建模 v3.1 — Java主链 + Hybrid工具层
 
-本skill用于读取、理解、修改 COMSOL Multiphysics 6.4 导出的电池模型 `.java` 文件,**并可选地自主编译/求解/debug/生成报告**。
+本skill用于读取、理解、修改 COMSOL Multiphysics 6.4 导出的电池模型 `.java` 文件,**并可选地自主编译/求解/debug/生成报告**。Java/comsolcompile/comsolbatch 仍是可复现交付主链; sim-cli/sim-plugin-comsol 与 COMSOL MCP 作为 Hybrid 工具层,只在需要检查环境、查看 `.mph` 内部状态、共享 Desktop、结构化读取结果或做 ad-hoc 后处理时接入。
 
 | 配置项 | 值 |
 |---|---|
@@ -17,7 +17,7 @@ description: Use this skill whenever working with COMSOL Multiphysics 6.4 batter
 
 ---
 
-# 两种工作模式
+# 两种交付模式 + Hybrid工具层
 
 本 skill 有两种工作模式,**任务开始时必须明确用户处于哪种模式**:
 
@@ -29,6 +29,16 @@ description: Use this skill whenever working with COMSOL Multiphysics 6.4 batter
 | **适用阶段** | 探索、试错、教学 | 项目交付、批量任务、自动化报告 |
 | **用户参与度** | 高 (粘贴、编译、验证) | 低 (定义目标 + 验收,等结果) |
 | **典型耗时** | 几分钟出片段 | 几十分钟到几小时(含debug循环) |
+
+Hybrid 工具层不是第三种交付模式,而是给以上两种模式补充观察和操作能力:
+
+| 工具层 | 定位 | 何时启用 |
+|---|---|---|
+| Java/comsolcompile/comsolbatch | 可复现执行底座 | 默认主链路:从零建模、改 `.java`、批量重跑、交付 `.mph/.java/report` |
+| sim-cli + sim-plugin-comsol | COMSOL 运行时入口 | 检查环境/license、`.mph` inspect、本地文档搜索、shared Desktop、人机协作盯模型 |
+| COMSOL MCP tools | 结构化查询/小步操作接口 | 列参数/边界/数据集、读取结果表达式、导出图/数据、临时后处理、快速诊断 |
+
+核心原则: **不要把三套工具机械串联**。先判断当前缺的是"生成能力"、"运行时能力"还是"观察能力",再选择最小工具集合。
 
 ## 何时进入 Autonomous Mode
 
@@ -56,7 +66,7 @@ $env:ELECTRON_RUN_AS_NODE='1'
 执行规则:
 - 先用 `Code.exe` 读取前 80 个字符,确认不是 `%TSD-Header-###%`。
 - 如果 `Code.exe` 读取后普通 Python/PowerShell 也能读到明文,后续可按正常工作流分析和 patch。
-- 如果 `Code.exe` 写出的工作副本仍被 DLP 重新加密,不要修改密文字节;改为在已明文可读的原文件上操作,或要求 IT 放行当前 Codex/Python/COMSOL 进程链的写入。
+- 如果 `Code.exe` 写出的工作副本仍被 DLP 重新加密,不要修改密文字节;改为在已明文可读的原文件上操作。
 - 自动迭代时仍以 `comsolcompile.exe` 为默认编译入口;不要用 `java.exe` 直接编译 `.java`。
 
 ---
@@ -65,13 +75,113 @@ $env:ELECTRON_RUN_AS_NODE='1'
 
 当用户提到 `COMSOL_Multiphysics_MCP`、`sim-cli`、`sim-plugin-comsol`、`shared-desktop`、"自动改模型代码自动仿真迭代"、"检查 mph 模型树"时,先做路径选择,不要直接开新工作流:
 
-| 目标 | 首选路径 | 不覆盖内容 |
-|---|---|---|
-| 修改/理解 COMSOL 导出的 `.java` | 本 skill 的 Snippet Mode | 不直接操作 `.mph` 内部树 |
-| 编译 `.java`、求解、导出 `.mph` 和报告 | 本 skill 的 Autonomous Mode + `comsolcompile.exe`/`comsolbatch.exe` | 不用 `java.exe` 代替 COMSOL 编译入口 |
-| 远程/桌面方式打开 COMSOL 或检查 `.mph` 模型树 | `sim-cli`/`sim-plugin-comsol` 或 COMSOL MCP,按用户已安装工具选择 | 不把 GUI 点击流程写进 Java snippet |
-| 通过 MCP 创建/查询模型、读取边界/数据集 | 已配置的 `mcp_servers.comsol` 工具 | 不重复实现 MCP 服务器 |
-| DLP/权限判断 | 先跑读取探针,再给 IT 证据包 | 不反复猜编码、不修改密文字节 |
+## 路由决策表
+
+| 目标 | 首选路径 | 可选增强 | 不覆盖内容 |
+|---|---|---|---|
+| 从零建模并交付 `.java/.mph/report` | Autonomous Mode + `comsolcompile.exe`/`comsolbatch.exe` | sim-cli 做环境检查; MCP 做结果抽查 | 不把完整复杂电池建模强塞进 MCP 小工具 |
+| 修改/理解 COMSOL 导出的 `.java` | Snippet Mode 或 Autonomous Mode | MCP/文档检索核对 API 名称 | 不直接操作 `.mph` 内部树 |
+| 已有 `.mph`,不知道模型里有什么 | **DLP 加密**(头含 `%TSD-Header-###%`): sim-cli `exec` + `ModelUtil.load`(后端 `comsolmphserver` 能读密文); **未加密**: COMSOL MCP `model_inspect` | 必要时导出 compact Java 再读 | MCP standalone 读加密 `.mph` 必失败(报"文件已损坏或无效");详见下文「读 DLP 加密 .mph 的已验证路径」 |
+| 需要人盯着 COMSOL Desktop 看模型 | sim-plugin-comsol shared Desktop / live session | Java API 分步执行小脚本 | 不把 GUI 点击流程写进 Java snippet |
+| 求解后临时读取指标/图/数据 | COMSOL MCP `datasets_list`/`results_evaluate`/`results_export_*` | Java 导出固定验收 CSV | 不为了一个临时指标重编译整个模型 |
+| 稳定批量重跑或参数扫描 | `comsolbatch.exe` 或 sim-cli 调度 batch | MCP 做状态/结果 spot check | 不用 Desktop GUI 承担批量生产 |
+| DLP/权限判断 | 先跑读取探针,再给 IT 证据包 | sim-cli doctor 辅助记录环境 | 不反复猜编码、不修改密文字节 |
+
+## Hybrid Mode 启用规则
+
+只有出现以下任一情况,才启用 sim-cli/sim-plugin-comsol 或 MCP:
+
+1. **运行时不确定**: 不知道 COMSOL 版本、license、`comsolcompile.exe`/`comsolbatch.exe`、Desktop attach 是否可用。
+2. **模型不可见**: 输入是 `.mph`,需要检查 physics、parameters、mesh、study、result、dataset、boundary id。
+3. **迭代需要观察**: 编译能过但求解/后处理异常,需要结构化读取模型状态或结果变量。
+4. **人机协作**: 工程师希望打开可见 COMSOL Desktop,边看边让 Agent 分步建模。
+5. **ad-hoc 后处理**: 需要临时计算 `max(T)`、boundary flux、参数扫描结果或额外导出图片/CSV。
+
+未触发以上条件时,不要引入额外工具层;继续走 Java/batch 主链路。
+
+## sim-cli + sim-plugin-comsol 使用边界
+
+sim-cli 的角色是本地 CAE runtime,不是 COMSOL 建模知识库。使用前先按当前项目 README/官方仓库说明确认安装命令;若项目尚未安装,优先使用 project-local uv 环境:
+
+```powershell
+uv add sim-cli-core sim-plugin-comsol
+uv run sim plugin sync-skills --target .agents/skills --copy
+uv run sim plugin list
+uv run sim check comsol
+uv run sim plugin doctor comsol --deep
+```
+
+执行规则:
+- 默认同机运行,**不要加 `--host`**,除非用户明确指定远程 solver 主机。
+- 不要把 `sim serve` 暴露到公共网络;远程模式必须是受控内网/实验机。
+- sim-cli 适合做 check/connect/inspect/exec/verify/artifact/checkpoint discipline;复杂电池模型的可复现源码仍写入 `.java`。
+- 如果 shared Desktop 中用户手动改了模型,Agent 必须重新 inspect live state 后再继续,不能沿用旧假设。
+
+需要可见 Desktop 协作时,按 plugin README 的 live session 路径启动并确认绑定:
+
+```powershell
+uv run sim connect --solver comsol --ui-mode gui --driver-option visual_mode=shared-desktop
+uv run sim inspect session.health
+uv run sim exec --file step.py
+```
+
+继续操作前,`session.health` 中应显示 live model binding 可用;否则不要假定 GUI 中看到的模型就是 Agent 正在修改的模型。
+
+## 读 DLP 加密 .mph 的已验证路径 (Hithium 本机, 2026-06 实测)
+
+本机 `.mph` 多被 DLP 加密(文件头 `%TSD-Header-###%`)。读取结论:
+- **COMSOL MCP standalone 读不了**: `model_load` 报 "COMSOL Multiphysics 模型文件已损坏或无效"(后端进程读到密文)。
+- **sim-cli + sim-plugin-comsol 能读**: 其后端 `comsolmphserver.exe` 可正常 load 加密 `.mph`(已实测读出 1GB 加密产热模型)。手开的 Desktop 是 `ComsolUI.exe`(DLP 白名单),二者是不同 exe——所以不能简单断定"COMSOL 都读不了加密文件"。
+
+已验证只读工作流(uv 环境, `sim` 非全局命令,在项目根 `D:\Users\hez\Desktop\hithium` 下):
+
+```powershell
+uv run sim --no-interactive connect --solver comsol --ui-mode no_gui   # 记下 session_id
+$env:SIM_SESSION='<id>'
+uv run sim --no-interactive exec "model = ModelUtil.load('m1', r'<路径.mph>')"   # 1GB 约 20s
+# ... 多次 exec 读参数/结果 ...
+uv run sim --no-interactive disconnect
+```
+
+exec namespace 暴露 `model` 和 `ModelUtil`(**不是** `session`);用 `print(...)` 回显 stdout。常用 COMSOL Java API:
+- 参数数值: `model.param().evaluate('name')`;原始表达式: `model.param().get('name')`
+- 结果时序: `ne=model.result().numerical().create('g','EvalGlobal'); ne.set('data','dset1'); ne.set('expr',['Q1/3600','vol']); ne.getReal()`(返回 `[expr][time]`)
+- 全局方程(累积容量/能量)变量名: `model.physics('ge').feature(...).getString('name')`/`getString('equation')`(可能叫 Q1/Q2,不固定,逐文件确认)
+- OCP 数据表: `model.material('matX').propertyGroup('ElectrodePotential').func('intN').getStringMatrix('table')`
+- 内置 SOC 节点: `model.physics('liion').feature('socicd1')` 的 `Ecell_0SOC`/`Ecell_100SOC`(注意默认占位值 3V/4V 常与真实窗口不符)
+- 物理树遍历: 递归 `feature().tags()`;study 辅助扫描: `model.study('std1').feature('param').getStringArray('pname')`/`getStringArray('plistarr')`
+
+注意:
+- 多个 1GB 模型别同时驻留;load 新模型前先 `ModelUtil.remove('<tag>')` 释放内存。
+- 复杂 python(含 lambda 的 `x:`、引号、`*`)走 `exec --file <script.py>`,**不要内联**——PowerShell 会把 `x:` 误判成盘符报 "Remove-Item on system path 'x:' is blocked"。脚本里可 `import numpy as np`。
+- 这是只读 inspect / 数据反解用途;可复现交付仍走 Java/batch 主链。
+
+## COMSOL MCP 使用边界
+
+COMSOL MCP 的角色是结构化查询和小步操作接口,不是完整替代 Java 导出链。优先使用已经配置好的 `mcp_servers.comsol` 工具;不要在本 skill 内重复实现 MCP server。
+
+适合调用 MCP 的任务:
+- `model_inspect` / `param_list` / `physics_list` / `geometry_list_features`
+- `geometry_get_boundaries` 辅助识别边界编号
+- `datasets_list` / `results_evaluate` / `results_global_evaluate`
+- `study_solve_async` + `study_get_progress` 用于可取消的长求解
+- `results_export_data` / `results_export_image` 生成报告素材
+
+不适合优先用 MCP 的任务:
+- 大型 `liion + ht` 电池模型从零完整搭建
+- 需要完整版本追溯和 diff 的复杂模型修改
+- 需要交付可复现实验链的批量参数扫描
+- MCP 未连接、工具面缺失或错误恢复不稳定时的生产任务
+
+## Hybrid smoke test 顺序
+
+在真正接入复杂电池模型前,先做最小闭环:
+
+1. `uv run sim check comsol` 确认本机 COMSOL 可发现。
+2. `uv run sim plugin doctor comsol --deep` 确认 plugin wiring 与本地 solver detection。
+3. 调 `mcp_servers.comsol` 状态检查;若未连接,先启动/连接 COMSOL session。
+4. 用一个最小热模型或现有小 `.mph` 做 inspect + solve + export,不要一开始跑 P2D/3D 电热耦合大模型。
+5. 记录 artifact: Java、mph、log、metrics、plots、debug_history。
 
 ## DLP / IT 证据包最小探针
 
@@ -180,6 +290,14 @@ AI **必须先与用户确认** 4 项,缺一不可:
 4. **资源边界**: max debug iterations (默认 8), max wall-clock (默认 2 小时), 是否允许调整物理参数 (default: yes,但记录在报告)
 
 未对齐 → 不进入 STEP B,继续问。
+
+如果任务需要 Hybrid 工具层,STEP A 还要补充确认:
+- sim-cli/sim-plugin-comsol 是否已安装,以及是否只在本机运行。
+- COMSOL MCP 是否已连接到可用 COMSOL session。
+- 是否需要 shared Desktop 让工程师实时查看/介入。
+- 输入是 `.java`、`.mph`、还是二者都有;`.mph inspect` 是否是 hard requirement。
+
+Hybrid 缺失不自动阻塞 Java/batch 主链。只有当当前任务依赖 `.mph inspect`、shared Desktop、MCP 读取结果或 live model state 时,才停下让用户先配置工具。
 
 ### STEP B — 生成完整 .java
 
@@ -311,6 +429,12 @@ while iteration <= max_iter:
 
 或者求解时直接用 `model.result().table().create(...)` + `export().run()` 导出 CSV。
 
+Hybrid 可选路径:
+- 固定验收指标优先写进 Java 导出逻辑或 `extractMetrics` 方法,保证可复现。
+- 临时排障/探索性指标可用 MCP `results_evaluate` / `results_global_evaluate` 读取。
+- 报告素材可用 MCP `results_export_data` / `results_export_image`,但最终报告必须记录这些导出节点和表达式。
+- 如果 MCP dataset/variable 不存在,不要直接改验收指标;先回到 `.java`/`.mph` 检查结果节点是否生成。
+
 逐项对照 `acceptance_criteria.yaml`:
 - 数值指标: 比较计算值与阈值
 - 实验对标: 读 reference CSV → 计算 RMSE/MAE/相关系数 → 与阈值比较
@@ -374,9 +498,12 @@ working-dir/
 ❌ **修改超出"调参范围"的内容** — 不能为了通过验收偷偷改物理场结构
 ❌ **License 错误时反复重试** — 立即停,告诉用户检查 license
 ❌ **覆盖用户提供的参考 .java** — 永远生成新文件
+❌ **为了用 MCP 而跳过 Java artifact** — Autonomous 交付必须保留可复现 `.java/.mph/log/metrics`
+❌ **把 sim-cli 远程入口暴露到公共网络** — 只允许受控本机/内网试验
 
 ✅ **允许**: 自主调整数值参数 (Ds, k, h_amb, 网格密度, 时间步), 自主调整求解器配置
 ✅ **允许**: 在 debug 失败时主动检索官方文档 (见 `references/comsol_official_docs.md`)
+✅ **允许**: 用 sim-plugin-comsol/MCP 做 inspect、shared Desktop、ad-hoc 结果读取和报告素材导出
 
 ---
 
@@ -426,7 +553,7 @@ working-dir/
 
 ❌ **永远不用 `ElectromagneticHeating`** 做电池电热耦合 → 用 `ElectrochemicalHeating`
 ❌ **永远不用 `model.batch()` API** 做参数扫描 → 用 `model.study("std1").feature("param")`
-❌ **永远不直接读 .mph** (加密)
+❌ **不用文本工具 / MCP standalone 读 DLP 加密 .mph** → 文本必乱码、MCP 报"文件已损坏";但 **sim-cli `exec`+`ModelUtil.load` 可读**(见上文已验证路径)
 ❌ **不猜 COMSOL API 方法名** → 必须从当前 .java 或官方文档找
 
 ---
