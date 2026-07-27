@@ -41,8 +41,10 @@ from src.notebook_api import run_peak_current
 
 模板：
 
-- `examples/循环老化.ipynb`
-- `examples/MIC_1175Ah_0p25P_循环老化对标.ipynb`
+- `examples/workflows/循环老化.ipynb`
+
+MIC 0.25P 对标旧实例位于
+`work/MIC_1175Ah/202607_何争_0p25P循环老化对标历史实例V1/02_模型/`。
 
 入口：
 
@@ -81,37 +83,29 @@ from src.exp_loader import load_cycling_csv, load_cycling_folder
 
 模板：
 
-- `examples/调频.ipynb`
+- `examples/workflows/调频.ipynb`
 
 入口：
 
 ```python
-from src.simulation import (
-    prepare_frequency_scenarios,
-    run_frequency_scenarios,
-    summarize_frequency_results,
-)
+from src.workflows.frequency import FrequencyWorkflowSpec, run_frequency_workflow
 ```
 
 建议：
 
 - 先使用 notebook 中的 `smoke` 配置检查路径和参数。
-- 结果表优先从 `summarize_frequency_results` 获取。
+- 结果表和图表 artifact 优先从 `run_frequency_workflow` 的标准输出目录获取。
 
 ## 插入脉冲
 
 模板：
 
-- `examples/插入脉冲.ipynb`
+- `examples/workflows/插入脉冲.ipynb`
 
 入口：
 
 ```python
-from src.notebook_api import (
-    prepare_pulse_lifecycle_scenarios,
-    run_pulse_lifecycle_scenarios,
-    summarize_pulse_lifecycle_results,
-)
+from src.workflows.pulse import PulseWorkflowSpec, run_pulse_workflow
 ```
 
 建议：

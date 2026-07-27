@@ -55,19 +55,8 @@ def _apply_plot_style(style: str | list[str] | tuple[str, ...] | None) -> None:
 
     import matplotlib.pyplot as plt
 
-    style_arg: str | list[str] | tuple[str, ...]
-    if style == "science":
-        try:
-            import scienceplots  # noqa: F401
-        except ImportError:
-            style_arg = "default"
-        else:
-            style_arg = "science"
-    else:
-        style_arg = style
-
-    plt.style.use(style_arg)
-    plt.rcParams["font.family"] = ["Calibri", "Microsoft YaHei"]
+    plt.style.use("science")
+    plt.rcParams["font.family"] = "Calibri, Microsoft YaHei"
     plt.rcParams["axes.unicode_minus"] = False
 
 
@@ -90,8 +79,7 @@ def setup_notebook(
         Optional cell alias, for example ``"MIC"`` or ``"587"``. It is stored in
         the returned context for downstream notebook code.
     style:
-        Matplotlib style to apply. ``"science"`` falls back to ``"default"`` if
-        the optional ``scienceplots`` package is unavailable. Use ``None`` to
+        Matplotlib style to apply. Defaults to ``"science"``. Use ``None`` to
         skip style setup.
     project_root, search_root, include_workspace_root:
         Passed through to ``configure_notebook_environment``.

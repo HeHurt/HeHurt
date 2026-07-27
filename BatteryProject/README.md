@@ -53,8 +53,10 @@ get_hithium_params = load_params("MIC")
 
 Notebook 模板：
 
-- [examples/循环老化.ipynb](examples/循环老化.ipynb)
-- [examples/MIC_1175Ah_0p25P_循环老化对标.ipynb](examples/MIC_1175Ah_0p25P_循环老化对标.ipynb)
+- [examples/workflows/循环老化.ipynb](examples/workflows/循环老化.ipynb)
+
+MIC 0.25P 对标旧实例已固化到
+`work/MIC_1175Ah/202607_何争_0p25P循环老化对标历史实例V1/02_模型/`，不再作为 canonical 模板。
 
 核心入口：
 
@@ -100,34 +102,18 @@ ctx = setup_notebook(cell="MIC")
 
 Notebook 模板：
 
-- [examples/调频.ipynb](examples/调频.ipynb)
-- [examples/插入脉冲.ipynb](examples/插入脉冲.ipynb)
+- [examples/workflows/调频.ipynb](examples/workflows/调频.ipynb)
+- [examples/workflows/插入脉冲.ipynb](examples/workflows/插入脉冲.ipynb)
 
 核心入口：
 
 ```python
-from src.notebook import setup_notebook, load_params
-from src.notebook_api import (
-    prepare_pulse_lifecycle_scenarios,
-    run_pulse_lifecycle_scenarios,
-    summarize_pulse_lifecycle_results,
-)
-
-ctx = setup_notebook(cell="MIC")
-get_hithium_params = load_params("MIC")
+from src.workflows.frequency import FrequencyWorkflowSpec, run_frequency_workflow
+from src.workflows.pulse import PulseWorkflowSpec, run_pulse_workflow
 ```
 
-调频相关函数从 `src.simulation` 精确导入：
-
-- `prepare_frequency_scenarios(...)`
-- `run_frequency_scenarios(...)`
-- `summarize_frequency_results(...)`
-
-插入脉冲相关函数：
-
-- `prepare_pulse_lifecycle_scenarios(...)`
-- `run_pulse_lifecycle_scenarios(...)`
-- `summarize_pulse_lifecycle_results(...)`
+调频和插入脉冲是两个独立 workflow；新增工况优先扩展各自 notebook 顶部 `CONFIG`，
+不要再复制参数副本。
 
 ## 我要跑 Studio
 

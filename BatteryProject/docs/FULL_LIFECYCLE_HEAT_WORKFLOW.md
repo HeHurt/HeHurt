@@ -31,18 +31,18 @@ Q_reversible,SOH95 = mean(I * T * dU/dT_branch,SOH95)
 2. 参数或模型选项发生变化时，先分别执行 BOL thermal heat diagnosis Notebook，确认充、放电平均产热均在实测值的 +/-10% 内。
 3. 在生命周期 Notebook 中先设置 `RUN_MODE="smoke"`，执行全部 cell。
 4. 检查 smoke 输出：无 error、产热为有限正值、BOL 与标定一致、cycle/SOH 图无空值或突变。
-5. 设置 `RUN_MODE="study_unified"`，重启 kernel 后执行全部 cell，生成 13,000 圈正式结果。
+5. 在 587Ah Notebook 中选择 `CASE_KEY="0p25P"`（7,000 圈）或 `CASE_KEY="0p5P"`（13,000 圈），再设置 `RUN_MODE="study_unified"`，重启 kernel 后执行全部 cell。
 6. 验收容量保持率、BOL/EOL 产热、最大相邻跳变和 BOL/EOL 分项增量，再用于报告。
 
 Notebook：
 
 - `work/314Ah/notebooks/314Ah_0p5P_lifecycle_heat_rate.ipynb`
-- `work/587Ah/notebooks/587Ah_0p5P_lifecycle_heat_generation.ipynb`
+- `BatteryProject/examples/587Ah_lifecycle_heat_generation.ipynb`
 
 正式输出：
 
 - `BatteryProject/output/314Ah_0.5P全生命周期产热/正式结果/`
-- `work/587Ah/notebooks/output/587Ah_0p5P_lifecycle_heat/正式结果/`
+- `BatteryProject/output/runs/lifecycle_heat/<RUN_ID>/`
 
 默认每个电芯只生成 4 个文件：1 个中文 Excel 和 3 张中文图。Excel 包含
 `结果汇总`、`循环产热`、`产热分项`、`老化机制`、`仿真配置` 五个 sheet。
