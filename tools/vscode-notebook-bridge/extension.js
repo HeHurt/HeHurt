@@ -5,12 +5,14 @@ const fs = require("fs");
 const http = require("http");
 const path = require("path");
 const vscode = require("vscode");
+const manifest = require("./package.json");
 
 let output;
 let server;
 let token;
 let connection;
 let startedAt;
+const writtenConnectionFiles = new Set();
 
 function activate(context) {
   output = vscode.window.createOutputChannel("Hithium Notebook Bridge");
@@ -25,7 +27,12 @@ function activate(context) {
       await startBridge(context);
     }),
     vscode.commands.registerCommand("hithiumNotebookBridge.showStatus", showStatus),
-    vscode.commands.registerCommand("hithiumNotebookBridge.copyConnection", copyConnection)
+    vscode.commands.registerCommand("hithiumNotebookBridge.copyConnection", copyConnection),
+    vscode.workspace.onDidChangeWorkspaceFolders(() => {
+      writeConnectionFiles(context).catch((error) => {
+        log(`Failed to refresh connection files: ${formatError(error)}`);
+      });
+    })
   );
 
   if (getConfig().get("autoStart", true)) {
@@ -42,7 +49,7 @@ async function deactivate() {
 
 async function startBridge(context) {
   if (server) {
-    await writeConnectionFile(context);
+    await writeConnectionFiles(context);
     return connection;
   }
 
@@ -54,9 +61,10 @@ async function startBridge(context) {
     server = app;
     startedAt = new Date().toISOString();
     connection = makeConnection(actualPort, context);
-    await writeConnectionFile(context);
+    await writeConnectionFiles(context);
     log(`Started on ${connection.baseUrl}`);
-    log(`Connection file: ${connection.connectionFile || "(no workspace)"}`);
+    log(`Registry file: ${connection.registryFile}`);
+    log(`Workspace connection file: ${connection.connectionFile || "(no workspace)"}`);
     return connection;
   } catch (error) {
     if (configuredPort !== 0 && error && error.code === "EADDRINUSE") {
@@ -66,9 +74,10 @@ async function startBridge(context) {
       server = fallback;
       startedAt = new Date().toISOString();
       connection = makeConnection(actualPort, context);
-      await writeConnectionFile(context);
+      await writeConnectionFiles(context);
       log(`Started on ${connection.baseUrl}`);
-      log(`Connection file: ${connection.connectionFile || "(no workspace)"}`);
+      log(`Registry file: ${connection.registryFile}`);
+      log(`Workspace connection file: ${connection.connectionFile || "(no workspace)"}`);
       return connection;
     }
     throw error;
@@ -102,7 +111,9 @@ async function stopBridge() {
     return;
   }
 
+  const currentToken = token;
   await new Promise((resolve) => server.close(resolve));
+  await removeOwnedConnectionFiles(currentToken);
   server = undefined;
   connection = undefined;
   startedAt = undefined;
@@ -124,7 +135,7 @@ async function handleRequest(context, request, response) {
 
   if (request.method === "GET" && url.pathname === "/active-notebook") {
     const editor = getActiveNotebookEditorOrThrow();
-    ensureWorkspaceAllowed(editor.notebook.uri);
+    ensureNotebookAllowed(editor.notebook.uri, editor.notebook.uri);
     sendJson(response, 200, { ok: true, notebook: serializeNotebook(editor.notebook, editor) });
     return;
   }
@@ -201,7 +212,7 @@ function getTargetNotebookOrThrow(body) {
   const uriInput = body.uri || body.notebookUri || body.path;
 
   if (!uriInput) {
-    ensureWorkspaceAllowed(activeNotebook.uri);
+    ensureNotebookAllowed(activeNotebook.uri, activeNotebook.uri);
     return activeNotebook;
   }
 
@@ -219,7 +230,7 @@ function getTargetNotebookOrThrow(body) {
     throw httpError(404, "Requested notebook is not open in VS Code.");
   }
 
-  ensureWorkspaceAllowed(notebook.uri);
+  ensureNotebookAllowed(notebook.uri, activeNotebook.uri);
   return notebook;
 }
 
@@ -329,8 +340,14 @@ function getStatusPayload(context) {
       startedAt,
       baseUrl: connection ? connection.baseUrl : undefined,
       connectionFile: connection ? connection.connectionFile : getConnectionFilePath(context),
+      registryFile: connection ? connection.registryFile : getRegistryFilePath(context),
+      processId: process.pid,
+      version: manifest.version,
       workspaceOnly: getConfig().get("workspaceOnly", true),
       editActiveNotebookOnly: getConfig().get("editActiveNotebookOnly", true)
+    },
+    window: {
+      focused: vscode.window.state.focused
     },
     activeNotebook: editor ? {
       uri: editor.notebook.uri.toString(),
@@ -348,11 +365,13 @@ function makeConnection(port, context) {
   return {
     ok: true,
     name: "hithium-notebook-bridge",
-    version: "0.1.0",
+    version: manifest.version,
+    processId: process.pid,
     baseUrl,
     token,
     authHeader: `Bearer ${token}`,
     connectionFile: getConnectionFilePath(context),
+    registryFile: getRegistryFilePath(context),
     startedAt,
     endpoints: {
       status: `${baseUrl}/status`,
@@ -363,19 +382,20 @@ function makeConnection(port, context) {
   };
 }
 
-async function writeConnectionFile(context) {
+async function writeConnectionFiles(context) {
   if (!connection) {
     return;
   }
 
-  const filePath = getConnectionFilePath(context);
-  if (!filePath) {
-    log("No workspace folder is open; connection file was not written.");
-    return;
-  }
+  connection.connectionFile = getConnectionFilePath(context);
+  connection.registryFile = getRegistryFilePath(context);
+  const filePaths = [connection.registryFile, connection.connectionFile].filter(Boolean);
 
-  await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.promises.writeFile(filePath, `${JSON.stringify(connection, null, 2)}\n`, "utf8");
+  for (const filePath of filePaths) {
+    await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.promises.writeFile(filePath, `${JSON.stringify(connection, null, 2)}\n`, "utf8");
+    writtenConnectionFiles.add(filePath);
+  }
 }
 
 function getConnectionFilePath(context) {
@@ -390,11 +410,38 @@ function getConnectionFilePath(context) {
   return path.join(folders[0].uri.fsPath, relativePath);
 }
 
+function getRegistryFilePath(context) {
+  const root = process.env.LOCALAPPDATA || context.globalStorageUri.fsPath;
+  return path.join(root, "HithiumNotebookBridge", "connections", `${process.pid}.json`);
+}
+
+async function removeOwnedConnectionFiles(expectedToken) {
+  const filePaths = Array.from(writtenConnectionFiles);
+  writtenConnectionFiles.clear();
+
+  for (const filePath of filePaths) {
+    try {
+      const raw = await fs.promises.readFile(filePath, "utf8");
+      const current = JSON.parse(raw);
+      if (current.token === expectedToken) {
+        await fs.promises.unlink(filePath);
+      }
+    } catch (error) {
+      if (!error || error.code !== "ENOENT") {
+        log(`Failed to remove connection file ${filePath}: ${formatError(error)}`);
+      }
+    }
+  }
+}
+
 function parseUriInput(input) {
   if (typeof input !== "string" || !input.trim()) {
     return undefined;
   }
   const value = input.trim();
+  if (/^[a-z]:[\\/]/i.test(value) || value.startsWith("\\\\")) {
+    return vscode.Uri.file(value);
+  }
   if (/^[a-z][a-z0-9+.-]*:/i.test(value)) {
     return vscode.Uri.parse(value);
   }
@@ -416,6 +463,18 @@ function sameUri(left, right) {
 
 function normalizePath(value) {
   return path.normalize(value).toLowerCase();
+}
+
+function ensureNotebookAllowed(uri, activeNotebookUri) {
+  if (
+    getConfig().get("editActiveNotebookOnly", true)
+    && activeNotebookUri
+    && sameUri(uri, activeNotebookUri)
+  ) {
+    return;
+  }
+
+  ensureWorkspaceAllowed(uri);
 }
 
 function ensureWorkspaceAllowed(uri) {
@@ -494,7 +553,11 @@ function getConfig() {
 
 function log(message) {
   if (output) {
-    output.appendLine(`[${new Date().toISOString()}] ${message}`);
+    try {
+      output.appendLine(`[${new Date().toISOString()}] ${message}`);
+    } catch (_error) {
+      // The output channel may already be disposed during extension shutdown.
+    }
   }
 }
 

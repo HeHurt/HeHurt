@@ -2,7 +2,7 @@
   "name": "notebook-bridge",
   "displayName": "Hithium Notebook Bridge",
   "description": "Local VS Code notebook bridge for Codex and Claude Code sidebars.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "hithium",
   "engines": {
     "vscode": "^1.90.0"
@@ -65,7 +65,7 @@
         "hithiumNotebookBridge.workspaceOnly": {
           "type": "boolean",
           "default": true,
-          "description": "Allow notebook edits only inside the current VS Code workspace."
+          "description": "Allow notebook edits only inside the current VS Code workspace, except for the explicitly active notebook when editActiveNotebookOnly is enabled."
         },
         "hithiumNotebookBridge.editActiveNotebookOnly": {
           "type": "boolean",
