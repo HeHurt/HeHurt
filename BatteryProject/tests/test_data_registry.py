@@ -2,12 +2,16 @@
 
 import json
 
+import pytest
+
 from src.data_registry import (
+    curate_entry,
     filter_entries,
     infer_rate,
     infer_temperature,
     infer_test_type,
     load_registry,
+    query_datasets,
     scan,
 )
 
@@ -105,3 +109,38 @@ def test_filter_entries():
     assert len(filter_entries(entries, kind="processed")) == 1
     assert len(filter_entries(entries, fmt=".CSV")) == 1
     assert len(filter_entries(entries)) == 2
+
+
+def test_query_datasets_resolves_paths_and_requires_unique(tmp_path):
+    _make_tree(tmp_path)
+    scan(root=tmp_path)
+    hits = query_datasets(root=tmp_path, cell="MIC", temp=25, test="倍率充电")
+    assert len(hits) == 1
+    assert hits[0]["absolute_path"].endswith(".csv")
+    assert query_datasets(root=tmp_path, cell="missing") == []
+    with pytest.raises(ValueError, match="exactly one match"):
+        query_datasets(root=tmp_path, require_unique=True)
+
+
+def test_curate_entry_updates_metadata_and_survives_rescan(tmp_path):
+    _make_tree(tmp_path)
+    registry_path = tmp_path / "datasets.json"
+    registry = scan(root=tmp_path, registry_path=registry_path)
+    target = next(entry for entry in registry["entries"] if entry["cell"] == "MIC_1175Ah")
+    curated = curate_entry(
+        registry_path,
+        entry_id_value=target["id"],
+        temperature_C=26.5,
+        signals=["voltage", "current", "capacity"],
+        source="实验室A",
+        quality="checked",
+        status="curated",
+    )
+    assert curated["temperature_C"] == 26.5
+    assert curated["status"] == "curated"
+    rescanned = scan(root=tmp_path, registry_path=registry_path)
+    saved = next(entry for entry in rescanned["entries"] if entry["id"] == target["id"])
+    assert saved["temperature_C"] == 26.5
+    assert saved["signals"] == ["voltage", "current", "capacity"]
+    with pytest.raises(ValueError, match="exactly one"):
+        curate_entry(registry_path, entry_id_value=target["id"], entry_path=target["path"])

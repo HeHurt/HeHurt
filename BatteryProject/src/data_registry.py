@@ -168,18 +168,42 @@ def iter_data_files(root: Path) -> list[tuple[Path, str]]:
 
 
 def load_registry(registry_path: Path) -> dict[str, Any]:
-    if registry_path.is_file():
+    """加载 registry；文件不存在或 JSON 损坏时返回空 registry。
+
+    JSON 损坏时把原文件备份为 <name>.corrupt.<timestamp> 再返回空
+    registry，避免单个坏文件使所有 ls/summary/scan 命令连锁崩溃。
+    """
+    if not registry_path.is_file():
+        return {"version": 1, "updated": None, "entries": []}
+    try:
         with open(registry_path, encoding="utf-8") as f:
             return json.load(f)
-    return {"version": 1, "updated": None, "entries": []}
+    except json.JSONDecodeError as exc:
+        corrupt_backup = registry_path.with_suffix(
+            registry_path.suffix + ".corrupt." + datetime.now().strftime("%Y%m%d%H%M%S")
+        )
+        try:
+            registry_path.replace(corrupt_backup)
+        except OSError:
+            pass
+        print(
+            "WARNING: %s 损坏（%s），已备份至 %s 并重建空 registry。"
+            % (registry_path, exc, corrupt_backup),
+            file=sys.stderr,
+        )
+        return {"version": 1, "updated": None, "entries": []}
 
 
 def save_registry(registry: dict[str, Any], registry_path: Path) -> None:
+    """原子写入 registry：先写 .tmp 再 os.replace，避免中断产生截断 JSON。"""
     registry["updated"] = datetime.now().strftime("%Y-%m-%d %H:%M")
     registry["entries"] = sorted(registry["entries"], key=lambda e: e["path"])
-    with open(registry_path, "w", encoding="utf-8", newline="\n") as f:
+    tmp_path = registry_path.with_suffix(registry_path.suffix + ".tmp")
+    tmp_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(tmp_path, "w", encoding="utf-8", newline="\n") as f:
         json.dump(registry, f, ensure_ascii=False, indent=1)
         f.write("\n")
+    tmp_path.replace(registry_path)
 
 
 def scan(root: Path = HITHIUM_ROOT, registry_path: Path | None = None) -> dict[str, Any]:
@@ -267,6 +291,92 @@ def filter_entries(
     return out
 
 
+def query_datasets(
+    *,
+    cell: str | None = None,
+    temp: float | None = None,
+    rate: str | None = None,
+    test: str | None = None,
+    kind: str | None = None,
+    fmt: str | None = None,
+    status: str | None = None,
+    path_contains: str | None = None,
+    root: Path = HITHIUM_ROOT,
+    registry_path: Path | None = None,
+    require_unique: bool = False,
+    include_inactive: bool = False,
+) -> list[dict[str, Any]]:
+    """Query registry entries and attach an absolute path for notebook workflows.
+
+    Missing and ignored entries are excluded by default. Set require_unique
+    when a workflow expects exactly one experimental dataset.
+    """
+    registry_path = registry_path or (root / REGISTRY_FILENAME)
+    hits = filter_entries(
+        load_registry(registry_path)["entries"],
+        cell=cell,
+        temp=temp,
+        rate=rate,
+        test=test,
+        kind=kind,
+        fmt=fmt,
+        status=status,
+        path_contains=path_contains,
+    )
+    if not include_inactive and status is None:
+        hits = [entry for entry in hits if entry.get("status") not in {"ignore", "missing"}]
+    resolved = []
+    for entry in hits:
+        item = dict(entry)
+        item["absolute_path"] = str((root / entry["path"]).resolve())
+        resolved.append(item)
+    if require_unique and len(resolved) != 1:
+        query = {
+            "cell": cell,
+            "temp": temp,
+            "rate": rate,
+            "test": test,
+            "kind": kind,
+            "fmt": fmt,
+            "path_contains": path_contains,
+        }
+        raise ValueError(f"dataset query expected exactly one match, got {len(resolved)}: {query}")
+    return resolved
+
+
+def curate_entry(
+    registry_path: Path,
+    *,
+    entry_id_value: str | None = None,
+    entry_path: str | None = None,
+    **updates: Any,
+) -> dict[str, Any]:
+    """Update one registry entry without hand-editing datasets.json."""
+    if bool(entry_id_value) == bool(entry_path):
+        raise ValueError("provide exactly one of entry_id_value or entry_path")
+    allowed = {
+        "cell", "temperature_C", "rate", "test_type", "soh_pct", "sample_id",
+        "signals", "source", "quality", "notes", "status",
+    }
+    unknown = set(updates) - allowed
+    if unknown:
+        raise ValueError(f"unsupported curate fields: {sorted(unknown)}")
+    registry = load_registry(registry_path)
+    matches = [
+        entry for entry in registry["entries"]
+        if (entry_id_value and entry.get("id") == entry_id_value)
+        or (entry_path and entry.get("path") == entry_path)
+    ]
+    if len(matches) != 1:
+        raise ValueError(f"curate selector expected exactly one match, got {len(matches)}")
+    entry = matches[0]
+    for key, value in updates.items():
+        if value is not None:
+            entry[key] = value
+    save_registry(registry, registry_path)
+    return dict(entry)
+
+
 def _fmt_row(e: dict[str, Any]) -> str:
     temp = f"{e['temperature_C']:g}℃" if e.get("temperature_C") is not None else "-"
     return (
@@ -323,6 +433,21 @@ def main(argv: list[str] | None = None) -> None:
     p_ls.add_argument("--format")
     p_ls.add_argument("--status")
     p_ls.add_argument("--path", help="路径包含（子串匹配）")
+    p_curate = sub.add_parser("curate", help="按 id/path 校准一个数据条目，无需手改 JSON")
+    selector = p_curate.add_mutually_exclusive_group(required=True)
+    selector.add_argument("--id", dest="entry_id")
+    selector.add_argument("--path", dest="entry_path")
+    p_curate.add_argument("--cell")
+    p_curate.add_argument("--temp", type=float)
+    p_curate.add_argument("--rate")
+    p_curate.add_argument("--test")
+    p_curate.add_argument("--soh", type=float)
+    p_curate.add_argument("--sample")
+    p_curate.add_argument("--signals", help="逗号分隔，如 voltage,current,capacity")
+    p_curate.add_argument("--source")
+    p_curate.add_argument("--quality")
+    p_curate.add_argument("--notes")
+    p_curate.add_argument("--status", choices=["auto", "curated", "ignore"], default="curated")
     sub.add_parser("summary", help="按电芯汇总数据覆盖情况")
     args = parser.parse_args(argv)
 
@@ -331,6 +456,27 @@ def main(argv: list[str] | None = None) -> None:
         scan(args.root, registry_path)
     elif args.command == "ls":
         cmd_ls(args, load_registry(registry_path))
+    elif args.command == "curate":
+        signals = None
+        if args.signals is not None:
+            signals = [item.strip() for item in args.signals.split(",") if item.strip()]
+        entry = curate_entry(
+            registry_path,
+            entry_id_value=args.entry_id,
+            entry_path=args.entry_path,
+            cell=args.cell,
+            temperature_C=args.temp,
+            rate=args.rate,
+            test_type=args.test,
+            soh_pct=args.soh,
+            sample_id=args.sample,
+            signals=signals,
+            source=args.source,
+            quality=args.quality,
+            notes=args.notes,
+            status=args.status,
+        )
+        print(_fmt_row(entry))
     elif args.command == "summary":
         cmd_summary(load_registry(registry_path))
 
