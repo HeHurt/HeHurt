@@ -28,6 +28,7 @@
 - 判断 COMSOL Java 是否编译成功时，不得只看外层终端或工具返回的 Exit Code；必须同时检查编译器正文输出和 compile*.log，若出现 `Compilation failed`、`无法编译 java 文件` 或 `65535 bytes limit` 一律按编译失败处理。
 - 迁移 Notebook 或历史工作区目录时，默认先直接迁移，不要为了“可能兼容”额外补入口文件、桥接脚本或兜底适配；兼容问题留到后续按具体文件逐个修复。
 - 本机工作区文件可能受加密软件保护；如果 PowerShell/`Get-Content`/`cmd type` 看到 `%TSD-Header-###%` 或乱码，不要反复排查编码，改用 Python 读取/解析文件内容。
+- 整合多个 Notebook 为 canonical 时必须保留旧文件功能并集；只允许把重复代码下沉到公共模块，不得删减分析章节、图表、实验对标、诊断或导出入口，未完成 feature parity 验证不得归档为完成。
 
 ---
 

@@ -1,0 +1,52 @@
+{
+  "published_runs": [
+    {
+      "run_id": "20260724_172825_mic1175_rate_benchmark",
+      "source": "BatteryProject/output/runs/data_processing/20260724_172825_mic1175_rate_benchmark",
+      "published_at": "2026-07-24T17:40:29",
+      "mode": "full",
+      "files": [
+        {
+          "path": "charge_curves_long.csv",
+          "size": 1355009,
+          "sha256": "e7053a1528638f3acf764460fe3e75ce832d1b8f0f4f3ef8cb2c20ce0be3c4a3"
+        },
+        {
+          "path": "charge_curves_long.jsonl",
+          "size": 2414970,
+          "sha256": "2b8a8fce875f9bfc030045654f86085135f3173b3c4fc1ef8e562e41dca954b3"
+        },
+        {
+          "path": "discharge_curves_long.csv",
+          "size": 1325172,
+          "sha256": "91414e8ffb2848fa8f5eeb3263799cf470e443ea704ecce63e51140eae66b076"
+        },
+        {
+          "path": "discharge_curves_long.jsonl",
+          "size": 2341057,
+          "sha256": "2b91957ca3f4b4bf10201ff258d5d23d01c6b064711dd83163e1553becff435a"
+        },
+        {
+          "path": "MIC1175Ah_倍率充放电模型对标数据.xlsx",
+          "size": 946984,
+          "sha256": "0df44b9e215da1e52ce29ea02ea907cb81e9b39cd03311504e5709a167d42a64"
+        },
+        {
+          "path": "processing_manifest.json",
+          "size": 1529,
+          "sha256": "d9f6e7498ceadff50464c27a029a5728d1746b1bc983d91a691c0ee5d06e5f65"
+        },
+        {
+          "path": "rate_summary.csv",
+          "size": 7981,
+          "sha256": "3f3d6651a5810a8ed393ddaee6cd614a27f8af9bec9c2d3adbbd644ead10f1e5"
+        },
+        {
+          "path": "rate_summary.json",
+          "size": 17337,
+          "sha256": "5880edaa321a83ca712c647745f133f9b39b7b49c249501509de8ab950fe137e"
+        }
+      ]
+    }
+  ]
+}

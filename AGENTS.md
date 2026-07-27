@@ -55,7 +55,7 @@
 ### 顶层目录地图
 - `data_raw/` / `data_processed/` — 实验数据（按电芯分目录）；索引见根目录 `datasets.json`
 - `datasets.json` — 数据 registry（git 跟踪，由 `data_registry.py` 维护）
-- `work/` — Notebook 工作区（原 `studies/` 已改名，各电芯目录同构 notebooks/reports/results）
+- `work/` — 按电芯/体系组织的任务交付区；新任务以 `YYYYMM_何争_任务名称Vn` 为完整可上传单元
 - `runs/` / `results/` / `scripts/` / `models/` / `logs/` — COMSOL/MATLAB 闭环工作目录（见下方 COMSOL 规范）
 - `archive/` — 归档的 legacy 脚本与旧 notebook
 - `tools/` — 预处理与运维脚本（`git_dlp_clean.py`、`0_preprocess_*.py` 等）
@@ -68,11 +68,29 @@
 | `work/314Ah/` | 314Ah | 老化建模、竞品分析、可靠性对标、不同温度/倍率 |
 | `work/280Ah/` | 280Ah | CW254 对标 |
 | `work/587Ah/` | 587Ah | 常规循环、脉冲插入、调频 |
+| `work/cross_cell/` | 跨电芯 | 多电芯对比与共用工况任务包 |
 | `work/AI_virtual_cell/` | — | 定容能效、COMSOL迁移、PSD |
 | `work/RTE机理/` | — | RTE 机理研究资料 |
 | `work/patent_disclosures/` | — | 专利交底书产出 |
 
 （`work/cylindrical/`、`work/sodium/` 目前是空骨架，待启用。）
+
+### 新任务与交付包工作流
+
+- 新任务必须先执行 `python tools/task_delivery.py new-task ...`，在 `work/<cell>/` 下创建
+  `YYYYMM_何争_任务名称Vn/`；负责人默认何争，首版必须显式为 V1。
+- 从 `BatteryProject/examples/` 选择 canonical Notebook，由 `new-task --template` 复制到任务包
+  `02_模型/` 后再修改；禁止为单次任务直接修改 examples 原件。
+- 整合 canonical Notebook 时必须保留旧文件能力并集：只把重复仿真、解析和导出代码下沉到
+  `BatteryProject/src/`，不得删减分析章节、图表、实验对标、诊断或导出入口；先做 feature parity
+  矩阵，未验证通过不得视为完成整合。
+- 原始运行、中间结果和日志写入 `BatteryProject/output/runs/<workflow>/<run_id>/`，不得再新建
+  `work/**/notebooks/output`、`outputs` 或 `results/output`。
+- 验证后的 run 使用 `python tools/task_delivery.py publish-task ...` 复制并固化到任务包
+  `04_输出结果/`；发布不移动、不覆盖原始 run。
+- 一个任务包至少包含任务说明、仿真报告、模型、输入数据、输出结果和复现说明，完成后可整包上传。
+- 已上传版本冻结；正式返修创建 V2/V3，不覆盖旧版。跨电芯任务放在 `work/cross_cell/`。
+- 完整流程与命令见 `docs/TASK_DELIVERY_WORKFLOW.md`。
 
 ---
 
@@ -183,6 +201,10 @@ git.exe）读取会得到密文/乱码。
     （`%TSD-Header-###%` 保护级别不丢；但 `.txt` 不会——DLP 按文件类型分类）。
   - 多行/复杂逻辑写成 `.js` 放 `scratch\`，用 `Code.exe <script.js>` 跑（避免内联转义）。
   - 改前先字节拷贝备份（`Copy-Item` 拷的是密文，可还原）。
+- **已在 VS Code 打开的 Notebook**：优先使用 `tools/vscode-notebook-bridge/bridge-client.ps1`
+  读取和修改，不要直接写磁盘。客户端会按 `-Uri <notebook路径>` 自动选择匹配且存活的 VS Code
+  窗口；用 `active-notebook` 读取、`replace-cell` 或 `apply-edits` 修改，修改会立即出现在 Notebook UI，
+  需要持久化时加 `-Save`。`Code.exe` 仅作为 Notebook 未打开、未加载或 bridge 不可用时的磁盘级 fallback。
 
 ### 2. Git 提交：只存明文（绕过 DLP 密文）
 git.exe 非白名单，直接 add 会把密文存进仓库。已配 clean filter 存**明文**：

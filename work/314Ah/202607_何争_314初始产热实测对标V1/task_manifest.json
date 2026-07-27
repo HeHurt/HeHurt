@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "task_id": "202607_何争_314初始产热实测对标V1",
+  "cell": "314Ah",
+  "task_name": "314初始产热实测对标",
+  "owner": "何争",
+  "month": "202607",
+  "version": "V1",
+  "status": "created",
+  "created_at": "2026-07-22T14:02:34",
+  "template": "BatteryProject/examples/BOL_thermal_heat_diagnosis.ipynb",
+  "task_notebook": "314Ah_BOL_2p5V_2p7V_ARC产热对标.ipynb"
+}

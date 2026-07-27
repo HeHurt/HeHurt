@@ -1,0 +1,3 @@
+cell: MIC_1175Ah
+task: 0p25P循环老化对标历史实例
+run_mode: smoke

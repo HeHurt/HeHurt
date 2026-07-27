@@ -27,6 +27,8 @@ BatteryProject/pybamm/
 *.ipynb
 !BatteryProject/docs/*.ipynb
 !BatteryProject/examples/*.ipynb
+!BatteryProject/examples/workflows/
+!BatteryProject/examples/workflows/*.ipynb
 # 本机 DLP 解不开的高密级笔记本（python 也读到密文）——不跟踪，传密文无意义
 BatteryProject/docs/Using_BatteryProject.ipynb
 BatteryProject/examples/EIS.ipynb
@@ -36,6 +38,9 @@ BatteryProject/examples/循环老化.ipynb
 BatteryProject/examples/欧盟电池法.ipynb
 BatteryProject/examples/粒径分布.ipynb
 BatteryProject/examples/调频.ipynb
+# 已由 examples/workflows/全生命周期产热.ipynb 取代并在外移目录归档
+BatteryProject/examples/统一老化路径_多倍率全生命周期产热.ipynb
+BatteryProject/examples/MIC_1175Ah_0p25P统一老化路径_多倍率全生命周期产热.ipynb
 # 注意：如果你有重要的说明文档是txt，就把上面的 *.txt 删掉
 
 # --- VS Code 配置 ---
@@ -106,11 +111,21 @@ COMSOL/_sim_cli_trial/
 # --- 数据 registry（机器可查询的实验数据索引，必须进 Git）---
 !/datasets.json
 
+# --- 任务交付包 manifests（Notebook/大结果仍按原规则忽略）---
+work/**/04_输出结果/
+!work/**/task_manifest.json
+!work/**/source_manifest.json
+!work/**/run_manifest.json
+!work/**/data_manifest.json
+
 # --- Local environments and temporary workspaces ---
 /.agents/
 /.codex/
+/.codex_scratch_*.js
+/.codex_scratch_*/
 /.codex_scratch/
 /.codex_tmp/
+/.workbuddy/
 /.sim/
 /.venv/
 /.venv-liionpack/
@@ -119,5 +134,6 @@ COMSOL/_sim_cli_trial/
 /tmp_patent_preview/
 /personal-site/
 /BatteryProject/battery-sim-site/
+/runs/
 **/_codex_*
 .pytest_cache/

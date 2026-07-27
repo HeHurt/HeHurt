@@ -1,0 +1,3 @@
+cell: MIC_1175Ah
+task: 倍率充放电模型对标数据处理
+run_mode: smoke

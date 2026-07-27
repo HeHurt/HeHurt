@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "task_id": "202607_何争_无活化14个月多温度日历老化V1",
+  "cell": "587Ah",
+  "task_name": "无活化14个月多温度日历老化",
+  "owner": "何争",
+  "month": "202607",
+  "version": "V1",
+  "status": "created",
+  "created_at": "2026-07-27T10:38:09",
+  "template": "BatteryProject/examples/workflows/日历老化.ipynb",
+  "task_notebook": "587Ah_0至50C_无活化14个月日历老化.ipynb"
+}
