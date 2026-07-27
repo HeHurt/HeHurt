@@ -231,21 +231,29 @@ def append_log(status: dict[str, Any], level: str, message: str) -> None:
     )
 
 
+# 进程内状态写锁：heartbeat 线程与 worker 主线程并发执行 read-modify-write
+# 时保护临界区，避免互相覆盖丢失日志/进度。每个 job 运行在独立 spawn 子进程，
+# 进程内只需一把锁即可覆盖同 job 的并发写。
+_status_lock = threading.Lock()
+
+
 def update_status(job_dir: Path, **changes: Any) -> None:
     status_path = job_dir / "status.json"
-    status = read_json(status_path, {}) or {}
-    status.update(changes)
-    status["updated_at"] = time.time()
-    atomic_write_json(status_path, status)
+    with _status_lock:
+        status = read_json(status_path, {}) or {}
+        status.update(changes)
+        status["updated_at"] = time.time()
+        atomic_write_json(status_path, status)
 
 
 def log_status(job_dir: Path, level: str, message: str, **changes: Any) -> None:
     status_path = job_dir / "status.json"
-    status = read_json(status_path, {}) or {}
-    append_log(status, level, message)
-    status.update(changes)
-    status["updated_at"] = time.time()
-    atomic_write_json(status_path, status)
+    with _status_lock:
+        status = read_json(status_path, {}) or {}
+        append_log(status, level, message)
+        status.update(changes)
+        status["updated_at"] = time.time()
+        atomic_write_json(status_path, status)
 
 
 def extrema_sample_indices(reference: Any, limit: int = 180) -> Any:
