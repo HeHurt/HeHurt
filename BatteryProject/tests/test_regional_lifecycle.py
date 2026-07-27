@@ -1,13 +1,17 @@
 from types import SimpleNamespace
 
+import matplotlib.pyplot as plt
+import pandas as pd
 import pytest
 
 from BatteryProject.src import simulation_regional_lifecycle as lifecycle
 from BatteryProject.src.simulation import (
     RegionalPowerCycleResult,
+    run_homogeneous_dfn_power_cycles,
     run_regional_dfn_power_cycles,
     solve_parallel_power_split,
 )
+from BatteryProject.src.plotting import plot_regional_negative_potential_analysis
 from BatteryProject.src.simulation_regional_parallel import RegionalCellState, RegionalDFNConfig
 
 
@@ -86,3 +90,105 @@ def test_run_regional_power_cycles_rejects_invalid_area_sum():
             discharge_power_w=100.0,
             cycles=1,
         )
+
+def test_solution_min_scalar_uses_full_spatial_time_field():
+    variable = SimpleNamespace(entries=[[0.2, -0.03], [0.1, 0.0]])
+    solution = {lifecycle.NEGATIVE_PLATING_OVERPOTENTIAL: variable}
+
+    assert lifecycle._solution_min_scalar(
+        solution, lifecycle.NEGATIVE_PLATING_OVERPOTENTIAL
+    ) == pytest.approx(-0.03)
+    assert lifecycle._solution_min_scalar(solution, "missing") != lifecycle._solution_min_scalar(
+        solution, "missing"
+    )
+
+
+def test_plot_regional_negative_potential_analysis_uses_cycle_minimum():
+    frame = pd.DataFrame(
+        [
+            {"segment": "charge", "sim_cycle": 1, "equivalent_cycle": 50, "region": "corner", "negative_surface_potential_difference_min_v": -0.02},
+            {"segment": "charge", "sim_cycle": 1, "equivalent_cycle": 50, "region": "corner", "negative_surface_potential_difference_min_v": -0.03},
+            {"segment": "charge", "sim_cycle": 1, "equivalent_cycle": 50, "region": "middle", "negative_surface_potential_difference_min_v": -0.01},
+            {"segment": "discharge", "sim_cycle": 1, "equivalent_cycle": 50, "region": "top", "negative_surface_potential_difference_min_v": -0.50},
+        ]
+    )
+
+    fig, _, regional, overall = plot_regional_negative_potential_analysis(frame)
+    try:
+        corner = regional.loc[regional["region"].eq("corner"), "negative_surface_potential_difference_min_v"].iloc[0]
+        assert corner == pytest.approx(-0.03)
+        assert overall["region"].iloc[0] == "corner"
+        assert overall["negative_surface_potential_difference_min_v"].iloc[0] == pytest.approx(-0.03)
+    finally:
+        plt.close(fig)
+
+
+
+
+def test_run_homogeneous_power_cycles_uses_native_experiment(monkeypatch):
+    captured = {}
+
+    class FakeParameters(dict):
+        def copy(self):
+            return FakeParameters(self)
+
+        def update(self, values, check_already_exists=True):
+            captured["parameter_update"] = dict(values)
+            super().update(values)
+
+    class FakeSimulation:
+        def __init__(self, model, parameter_values, experiment, solver, var_pts):
+            captured.update(
+                model=model,
+                parameter_values=parameter_values,
+                experiment=experiment,
+                solver=solver,
+                var_pts=var_pts,
+            )
+
+        def solve(self, **kwargs):
+            captured["solve_kwargs"] = kwargs
+            return "native-solution"
+
+    expected = RegionalPowerCycleResult((), (), (), (), (), {})
+    monkeypatch.setattr(lifecycle.pybamm, "Experiment", lambda cycles, period: (cycles, period))
+    monkeypatch.setattr(lifecycle.pybamm.lithium_ion, "DFN", lambda options: ("dfn", options))
+    monkeypatch.setattr(lifecycle.pybamm, "IDAKLUSolver", lambda **kwargs: ("solver", kwargs))
+    monkeypatch.setattr(lifecycle.pybamm, "Simulation", FakeSimulation)
+    monkeypatch.setattr(lifecycle, "_convert_homogeneous_solution", lambda *args, **kwargs: expected)
+
+    params = FakeParameters({"Nominal cell capacity [A.h]": 314.0})
+    result = run_homogeneous_dfn_power_cycles(
+        params,
+        discharge_power_w=502.4,
+        cycles=2,
+        output_period_s=60,
+    )
+
+    assert result is expected
+    assert captured["experiment"][1] == "60 seconds"
+    assert len(captured["experiment"][0]) == 2
+    assert "Discharge at 502.4 W until 2.5 V" in captured["experiment"][0][0]
+    assert captured["solve_kwargs"] == {"initial_soc": 1.0, "showprogress": False}
+    assert params == {"Nominal cell capacity [A.h]": 314.0}
+
+
+def test_select_macro_step_uses_large_steps_away_from_cutoff():
+    kwargs = {
+        "segment": "discharge",
+        "cutoff_v": 2.5,
+        "minimum_step_s": 120.0,
+        "maximum_step_s": 600.0,
+        "adaptive_voltage_window_v": 0.15,
+    }
+    assert lifecycle._select_macro_step_s(terminal_voltage_v=3.2, **kwargs) == 600.0
+    assert lifecycle._select_macro_step_s(terminal_voltage_v=2.60, **kwargs) == 240.0
+    assert lifecycle._select_macro_step_s(terminal_voltage_v=2.54, **kwargs) == 120.0
+    assert lifecycle._select_macro_step_s(
+        segment="rest_after_discharge",
+        terminal_voltage_v=2.5,
+        cutoff_v=None,
+        minimum_step_s=120.0,
+        maximum_step_s=600.0,
+        adaptive_voltage_window_v=0.15,
+    ) == 600.0

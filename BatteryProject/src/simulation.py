@@ -83,6 +83,7 @@ from .simulation_regional_parallel import (
 )
 from .simulation_regional_lifecycle import (
     RegionalPowerCycleResult,
+    run_homogeneous_dfn_power_cycles,
     run_regional_dfn_power_cycles,
     solve_parallel_power_split,
 )
@@ -153,6 +154,7 @@ __all__ = [
     "solve_parallel_current_split",
     # regional lifecycle
     "RegionalPowerCycleResult",
+    "run_homogeneous_dfn_power_cycles",
     "run_regional_dfn_power_cycles",
     "solve_parallel_power_split",
 ]

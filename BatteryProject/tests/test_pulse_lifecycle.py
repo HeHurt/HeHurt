@@ -228,6 +228,243 @@ class PulseLifecycleBuilderTests(unittest.TestCase):
         self.assertTrue(steps[rest_index + 1].startswith("Discharge at 1410.00W for 60 seconds"))
 
 
+class PulseLifecycleSohDiagnosticTests(unittest.TestCase):
+    class FakeSolution:
+        def __init__(self, name):
+            self.name = name
+            self.last_state = self
+
+    @staticmethod
+    def diagnostic_summary():
+        return {
+            "rpt_charge_capacity_ah": 100.0,
+            "rpt_discharge_capacity_ah": 99.0,
+            "rpt_charge_energy_wh": 320.0,
+            "rpt_discharge_energy_wh": 310.0,
+            "rpt_efficiency": 310.0 / 320.0,
+        }
+
+    def test_soh_targets_run_two_independent_diagnostic_rates(self):
+        class FakeSimulation:
+            solve_count = 0
+
+            def __init__(self, model, parameter_values, experiment, var_pts, solver):
+                self.experiment = experiment
+
+            def solve(self, **kwargs):
+                FakeSimulation.solve_count += 1
+                return PulseLifecycleSohDiagnosticTests.FakeSolution(
+                    f"main-{FakeSimulation.solve_count}"
+                )
+
+        cycle_frames = [
+            pd.DataFrame({"sim_cycle": [1], "discharge_capacity_ah": [100.0]}),
+            pd.DataFrame({"sim_cycle": [1], "discharge_capacity_ah": [95.0]}),
+            pd.DataFrame({"sim_cycle": [1], "discharge_capacity_ah": [89.0]}),
+        ]
+        diagnostic_calls = []
+
+        def fake_diagnostic(*args, **kwargs):
+            diagnostic_calls.append(kwargs["check_p_rate"])
+            return self.FakeSolution("diagnostic"), self.diagnostic_summary()
+
+        runtime_config = {
+            "total_cycles": 101,
+            "use_block_acceleration": True,
+            "cycles_per_block": 1,
+            "aging_t_factor": 50,
+            "diagnostic_soh_targets_pct": [100, 95, 90],
+            "diagnostic_p_rates": [0.25, 0.5],
+            "return_partial_on_error": True,
+            "showprogress": False,
+        }
+        scenario = {"name": "baseline", "display_name": "baseline", "pulse_p_rate": None}
+
+        with patch.object(spl.pybamm.lithium_ion, "DFN", return_value=object()), \
+             patch.object(spl.pybamm, "IDAKLUSolver", return_value=object()), \
+             patch.object(spl.pybamm, "Experiment", side_effect=lambda steps, temperature: list(steps)), \
+             patch.object(spl.pybamm, "Simulation", FakeSimulation), \
+             patch.object(spl, "_make_parameter_values", return_value={}), \
+             patch.object(spl, "_build_cycle_dataframe", side_effect=cycle_frames), \
+             patch.object(spl, "_run_capacity_check", side_effect=fake_diagnostic), \
+             patch.object(spl, "_prepare_solution_for_storage", side_effect=lambda sol, keep: sol), \
+             patch.object(spl, "snapshot_degradation_variables", return_value={}):
+            result = spl._run_single_pulse_lifecycle_scenario(
+                scenario,
+                runtime_config,
+                model_options={},
+                var_pts={},
+                nominal_capacity_ah=100.0,
+                temperature_k=298.15,
+                get_hithium_params=lambda t_factor, temperature: {},
+                get_discharge_capacity_func=lambda sol: {},
+            )
+
+        self.assertEqual(diagnostic_calls, [0.25, 0.5, 0.25, 0.5, 0.25, 0.5])
+        self.assertEqual(result["run_status"], "completed")
+        self.assertEqual(result["pending_diagnostic_soh_targets_pct"], [])
+        self.assertEqual(len(result["diagnostic_solutions"]), 6)
+        self.assertEqual(
+            result["diagnostic_df"]["target_soh_pct"].tolist(),
+            [100.0, 100.0, 95.0, 95.0, 90.0, 90.0],
+        )
+
+    def test_block_failure_returns_last_valid_soh_for_extrapolation(self):
+        class FailingSimulation:
+            solve_count = 0
+
+            def __init__(self, model, parameter_values, experiment, var_pts, solver):
+                pass
+
+            def solve(self, **kwargs):
+                FailingSimulation.solve_count += 1
+                if FailingSimulation.solve_count > 1:
+                    raise RuntimeError("synthetic DAE failure")
+                return PulseLifecycleSohDiagnosticTests.FakeSolution("first")
+
+        runtime_config = {
+            "total_cycles": 51,
+            "use_block_acceleration": True,
+            "cycles_per_block": 1,
+            "aging_t_factor": 50,
+            "diagnostic_soh_targets_pct": [100, 95],
+            "diagnostic_p_rates": [0.25, 0.5],
+            "return_partial_on_error": True,
+            "showprogress": False,
+        }
+        first_frame = pd.DataFrame({"sim_cycle": [1], "discharge_capacity_ah": [100.0]})
+
+        with patch.object(spl.pybamm.lithium_ion, "DFN", return_value=object()), \
+             patch.object(spl.pybamm, "IDAKLUSolver", return_value=object()), \
+             patch.object(spl.pybamm, "Experiment", side_effect=lambda steps, temperature: list(steps)), \
+             patch.object(spl.pybamm, "Simulation", FailingSimulation), \
+             patch.object(spl, "_make_parameter_values", return_value={}), \
+             patch.object(spl, "_build_cycle_dataframe", return_value=first_frame), \
+             patch.object(
+                 spl,
+                 "_run_capacity_check",
+                 return_value=(self.FakeSolution("diagnostic"), self.diagnostic_summary()),
+             ), \
+             patch.object(spl, "_prepare_solution_for_storage", side_effect=lambda sol, keep: sol), \
+             patch.object(spl, "snapshot_degradation_variables", return_value={}):
+            result = spl._run_single_pulse_lifecycle_scenario(
+                {"name": "baseline", "display_name": "baseline", "pulse_p_rate": None},
+                runtime_config,
+                model_options={},
+                var_pts={},
+                nominal_capacity_ah=100.0,
+                temperature_k=298.15,
+                get_hithium_params=lambda t_factor, temperature: {},
+                get_discharge_capacity_func=lambda sol: {},
+            )
+
+        self.assertEqual(result["run_status"], "partial")
+        self.assertEqual(result["real_cycles_covered"], 1.0)
+        self.assertEqual(result["last_valid_soh_pct"], 100.0)
+        self.assertEqual(result["pending_diagnostic_soh_targets_pct"], [95.0])
+        self.assertIn("synthetic DAE failure", result["failure_message"])
+
+
+    def test_solver_root_method_is_forwarded_to_idaklu(self):
+        class FakeSimulation:
+            def __init__(self, model, parameter_values, experiment, var_pts, solver):
+                pass
+
+            def solve(self, **kwargs):
+                return PulseLifecycleSohDiagnosticTests.FakeSolution("solution")
+
+        runtime_config = {
+            "total_cycles": 1,
+            "use_block_acceleration": True,
+            "cycles_per_block": 1,
+            "aging_t_factor": 50,
+            "solver_root_method": "lm",
+            "solver_root_tol": 1e-6,
+            "showprogress": False,
+        }
+        frame = pd.DataFrame({"sim_cycle": [1], "discharge_capacity_ah": [100.0]})
+
+        with patch.object(spl.pybamm.lithium_ion, "DFN", return_value=object()), \
+             patch.object(spl.pybamm, "IDAKLUSolver", return_value=object()) as solver_cls, \
+             patch.object(spl.pybamm, "Experiment", side_effect=lambda steps, temperature: list(steps)), \
+             patch.object(spl.pybamm, "Simulation", FakeSimulation), \
+             patch.object(spl, "_make_parameter_values", return_value={}), \
+             patch.object(spl, "_build_cycle_dataframe", return_value=frame), \
+             patch.object(spl, "_prepare_solution_for_storage", side_effect=lambda sol, keep: sol), \
+             patch.object(spl, "snapshot_degradation_variables", return_value={}):
+            spl._run_single_pulse_lifecycle_scenario(
+                {"name": "baseline", "display_name": "baseline", "pulse_p_rate": None},
+                runtime_config,
+                model_options={},
+                var_pts={},
+                nominal_capacity_ah=100.0,
+                temperature_k=298.15,
+                get_hithium_params=lambda t_factor, temperature: {},
+                get_discharge_capacity_func=lambda sol: {},
+            )
+
+        solver_cls.assert_called_once_with(
+            rtol=1e-6,
+            atol=1e-6,
+            root_method="lm",
+            root_tol=1e-6,
+        )
+
+    def test_cycle_dataframe_drops_empty_placeholder_cycles(self):
+        frame = spl._build_cycle_dataframe(
+            object(),
+            lambda sol: {"discharge_capacity": np.array([np.nan, 99.0])},
+        )
+
+        self.assertEqual(frame["sim_cycle"].tolist(), [1])
+        self.assertEqual(frame["discharge_capacity_ah"].tolist(), [99.0])
+
+    def test_no_positive_block_capacity_returns_partial_without_storing_invalid_block(self):
+        class FakeSimulation:
+            def __init__(self, model, parameter_values, experiment, var_pts, solver):
+                pass
+
+            def solve(self, **kwargs):
+                return PulseLifecycleSohDiagnosticTests.FakeSolution("solution")
+
+        runtime_config = {
+            "total_cycles": 51,
+            "use_block_acceleration": True,
+            "cycles_per_block": 1,
+            "aging_t_factor": 50,
+            "return_partial_on_error": True,
+            "showprogress": False,
+        }
+        frames = [
+            pd.DataFrame({"sim_cycle": [1], "discharge_capacity_ah": [100.0]}),
+            pd.DataFrame({"sim_cycle": [1], "discharge_capacity_ah": [0.0]}),
+        ]
+
+        with patch.object(spl.pybamm.lithium_ion, "DFN", return_value=object()), \
+             patch.object(spl.pybamm, "IDAKLUSolver", return_value=object()), \
+             patch.object(spl.pybamm, "Experiment", side_effect=lambda steps, temperature: list(steps)), \
+             patch.object(spl.pybamm, "Simulation", FakeSimulation), \
+             patch.object(spl, "_make_parameter_values", return_value={}), \
+             patch.object(spl, "_build_cycle_dataframe", side_effect=frames), \
+             patch.object(spl, "_prepare_solution_for_storage", side_effect=lambda sol, keep: sol), \
+             patch.object(spl, "snapshot_degradation_variables", return_value={}):
+            result = spl._run_single_pulse_lifecycle_scenario(
+                {"name": "baseline", "display_name": "baseline", "pulse_p_rate": None},
+                runtime_config,
+                model_options={},
+                var_pts={},
+                nominal_capacity_ah=100.0,
+                temperature_k=298.15,
+                get_hithium_params=lambda t_factor, temperature: {},
+                get_discharge_capacity_func=lambda sol: {},
+            )
+
+        self.assertEqual(result["run_status"], "partial")
+        self.assertEqual(result["real_cycles_covered"], 1.0)
+        self.assertIn("no positive discharge capacity", result["failure_message"])
+        self.assertEqual(result["solution_real_cycles"], [1.0])
+
+
 class FrequencyProfileTests(unittest.TestCase):
     def test_build_and_trim_frequency_current_profile(self):
         time_s, current_a = build_frequency_current_profile(10, 2, 293.5)

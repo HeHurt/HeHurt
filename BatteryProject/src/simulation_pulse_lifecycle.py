@@ -283,6 +283,7 @@ def prepare_pulse_lifecycle_scenarios(
 
 def _build_cycle_dataframe(sol, get_discharge_capacity_func):
     capacities = np.asarray(get_discharge_capacity_func(sol).get("discharge_capacity", []), dtype=float)
+    capacities = capacities[np.isfinite(capacities)]
     cycle_numbers = np.arange(1, len(capacities) + 1)
     if capacities.size == 0:
         return pd.DataFrame(columns=["sim_cycle", "discharge_capacity_ah", "capacity_retention"])
@@ -413,7 +414,14 @@ def _run_single_pulse_lifecycle_scenario(
     return_solutions=True,
 ):
     model = pybamm.lithium_ion.DFN(model_options)
-    solver = pybamm.IDAKLUSolver(rtol=solver_rtol, atol=solver_atol)
+    solver_root_method = str(runtime_config.get("solver_root_method", "casadi"))
+    solver_root_tol = float(runtime_config.get("solver_root_tol", 1e-6))
+    solver = pybamm.IDAKLUSolver(
+        rtol=solver_rtol,
+        atol=solver_atol,
+        root_method=solver_root_method,
+        root_tol=solver_root_tol,
+    )
     total_cycles = int(runtime_config["total_cycles"])
     use_block_acceleration = bool(runtime_config.get("use_block_acceleration", True))
     cycles_per_block = (
@@ -428,6 +436,13 @@ def _run_single_pulse_lifecycle_scenario(
     capacity_check_at_start = bool(
         runtime_config.get("capacity_check_at_start", capacity_check_interval_cycles is not None)
     )
+    diagnostic_soh_targets_pct = sorted(
+        {float(value) for value in runtime_config.get("diagnostic_soh_targets_pct", [])},
+        reverse=True,
+    )
+    diagnostic_p_rates = tuple(float(value) for value in runtime_config.get("diagnostic_p_rates", []))
+    return_partial_on_error = bool(runtime_config.get("return_partial_on_error", False))
+    stop_at_lowest_diagnostic_soh = bool(runtime_config.get("stop_at_lowest_diagnostic_soh", False))
     adapt_pulse_windows_to_capacity = bool(runtime_config.get("adapt_pulse_windows_to_capacity", False))
     showprogress = bool(runtime_config.get("showprogress", False))
     if use_block_acceleration and cycles_per_block <= 0:
@@ -436,6 +451,16 @@ def _run_single_pulse_lifecycle_scenario(
         raise ValueError("total_cycles must be non-negative")
     if aging_t_factor <= 0:
         raise ValueError("aging_t_factor must be positive")
+    if solver_root_tol <= 0:
+        raise ValueError("solver_root_tol must be positive")
+    if any(not 0 < target <= 100 for target in diagnostic_soh_targets_pct):
+        raise ValueError("diagnostic_soh_targets_pct values must be within (0, 100]")
+    if diagnostic_soh_targets_pct and not diagnostic_p_rates:
+        raise ValueError("diagnostic_p_rates is required when SOH diagnostics are enabled")
+    if any(rate <= 0 for rate in diagnostic_p_rates):
+        raise ValueError("diagnostic_p_rates values must be positive")
+    if diagnostic_soh_targets_pct and not use_block_acceleration:
+        raise ValueError("SOH-triggered diagnostics require use_block_acceleration=True")
     if (not use_block_acceleration) and capacity_check_interval_cycles is not None:
         raise ValueError(
             "capacity_check_interval_cycles requires use_block_acceleration=True; "
@@ -483,8 +508,12 @@ def _run_single_pulse_lifecycle_scenario(
             "solution_real_cycles": [],
             "capacity_check_solutions": [],
             "capacity_check_real_cycles": [],
+            "diagnostic_df": pd.DataFrame(),
+            "diagnostic_solutions": [],
             "final_solution": None,
             "real_cycles_covered": 0.0,
+            "run_status": "completed",
+            "failure_message": "",
         }
 
     params = _make_parameter_values(get_hithium_params, conditioning_t_factor, temperature_k)
@@ -505,6 +534,13 @@ def _run_single_pulse_lifecycle_scenario(
     capacity_check_records = []
     capacity_check_solutions = []
     capacity_check_real_cycles = []
+    diagnostic_records = []
+    diagnostic_solutions = []
+    pending_diagnostic_targets = list(diagnostic_soh_targets_pct)
+    diagnostic_base_capacity_ah = None
+    last_valid_soh_pct = np.nan
+    run_status = "completed"
+    failure_message = ""
 
     def record_capacity_check(real_cycle, starting_solution, source_solution=None):
         check_solution, check_summary = _run_capacity_check(
@@ -539,6 +575,77 @@ def _run_single_pulse_lifecycle_scenario(
             capacity_check_real_cycles.append(float(real_cycle))
         return check_solution
 
+    def record_soh_diagnostics(real_cycle, starting_solution, source_solution, capacity_ah):
+        """Run independent diagnostic branches for every newly crossed SOH target."""
+        nonlocal diagnostic_base_capacity_ah, last_valid_soh_pct
+        capacity_ah = float(capacity_ah)
+        if diagnostic_base_capacity_ah is None:
+            diagnostic_base_capacity_ah = capacity_ah
+        if not np.isfinite(capacity_ah) or capacity_ah <= 0:
+            return
+        last_valid_soh_pct = capacity_ah / diagnostic_base_capacity_ah * 100.0
+        crossed_targets = [
+            target for target in pending_diagnostic_targets
+            if last_valid_soh_pct <= target + 1.0e-9
+        ]
+        if not crossed_targets:
+            return
+
+        degradation_snapshot = snapshot_degradation_variables(source_solution)
+        for target_soh_pct in crossed_targets:
+            for diagnostic_p_rate in diagnostic_p_rates:
+                metadata = {
+                    "target_soh_pct": float(target_soh_pct),
+                    "actual_soh_pct": float(last_valid_soh_pct),
+                    "real_cycle": float(real_cycle),
+                    "diagnostic_p_rate": float(diagnostic_p_rate),
+                }
+                try:
+                    check_solution, check_summary = _run_capacity_check(
+                        model,
+                        solver,
+                        starting_solution=starting_solution,
+                        initial_soc=initial_soc,
+                        temperature_k=temperature_k,
+                        var_pts=var_pts,
+                        get_hithium_params=get_hithium_params,
+                        nominal_capacity_ah=nominal_capacity_ah,
+                        check_p_rate=diagnostic_p_rate,
+                        nominal_voltage_v=nominal_voltage_v,
+                        charge_cutoff_v=charge_cutoff_v,
+                        discharge_cutoff_v=discharge_cutoff_v,
+                        rest_minutes=rest_minutes,
+                        period_minutes=period_minutes,
+                        showprogress=showprogress,
+                    )
+                except Exception as exc:
+                    if not return_partial_on_error:
+                        raise
+                    row = dict(metadata)
+                    row.update(degradation_snapshot)
+                    row["diagnostic_status"] = "failed"
+                    row["diagnostic_error"] = f"{type(exc).__name__}: {exc}"
+                    diagnostic_records.append(row)
+                    continue
+
+                row = _capacity_check_summary_to_row(check_summary)
+                row.update(degradation_snapshot)
+                row.update(metadata)
+                row["diagnostic_status"] = "simulated"
+                row["diagnostic_error"] = ""
+                diagnostic_records.append(row)
+                if return_solutions:
+                    diagnostic_solutions.append(
+                        {
+                            **metadata,
+                            "solution": _prepare_solution_for_storage(
+                                check_solution,
+                                keep_only_last_capacity_check_solution,
+                            ),
+                        }
+                    )
+            pending_diagnostic_targets.remove(target_soh_pct)
+
     if capacity_check_at_start:
         record_capacity_check(0.0, starting_solution=None, source_solution=None)
     if return_solutions:
@@ -555,6 +662,12 @@ def _run_single_pulse_lifecycle_scenario(
         row["real_cycle"] = 1
         row["sim_cycle"] = 1
         cycle_records.append(row)
+        record_soh_diagnostics(
+            1.0,
+            restart_solution,
+            current_solution,
+            row["discharge_capacity_ah"],
+        )
 
     completed_real_cycles = 1.0
     remaining_real_cycles = max(0, total_cycles - completed_real_cycles)
@@ -630,31 +743,50 @@ def _run_single_pulse_lifecycle_scenario(
         effective_t_factor = real_cycles_this_block / sim_cycles_this_block
         block_steps = build_current_cycle_steps()
         params = _make_parameter_values(get_hithium_params, effective_t_factor, temperature_k)
-        block_sim = pybamm.Simulation(
-            model,
-            parameter_values=params,
-            experiment=pybamm.Experiment([tuple(block_steps)] * sim_cycles_this_block, temperature=temperature_k),
-            var_pts=var_pts,
-            solver=solver,
-        )
-        current_solution = block_sim.solve(
-            starting_solution=restart_solution,
-            showprogress=showprogress,
-            calc_esoh=False,
-        )
+        try:
+            block_sim = pybamm.Simulation(
+                model,
+                parameter_values=params,
+                experiment=pybamm.Experiment([tuple(block_steps)] * sim_cycles_this_block, temperature=temperature_k),
+                var_pts=var_pts,
+                solver=solver,
+            )
+            block_solution = block_sim.solve(
+                starting_solution=restart_solution,
+                showprogress=showprogress,
+                calc_esoh=False,
+            )
+        except Exception as exc:
+            if not return_partial_on_error:
+                raise
+            run_status = "partial"
+            failure_message = f"{type(exc).__name__}: {exc}"
+            break
+        cycle_df = _build_cycle_dataframe(block_solution, get_discharge_capacity_func)
+        if (
+            cycle_df.empty
+            or not np.isfinite(cycle_df["discharge_capacity_ah"].iloc[-1])
+            or cycle_df["discharge_capacity_ah"].iloc[-1] <= 0
+        ):
+            failure_message = (
+                "RuntimeError: Pulse lifecycle block produced no positive discharge capacity "
+                f"for scenario {scenario.get('name', '<unnamed>')!r} near real cycle "
+                f"{completed_real_cycles + real_cycles_this_block:g}."
+            )
+            if scenario.get("pulse_p_rate") is not None:
+                failure_message += (
+                    " Enable runtime_config['adapt_pulse_windows_to_capacity'] "
+                    "or narrow the pulse SOC window."
+                )
+            if not return_partial_on_error:
+                raise RuntimeError(failure_message.removeprefix("RuntimeError: "))
+            run_status = "partial"
+            break
+        current_solution = block_solution
         if return_solutions:
             stored_solutions.append(_prepare_solution_for_storage(current_solution, keep_only_last_cycle_solution))
             solution_real_cycles.append(completed_real_cycles + real_cycles_this_block)
         restart_solution = current_solution.last_state if hasattr(current_solution, "last_state") else current_solution
-        cycle_df = _build_cycle_dataframe(current_solution, get_discharge_capacity_func)
-        if cycle_df.empty or not np.isfinite(cycle_df["discharge_capacity_ah"].iloc[-1]) or cycle_df["discharge_capacity_ah"].iloc[-1] <= 0:
-            raise RuntimeError(
-                "Pulse lifecycle block produced no positive discharge capacity "
-                f"for scenario {scenario.get('name', '<unnamed>')!r} near real cycle "
-                f"{completed_real_cycles + real_cycles_this_block:g}. "
-                "If this is an inserted-pulse case, enable "
-                "runtime_config['adapt_pulse_windows_to_capacity'] or narrow the pulse SOC window."
-            )
         update_window_capacity(cycle_df["discharge_capacity_ah"].iloc[-1])
         snapshot = snapshot_degradation_variables(current_solution)
         if not cycle_df.empty:
@@ -665,10 +797,27 @@ def _run_single_pulse_lifecycle_scenario(
                 row["real_cycle"] = completed_real_cycles + local_sim_cycle * effective_t_factor
                 row.update(snapshot)
                 cycle_records.append(row)
+        checkpoint_real_cycle = completed_real_cycles + real_cycles_this_block
+        record_soh_diagnostics(
+            checkpoint_real_cycle,
+            restart_solution,
+            current_solution,
+            cycle_df["discharge_capacity_ah"].iloc[-1],
+        )
         completed_real_cycles += real_cycles_this_block
         if next_check_cycle is not None and completed_real_cycles >= next_check_cycle - 1e-9:
             record_capacity_check(next_check_cycle, restart_solution, source_solution=current_solution)
         remaining_real_cycles = max(0, total_cycles - completed_real_cycles)
+        if (
+            stop_at_lowest_diagnostic_soh
+            and diagnostic_soh_targets_pct
+            and np.isfinite(last_valid_soh_pct)
+            and last_valid_soh_pct <= min(diagnostic_soh_targets_pct) + 1.0e-9
+        ):
+            remaining_real_cycles = 0
+
+    if run_status == "completed" and pending_diagnostic_targets:
+        run_status = "target_not_reached"
 
     main_df = pd.DataFrame(cycle_records)
     if not main_df.empty:
@@ -685,8 +834,14 @@ def _run_single_pulse_lifecycle_scenario(
         "solution_real_cycles": solution_real_cycles,
         "capacity_check_solutions": capacity_check_solutions,
         "capacity_check_real_cycles": capacity_check_real_cycles,
+        "diagnostic_df": pd.DataFrame(diagnostic_records),
+        "diagnostic_solutions": diagnostic_solutions,
         "final_solution": stored_solutions[-1] if stored_solutions else None,
         "real_cycles_covered": completed_real_cycles,
+        "last_valid_soh_pct": last_valid_soh_pct,
+        "pending_diagnostic_soh_targets_pct": pending_diagnostic_targets,
+        "run_status": run_status,
+        "failure_message": failure_message,
     }
 
 

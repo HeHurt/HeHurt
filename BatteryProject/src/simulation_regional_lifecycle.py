@@ -12,6 +12,7 @@ from typing import Mapping, Sequence
 
 import numpy as np
 import pybamm
+from scipy.integrate import cumulative_trapezoid
 from scipy.optimize import least_squares
 
 from .simulation_regional_parallel import (
@@ -27,6 +28,14 @@ from .simulation_regional_parallel import (
     solve_parallel_current_split,
 )
 from .simulation_rpt import safe_last_scalar, snapshot_degradation_variables
+
+
+NEGATIVE_SURFACE_POTENTIAL_DIFFERENCE = (
+    "Negative electrode surface potential difference [V]"
+)
+NEGATIVE_PLATING_OVERPOTENTIAL = (
+    "Negative electrode lithium plating reaction overpotential [V]"
+)
 
 
 @dataclass(frozen=True)
@@ -87,6 +96,351 @@ class _CouplingConvergenceError(RuntimeError):
     """Signal that a regional macro step needs a shorter continuation step."""
 
 
+def run_homogeneous_dfn_power_cycles(
+    parameter_values,
+    *,
+    discharge_power_w: float,
+    charge_power_w: float | None = None,
+    cycles: int,
+    rest_s: float = 600.0,
+    output_period_s: float = 120.0,
+    initial_soc: float = 1.0,
+    lower_cutoff_v: float = 2.5,
+    upper_cutoff_v: float = 3.65,
+    equivalent_cycle_factor: float = 1.0,
+    model_options: Mapping[str, object] | None = None,
+    var_pts: Mapping[str, int] | None = None,
+    rtol: float = 1e-6,
+    atol: float = 1e-6,
+    model_voltage_limits_v: tuple[float, float] = (2.0, 4.0),
+    progress_callback=None,
+) -> RegionalPowerCycleResult:
+    """Run a homogeneous DFN lifecycle with native PyBaMM power control.
+
+    The protocol is solved continuously by IDAKLU. ``output_period_s`` only
+    controls stored result resolution and does not split the electrochemical
+    solve into external coupling steps.
+    """
+    charge_power_w = float(discharge_power_w if charge_power_w is None else charge_power_w)
+    _validate_homogeneous_inputs(
+        discharge_power_w=discharge_power_w,
+        charge_power_w=charge_power_w,
+        cycles=cycles,
+        rest_s=rest_s,
+        output_period_s=output_period_s,
+        initial_soc=initial_soc,
+        lower_cutoff_v=lower_cutoff_v,
+        upper_cutoff_v=upper_cutoff_v,
+        equivalent_cycle_factor=equivalent_cycle_factor,
+        rtol=rtol,
+        atol=atol,
+        model_voltage_limits_v=model_voltage_limits_v,
+    )
+
+    options = {"contact resistance": "true"}
+    if model_options is not None:
+        options.update(dict(model_options))
+    mesh_points = dict(DEFAULT_REGIONAL_DFN_VAR_PTS if var_pts is None else var_pts)
+    params = parameter_values.copy()
+    params.update(
+        {
+            "Lower voltage cut-off [V]": float(model_voltage_limits_v[0]),
+            "Upper voltage cut-off [V]": float(model_voltage_limits_v[1]),
+        },
+        check_already_exists=False,
+    )
+    cycle_steps = (
+        f"Discharge at {float(discharge_power_w):.12g} W until {float(lower_cutoff_v):.12g} V",
+        f"Rest for {float(rest_s):.12g} seconds",
+        f"Charge at {charge_power_w:.12g} W until {float(upper_cutoff_v):.12g} V",
+        f"Rest for {float(rest_s):.12g} seconds",
+    )
+    experiment = pybamm.Experiment(
+        [cycle_steps] * int(cycles),
+        period=f"{float(output_period_s):.12g} seconds",
+    )
+    simulation = pybamm.Simulation(
+        pybamm.lithium_ion.DFN(options),
+        parameter_values=params,
+        experiment=experiment,
+        solver=pybamm.IDAKLUSolver(rtol=float(rtol), atol=float(atol)),
+        var_pts=mesh_points,
+    )
+    solution = simulation.solve(initial_soc=float(initial_soc), showprogress=False)
+    return _convert_homogeneous_solution(
+        solution,
+        cycles=int(cycles),
+        equivalent_cycle_factor=float(equivalent_cycle_factor),
+        nominal_capacity_ah=float(params["Nominal cell capacity [A.h]"]),
+        discharge_power_w=float(discharge_power_w),
+        charge_power_w=charge_power_w,
+        progress_callback=progress_callback,
+    )
+
+
+def _validate_homogeneous_inputs(
+    *,
+    discharge_power_w,
+    charge_power_w,
+    cycles,
+    rest_s,
+    output_period_s,
+    initial_soc,
+    lower_cutoff_v,
+    upper_cutoff_v,
+    equivalent_cycle_factor,
+    rtol,
+    atol,
+    model_voltage_limits_v,
+):
+    positive = {
+        "discharge_power_w": discharge_power_w,
+        "charge_power_w": charge_power_w,
+        "rest_s": rest_s,
+        "output_period_s": output_period_s,
+        "equivalent_cycle_factor": equivalent_cycle_factor,
+        "rtol": rtol,
+        "atol": atol,
+    }
+    for name, value in positive.items():
+        if not isfinite(float(value)) or float(value) <= 0:
+            raise ValueError(f"{name} must be positive and finite")
+    if int(cycles) != cycles or cycles <= 0:
+        raise ValueError("cycles must be a positive integer")
+    if not 0 <= float(initial_soc) <= 1:
+        raise ValueError("initial_soc must be in [0, 1]")
+    if not float(lower_cutoff_v) < float(upper_cutoff_v):
+        raise ValueError("lower_cutoff_v must be below upper_cutoff_v")
+    if len(model_voltage_limits_v) != 2 or not (
+        float(model_voltage_limits_v[0]) < float(lower_cutoff_v)
+        and float(model_voltage_limits_v[1]) > float(upper_cutoff_v)
+    ):
+        raise ValueError("model voltage limits must sit outside protocol voltage cutoffs")
+
+
+def _solution_time_series(solution, variable_name, *, default=float("nan")):
+    time_s = np.asarray(solution["Time [s]"].entries, dtype=float).reshape(-1)
+    try:
+        values = np.asarray(solution[variable_name].entries, dtype=float)
+    except (KeyError, TypeError, ValueError):
+        return np.full(time_s.size, default, dtype=float)
+    if values.ndim == 0:
+        return np.full(time_s.size, float(values), dtype=float)
+    if values.ndim == 1:
+        return values.reshape(-1)
+    return values.reshape(-1, values.shape[-1])[0]
+
+
+def _solution_spatial_min_series(solution, variable_name):
+    time_s = np.asarray(solution["Time [s]"].entries, dtype=float).reshape(-1)
+    try:
+        values = np.asarray(solution[variable_name].entries, dtype=float)
+    except (KeyError, TypeError, ValueError):
+        return np.full(time_s.size, float("nan"), dtype=float)
+    if values.ndim <= 1:
+        return values.reshape(-1)
+    return np.nanmin(values.reshape(-1, values.shape[-1]), axis=0)
+
+
+def _cumulative_absolute_integral(values, time_s):
+    values = np.asarray(values, dtype=float).reshape(-1)
+    time_s = np.asarray(time_s, dtype=float).reshape(-1)
+    if time_s.size <= 1:
+        return np.zeros(time_s.size, dtype=float)
+    return np.concatenate([[0.0], cumulative_trapezoid(np.abs(values), time_s)])
+
+
+def _homogeneous_step_rows(
+    step_solution,
+    *,
+    cycle,
+    equivalent_cycle,
+    segment,
+    target_power_w,
+    nominal_capacity_ah,
+):
+    time_s = np.asarray(step_solution["Time [s]"].entries, dtype=float).reshape(-1)
+    segment_time_s = time_s - time_s[0]
+    voltage_v = _solution_time_series(step_solution, "Terminal voltage [V]")
+    current_a = _solution_time_series(step_solution, "Current [A]")
+    ocv_v = _solution_time_series(step_solution, "Surface open-circuit voltage [V]")
+    actual_power_w = voltage_v * current_a
+    capacity_ah = _cumulative_absolute_integral(current_a, time_s) / 3600.0
+    negative_potential_v = _solution_spatial_min_series(
+        step_solution, NEGATIVE_SURFACE_POTENTIAL_DIFFERENCE
+    )
+    plating_overpotential_v = _solution_spatial_min_series(
+        step_solution, NEGATIVE_PLATING_OVERPOTENTIAL
+    )
+    porosity = {
+        column_name: _solution_time_series(step_solution, variable_name)
+        for column_name, variable_name in REGIONAL_POROSITY_VARIABLES.items()
+    }
+    rows = []
+    for index in range(time_s.size):
+        if abs(current_a[index]) > CURRENT_TOLERANCE_A:
+            resistance_ohm = abs((ocv_v[index] - voltage_v[index]) / current_a[index])
+        else:
+            resistance_ohm = float("nan")
+        row = {
+            "sim_cycle": cycle,
+            "equivalent_cycle": equivalent_cycle,
+            "segment": segment,
+            "segment_step": index,
+            "segment_time_s": segment_time_s[index],
+            "global_time_s": time_s[index],
+            "segment_capacity_ah": capacity_ah[index],
+            "region": "whole",
+            "area_fraction": 1.0,
+            "current_a": current_a[index],
+            "total_current_a": current_a[index],
+            "c_rate": current_a[index] / nominal_capacity_ah,
+            "target_power_w": target_power_w,
+            "actual_power_w": actual_power_w[index],
+            "power_error_w": actual_power_w[index] - target_power_w,
+            "voltage_v": voltage_v[index],
+            "terminal_voltage_v": voltage_v[index],
+            "ocv_v": ocv_v[index],
+            "apparent_resistance_ohm": resistance_ohm,
+            "iterations": 0,
+            "voltage_spread_v": 0.0,
+            "negative_surface_potential_difference_min_v": negative_potential_v[index],
+            "negative_plating_overpotential_min_v": plating_overpotential_v[index],
+        }
+        row.update({name: values[index] for name, values in porosity.items()})
+        rows.append(row)
+    return rows
+
+
+def _segment_metrics(step_solution):
+    time_s = np.asarray(step_solution["Time [s]"].entries, dtype=float).reshape(-1)
+    voltage_v = _solution_time_series(step_solution, "Terminal voltage [V]")
+    current_a = _solution_time_series(step_solution, "Current [A]")
+    power_w = voltage_v * current_a
+    capacity_ah = _cumulative_absolute_integral(current_a, time_s)[-1] / 3600.0
+    energy_wh = _cumulative_absolute_integral(power_w, time_s)[-1] / 3600.0
+    return {
+        "capacity_ah": float(capacity_ah),
+        "energy_wh": float(energy_wh),
+        "duration_s": float(time_s[-1] - time_s[0]),
+        "end_voltage_v": float(voltage_v[-1]),
+    }
+
+
+def _snapshot_solution_degradation(solution, cycle, equivalent_cycle, stage, config):
+    faraday_to_ah = 96485.33212 / 3600.0
+    snapshot = snapshot_degradation_variables(solution)
+    lam_pos_mol = safe_last_scalar(
+        solution,
+        "Loss of lithium due to loss of active material in positive electrode [mol]",
+    )
+    snapshot.update(
+        {
+            "sim_cycle": cycle,
+            "equivalent_cycle": equivalent_cycle,
+            "stage": stage,
+            "region": config.name,
+            "area_fraction": config.area_fraction,
+            "lam_pos_ah": (
+                float("nan") if not isfinite(lam_pos_mol) else lam_pos_mol * faraday_to_ah
+            ),
+            "lam_negative_pct": safe_last_scalar(
+                solution, "Loss of active material in negative electrode [%]"
+            ),
+            "lam_positive_pct": safe_last_scalar(
+                solution, "Loss of active material in positive electrode [%]"
+            ),
+            "separator_porosity_avg": safe_last_scalar(
+                solution, "X-averaged separator porosity"
+            ),
+            "positive_porosity_avg": safe_last_scalar(
+                solution, "X-averaged positive electrode porosity"
+            ),
+        }
+    )
+    return snapshot
+
+
+def _convert_homogeneous_solution(
+    solution,
+    *,
+    cycles,
+    equivalent_cycle_factor,
+    nominal_capacity_ah,
+    discharge_power_w,
+    charge_power_w,
+    progress_callback,
+):
+    if len(solution.cycles) != cycles:
+        raise RuntimeError(f"expected {cycles} cycles, PyBaMM returned {len(solution.cycles)}")
+    segment_names = ("discharge", "rest_after_discharge", "charge", "rest_after_charge")
+    target_powers = (discharge_power_w, 0.0, -charge_power_w, 0.0)
+    whole = RegionalDFNConfig("whole", 1.0)
+    step_rows = []
+    cycle_rows = []
+    degradation_rows = []
+    first_discharge_capacity_ah = None
+    for cycle_index, cycle_solution in enumerate(solution.cycles, start=1):
+        if len(cycle_solution.steps) != 4:
+            raise RuntimeError(
+                f"cycle {cycle_index} expected 4 protocol steps, got {len(cycle_solution.steps)}"
+            )
+        equivalent_cycle = cycle_index * equivalent_cycle_factor
+        for segment, target_power_w, step_solution in zip(
+            segment_names, target_powers, cycle_solution.steps
+        ):
+            step_rows.extend(
+                _homogeneous_step_rows(
+                    step_solution,
+                    cycle=cycle_index,
+                    equivalent_cycle=equivalent_cycle,
+                    segment=segment,
+                    target_power_w=target_power_w,
+                    nominal_capacity_ah=nominal_capacity_ah,
+                )
+            )
+        discharge = _segment_metrics(cycle_solution.steps[0])
+        charge = _segment_metrics(cycle_solution.steps[2])
+        if first_discharge_capacity_ah is None:
+            first_discharge_capacity_ah = discharge["capacity_ah"]
+        cycle_step_rows = [row for row in step_rows if row["sim_cycle"] == cycle_index]
+        cycle_row = {
+            "sim_cycle": cycle_index,
+            "equivalent_cycle": equivalent_cycle,
+            "discharge_capacity_ah": discharge["capacity_ah"],
+            "charge_capacity_ah": charge["capacity_ah"],
+            "capacity_retention_pct": (
+                discharge["capacity_ah"] / first_discharge_capacity_ah * 100.0
+            ),
+            "discharge_energy_wh": discharge["energy_wh"],
+            "charge_energy_wh": charge["energy_wh"],
+            "discharge_duration_s": discharge["duration_s"],
+            "charge_duration_s": charge["duration_s"],
+            "discharge_end_voltage_v": discharge["end_voltage_v"],
+            "charge_end_voltage_v": charge["end_voltage_v"],
+            "max_voltage_spread_v": 0.0,
+            "max_abs_power_error_w": max(
+                abs(row["power_error_w"]) for row in cycle_step_rows
+            ),
+        }
+        cycle_rows.append(cycle_row)
+        degradation_rows.append(
+            _snapshot_solution_degradation(
+                cycle_solution.steps[0], cycle_index, equivalent_cycle, "discharge_end", whole
+            )
+        )
+        if progress_callback is not None:
+            progress_callback(dict(cycle_row))
+    return RegionalPowerCycleResult(
+        region_configs=(whole,),
+        step_rows=tuple(step_rows),
+        iteration_rows=(),
+        cycle_rows=tuple(cycle_rows),
+        degradation_rows=tuple(degradation_rows),
+        final_solutions={"whole": solution},
+    )
+
+
 def solve_parallel_power_split(
     regions: Sequence[RegionalCellState],
     target_power_w: float,
@@ -132,6 +486,8 @@ def run_regional_dfn_power_cycles(
     cycles: int,
     rest_s: float = 600.0,
     macro_step_s: float = 300.0,
+    maximum_macro_step_s: float | None = None,
+    adaptive_voltage_window_v: float = 0.15,
     initial_soc: float = 1.0,
     lower_cutoff_v: float = 2.5,
     upper_cutoff_v: float = 3.65,
@@ -172,6 +528,9 @@ def run_regional_dfn_power_cycles(
     equivalent_cycle_factor : float
         Reporting multiplier, for example 50 accelerated real cycles per
         simulated cycle.
+    maximum_macro_step_s : float or None
+        When provided above ``macro_step_s``, use larger steps away from voltage
+        cutoffs and during rests. ``macro_step_s`` remains the near-cutoff step.
     progress_callback : callable or None
         Optional callback receiving the completed cycle-summary dictionary.
 
@@ -189,6 +548,8 @@ def run_regional_dfn_power_cycles(
         cycles=cycles,
         rest_s=rest_s,
         macro_step_s=macro_step_s,
+        maximum_macro_step_s=maximum_macro_step_s,
+        adaptive_voltage_window_v=adaptive_voltage_window_v,
         initial_soc=initial_soc,
         lower_cutoff_v=lower_cutoff_v,
         upper_cutoff_v=upper_cutoff_v,
@@ -245,6 +606,10 @@ def run_regional_dfn_power_cycles(
             global_time_s=global_time_s,
             previous_terminal_voltage_v=last_terminal_voltage_v,
             macro_step_s=float(macro_step_s),
+            maximum_macro_step_s=(
+                None if maximum_macro_step_s is None else float(maximum_macro_step_s)
+            ),
+            adaptive_voltage_window_v=float(adaptive_voltage_window_v),
             max_segment_duration_s=float(max_segment_duration_s),
             max_iterations=int(max_iterations),
             voltage_tolerance_v=float(voltage_tolerance_v),
@@ -272,6 +637,10 @@ def run_regional_dfn_power_cycles(
             global_time_s=global_time_s,
             previous_terminal_voltage_v=last_terminal_voltage_v,
             macro_step_s=float(macro_step_s),
+            maximum_macro_step_s=(
+                None if maximum_macro_step_s is None else float(maximum_macro_step_s)
+            ),
+            adaptive_voltage_window_v=float(adaptive_voltage_window_v),
             max_segment_duration_s=float(max_segment_duration_s),
             max_iterations=int(max_iterations),
             voltage_tolerance_v=float(voltage_tolerance_v),
@@ -296,6 +665,10 @@ def run_regional_dfn_power_cycles(
             global_time_s=global_time_s,
             previous_terminal_voltage_v=last_terminal_voltage_v,
             macro_step_s=float(macro_step_s),
+            maximum_macro_step_s=(
+                None if maximum_macro_step_s is None else float(maximum_macro_step_s)
+            ),
+            adaptive_voltage_window_v=float(adaptive_voltage_window_v),
             max_segment_duration_s=float(max_segment_duration_s),
             max_iterations=int(max_iterations),
             voltage_tolerance_v=float(voltage_tolerance_v),
@@ -320,6 +693,10 @@ def run_regional_dfn_power_cycles(
             global_time_s=global_time_s,
             previous_terminal_voltage_v=last_terminal_voltage_v,
             macro_step_s=float(macro_step_s),
+            maximum_macro_step_s=(
+                None if maximum_macro_step_s is None else float(maximum_macro_step_s)
+            ),
+            adaptive_voltage_window_v=float(adaptive_voltage_window_v),
             max_segment_duration_s=float(max_segment_duration_s),
             max_iterations=int(max_iterations),
             voltage_tolerance_v=float(voltage_tolerance_v),
@@ -428,6 +805,28 @@ def _build_runtimes(
     return runtimes
 
 
+def _select_macro_step_s(
+    *,
+    segment,
+    terminal_voltage_v,
+    cutoff_v,
+    minimum_step_s,
+    maximum_step_s,
+    adaptive_voltage_window_v,
+):
+    """Choose a larger flat-region step while retaining cutoff resolution."""
+    if maximum_step_s is None or maximum_step_s <= minimum_step_s:
+        return float(minimum_step_s)
+    if cutoff_v is None or segment.startswith("rest"):
+        return float(maximum_step_s)
+    distance_v = abs(float(terminal_voltage_v) - float(cutoff_v))
+    if distance_v <= adaptive_voltage_window_v / 3.0:
+        return float(minimum_step_s)
+    if distance_v <= adaptive_voltage_window_v:
+        return float(min(2.0 * minimum_step_s, maximum_step_s))
+    return float(maximum_step_s)
+
+
 def _advance_segment(
     runtimes,
     *,
@@ -441,6 +840,8 @@ def _advance_segment(
     global_time_s,
     previous_terminal_voltage_v,
     macro_step_s,
+    maximum_macro_step_s,
+    adaptive_voltage_window_v,
     max_segment_duration_s,
     max_iterations,
     voltage_tolerance_v,
@@ -466,7 +867,14 @@ def _advance_segment(
             raise RuntimeError(
                 f"cycle {cycle} {segment} exceeded {max_segment_duration_s:.6g} s before cutoff"
             )
-        dt_s = macro_step_s
+        dt_s = _select_macro_step_s(
+            segment=segment,
+            terminal_voltage_v=terminal_voltage_v,
+            cutoff_v=cutoff_v,
+            minimum_step_s=macro_step_s,
+            maximum_step_s=maximum_macro_step_s,
+            adaptive_voltage_window_v=adaptive_voltage_window_v,
+        )
         if duration_s is not None:
             dt_s = min(dt_s, duration_s - elapsed_s)
         step_index += 1
@@ -570,6 +978,16 @@ def _advance_segment(
                     for column_name, variable_name in REGIONAL_POROSITY_VARIABLES.items()
                 }
             )
+            row.update(
+                {
+                    "negative_surface_potential_difference_min_v": _solution_min_scalar(
+                        data, NEGATIVE_SURFACE_POTENTIAL_DIFFERENCE
+                    ),
+                    "negative_plating_overpotential_min_v": _solution_min_scalar(
+                        data, NEGATIVE_PLATING_OVERPOTENTIAL
+                    ),
+                }
+            )
             step_rows.append(row)
 
         initial_currents = dict(result.currents_a)
@@ -585,6 +1003,18 @@ def _advance_segment(
         "max_voltage_spread_v": max_voltage_spread_v,
         "max_abs_power_error_w": max_abs_power_error_w,
     }
+
+
+def _solution_min_scalar(solution, variable_name):
+    """Return the finite spatial-time minimum of one solution variable."""
+    try:
+        values = np.asarray(solution[variable_name].entries, dtype=float)
+    except (KeyError, TypeError, ValueError):
+        return float("nan")
+    finite = values[np.isfinite(values)]
+    if finite.size == 0:
+        return float("nan")
+    return float(np.min(finite))
 
 
 def _solve_coupled_step(
@@ -979,6 +1409,8 @@ def _validate_inputs(
     cycles,
     rest_s,
     macro_step_s,
+    maximum_macro_step_s,
+    adaptive_voltage_window_v,
     initial_soc,
     lower_cutoff_v,
     upper_cutoff_v,
@@ -1011,6 +1443,7 @@ def _validate_inputs(
         "discharge_power_w": discharge_power_w,
         "rest_s": rest_s,
         "macro_step_s": macro_step_s,
+        "adaptive_voltage_window_v": adaptive_voltage_window_v,
         "equivalent_cycle_factor": equivalent_cycle_factor,
         "nominal_voltage_v": nominal_voltage_v,
         "rtol": rtol,
@@ -1020,6 +1453,10 @@ def _validate_inputs(
         "minimum_resistance_ohm": minimum_resistance_ohm,
         "max_segment_duration_s": max_segment_duration_s,
     }
+    if maximum_macro_step_s is not None:
+        positive_values["maximum_macro_step_s"] = maximum_macro_step_s
+        if float(maximum_macro_step_s) < float(macro_step_s):
+            raise ValueError("maximum_macro_step_s must be at least macro_step_s")
     if charge_power_w is not None:
         positive_values["charge_power_w"] = charge_power_w
     for name, value in positive_values.items():
@@ -1047,6 +1484,7 @@ def _validate_inputs(
 
 __all__ = [
     "RegionalPowerCycleResult",
+    "run_homogeneous_dfn_power_cycles",
     "run_regional_dfn_power_cycles",
     "solve_parallel_power_split",
 ]

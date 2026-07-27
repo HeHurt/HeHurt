@@ -6,7 +6,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
-from .config import DEFAULT_PLOT_STYLE, DEFAULT_FONT_SANS_SERIF
+from .config import DEFAULT_PLOT_STYLE
 from .analysis import calculate_rrmse_from_sol
 
 logger = logging.getLogger(__name__)
@@ -16,11 +16,10 @@ def _apply_default_style():
     """应用默认绘图风格与字体配置。"""
     try:
         if DEFAULT_PLOT_STYLE:
-            plt.style.use(DEFAULT_PLOT_STYLE)
+            plt.style.use("science")
     except Exception as exc:
         logger.warning("Failed to apply plot style %r (%s); using matplotlib default.", DEFAULT_PLOT_STYLE, exc)
-    if DEFAULT_FONT_SANS_SERIF:
-        plt.rcParams["font.sans-serif"] = DEFAULT_FONT_SANS_SERIF
+    plt.rcParams["font.family"] = "Calibri, Microsoft YaHei"
     plt.rcParams["axes.unicode_minus"] = False
 
 
@@ -303,6 +302,70 @@ def plot_analysis(sol, t_factor=50):
     plot_lithium_loss(ax[1, 2], sol, step=10)
     plot_porosity(ax[1, 3], sol)
     return fig, ax
+
+
+def plot_regional_negative_potential_analysis(
+    step_history,
+    potential_column="negative_surface_potential_difference_min_v",
+):
+    """Plot regional and overall charge-only negative-potential minima.
+
+    ``step_history`` is the DataFrame created from
+    ``RegionalPowerCycleResult.steps()``. The overall value is the minimum
+    across all accepted charge macro steps and all regions in each cycle.
+    """
+    required = {
+        "segment",
+        "sim_cycle",
+        "equivalent_cycle",
+        "region",
+        potential_column,
+    }
+    missing = required.difference(step_history.columns)
+    if missing:
+        raise ValueError(f"step_history is missing columns: {sorted(missing)}")
+
+    charge = step_history.loc[
+        step_history["segment"].eq("charge"),
+        ["sim_cycle", "equivalent_cycle", "region", potential_column],
+    ].copy()
+    charge[potential_column] = charge[potential_column].astype(float)
+    charge = charge[np.isfinite(charge[potential_column])]
+    if charge.empty:
+        raise ValueError(f"no finite charge data found in {potential_column!r}")
+
+    regional = charge.groupby(
+        ["sim_cycle", "equivalent_cycle", "region"], as_index=False
+    )[potential_column].min()
+    overall = regional.loc[
+        regional.groupby("sim_cycle")[potential_column].idxmin()
+    ].sort_values("sim_cycle")
+
+    fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.4), constrained_layout=True)
+    color_map = {"corner": "#D1495B", "middle": "#00798C", "top": "#EDA942"}
+    for region, frame in regional.groupby("region"):
+        axes[0].plot(
+            frame["equivalent_cycle"],
+            frame[potential_column],
+            label=region,
+            color=color_map.get(region),
+            linewidth=1.8,
+        )
+    axes[1].plot(
+        overall["equivalent_cycle"],
+        overall[potential_column],
+        color="#6A4C93",
+        linewidth=2.0,
+        label="Minimum across regions",
+    )
+    axes[0].set_title("Charge-only minimum by region")
+    axes[1].set_title("Overall charge-only minimum")
+    for axis in axes:
+        axis.set_xlabel("Equivalent cycle")
+        axis.set_ylabel("Potential (V)")
+        axis.grid(alpha=0.25)
+        axis.legend()
+    return fig, axes, regional, overall
 
 
 def plot_cycle_layer(ax, sol, t_factor=50):

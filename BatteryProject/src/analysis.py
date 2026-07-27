@@ -25,12 +25,28 @@ def calc_rrmse(y_true, y_pred):
     ----
     tuple(float, float)
         (rmse, rrmse)，其中 rrmse = rmse / mean(y_true)。
+        当 mean(y_true) 为 0 或无效时 rrmse 返回 nan 并告警。
     """
-    y_true = np.asarray(y_true)
-    y_pred = np.asarray(y_pred)
-    rmse = np.sqrt(np.mean((y_true - y_pred) ** 2))
-    rrmse = rmse / np.mean(y_true)
-    return rmse, rrmse
+    y_true = np.asarray(y_true, dtype=float)
+    y_pred = np.asarray(y_pred, dtype=float)
+    if y_true.shape != y_pred.shape:
+        n = min(y_true.size, y_pred.size)
+        logger.warning(
+            "calc_rrmse: y_true(%d) 与 y_pred(%d) 长度不一致，截断到 %d。",
+            y_true.size, y_pred.size, n,
+        )
+        y_true = y_true[:n]
+        y_pred = y_pred[:n]
+    diff = y_true - y_pred
+    mask = np.isfinite(diff)
+    if not np.any(mask):
+        return np.nan, np.nan
+    rmse = float(np.sqrt(np.mean((y_true[mask] - y_pred[mask]) ** 2)))
+    mean_true = float(np.mean(y_true[mask]))
+    if mean_true == 0 or not np.isfinite(mean_true):
+        logger.warning("calc_rrmse: mean(y_true)=%.6g 为零或无效，rrmse 置为 nan。", mean_true)
+        return rmse, np.nan
+    return rmse, rmse / mean_true
 
 
 def retention_from_capacity(caps):
@@ -57,23 +73,52 @@ def calculate_rrmse_from_sol(df, x_columns, y_columns, sol_list, labels, charge_
     """
     results = []
     for x_col, y_col, sol, label in zip(x_columns, y_columns, sol_list, labels):
-        x_exp = df[x_col].dropna().to_numpy()
-        y_exp = df[y_col].dropna().to_numpy()
-        voltage = sol["Voltage [V]"].entries
-        cap = sol["Throughput capacity [A.h]"].entries
-        idx_max = voltage.argmax()
+        # 实验侧：x/y 按行同时 dropna，保证长度一致
+        sub = df[[x_col, y_col]].dropna()
+        x_exp = sub[x_col].to_numpy(dtype=float)
+        y_exp = sub[y_col].to_numpy(dtype=float)
+
+        voltage = np.asarray(sol["Voltage [V]"].entries, dtype=float)
+        cap = np.asarray(sol["Throughput capacity [A.h]"].entries, dtype=float)
+        try:
+            current = np.asarray(sol["Current [A]"].entries, dtype=float)
+        except (KeyError, TypeError):
+            current = np.full_like(voltage, np.nan)
+        # 按电流符号切分充放电段（与 compute_cycle_energies 口径一致：
+        # 电流>0 放电、<0 充电），不再依赖 voltage.argmax()，避免
+        # CC-CV 平台/多段工况下切分错误。
         if charge_or_discharge == "charge":
-            x_sim = cap[:idx_max + 1]
-            y_sim = voltage[:idx_max + 1]
+            seg_mask = current < 0
         else:
-            x_sim = (cap[idx_max + 1:] - cap[idx_max])
-            y_sim = voltage[idx_max + 1:]
-        f_sim = interp1d(x_sim, y_sim, bounds_error=False, fill_value="extrapolate")
-        y_sim_interp = f_sim(x_exp)
-        mask = ~np.isnan(y_sim_interp)
-        if np.any(mask):
-            rmse, rrmse = calc_rrmse(y_exp[mask], y_sim_interp[mask])
+            seg_mask = current > 0
+        if np.any(seg_mask):
+            x_sim = cap[seg_mask]
+            y_sim = voltage[seg_mask]
+            if x_sim.size > 0:
+                x_sim = x_sim - x_sim[0]
         else:
+            logger.warning(
+                "calculate_rrmse_from_sol: 解中未找到 %s 段电流，回退整段曲线。",
+                charge_or_discharge,
+            )
+            x_sim = cap
+            y_sim = voltage
+            if x_sim.size > 0:
+                x_sim = x_sim - x_sim[0]
+
+        if x_sim.size >= 2:
+            f_sim = interp1d(x_sim, y_sim, bounds_error=False, fill_value="extrapolate")
+            y_sim_interp = f_sim(x_exp)
+            mask = np.isfinite(y_sim_interp) & np.isfinite(y_exp)
+            if np.any(mask):
+                rmse, rrmse = calc_rrmse(y_exp[mask], y_sim_interp[mask])
+            else:
+                rmse, rrmse = np.nan, np.nan
+        else:
+            logger.warning(
+                "calculate_rrmse_from_sol: %s 段仿真点数不足(%d)，无法计算误差。",
+                label, x_sim.size,
+            )
             rmse, rrmse = np.nan, np.nan
         results.append({
             "label": label,
