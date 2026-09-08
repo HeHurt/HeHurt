@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "task_id": "202607_何争_587Ah_MIC_20C_98SOC_10s充电峰值功率V3",
+  "cell": "cross_cell",
+  "task_name": "587Ah_MIC_20C_98SOC_10s充电峰值功率",
+  "owner": "何争",
+  "month": "202607",
+  "version": "V3",
+  "status": "published",
+  "created_at": "2026-07-28T17:07:15",
+  "template": "BatteryProject/examples/峰值电流.ipynb",
+  "task_notebook": "cross_cell_587Ah_MIC_20C_98SOC_10s充电峰值功率.ipynb",
+  "latest_run_id": "20260728_170855_587Ah_override_MIC_contact_on_20C_98SOC_10s_charge_peak_power"
+}

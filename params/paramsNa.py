@@ -18,21 +18,23 @@ HardC_charge = build_ocp_function("HardC.csv", name="Neg_OCP")
 HardC_discharge = build_ocp_function("HardC.csv", name="Neg_OCP")
           
 def get_hithium_params(t_factor=1,temperature=298.15):
+    # 54-case rate benchmark calibration (2026-08-13): particle transport was
+    # previously over-suppressed below 25 C, causing premature voltage cut-off.
     Na_diffusivity = build_diffusivity(
-        2e-15,
-        select_by_requested_temperature(temperature, 65000, 20000, threshold=298),
+        4e-15,
+        select_by_requested_temperature(temperature, 0, 20000, threshold=298),
     )
     Gr_diffusivity = build_diffusivity(
-        1.06e-14 * 5,
-        select_by_requested_temperature(temperature, 60000, 20000, threshold=298),
+        1.06e-14 * 10,
+        select_by_requested_temperature(temperature, 0, 20000, threshold=298),
     )
     graphite_exchange_current_density = build_exchange_current_density(
-        1.2121e-9 * 2.5,
+        1.2121e-9 * 2.5 * 3,
         select_by_requested_temperature(temperature, 70000, 20000, threshold=298),
     )
     Na_exchange_current_density = build_exchange_current_density(
-        1.1131e-10 * 2.5,
-        select_by_requested_temperature(temperature, 65000, 20000, threshold=298),
+        1.1131e-10 * 2.5 * 3,
+        select_by_requested_temperature(temperature, 70000, 20000, threshold=298),
     )
 
     hithium_params = {
@@ -43,7 +45,8 @@ def get_hithium_params(t_factor=1,temperature=298.15):
         "Negative particle radius [m]": 2.3331E-6 ,
         "Positive particle radius [m]": 2.9395E-6,
         "Electrode height [m]": 0.1875 ,
-        "Electrode width [m]": 14.297*2*2 *.9,
+        # Calibrated effective area: 0.90 x the previous value.
+        "Electrode width [m]": 14.297 * 2 * 2 * 0.81,
         
         # 电池容量参数
         "Nominal cell capacity [A.h]": 162,
@@ -68,7 +71,9 @@ def get_hithium_params(t_factor=1,temperature=298.15):
         "Lower voltage cut-off [V]": 2.0,
         "Upper voltage cut-off [V]": 3.65,
         "Open-circuit voltage at 0% SOC [V]": 2.0,
-        "Open-circuit voltage at 100% SOC [V]": 3.65,
+        # The measured discharge tests start after charging to 3.3 V; 3.25 V
+        # represents the relaxed full-state OCV used for SOC initialization.
+        "Open-circuit voltage at 100% SOC [V]": 3.25,
         
         # 电化学参数
         "Negative electrode exchange-current density [A.m-2]": graphite_exchange_current_density,

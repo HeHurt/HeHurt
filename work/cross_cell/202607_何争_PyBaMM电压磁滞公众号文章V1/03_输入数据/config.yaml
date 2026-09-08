@@ -1,0 +1,3 @@
+cell: cross_cell
+task: PyBaMM电压磁滞公众号文章
+run_mode: smoke

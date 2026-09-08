@@ -1,0 +1,57 @@
+{
+  "published_runs": [
+    {
+      "run_id": "20260904_100448_CW368_1175Ah_25C",
+      "source": "BatteryProject/output/runs/cw368_1175_benchmark/20260904_100448_CW368_1175Ah_25C",
+      "published_at": "2026-09-04T14:35:19",
+      "mode": "selected",
+      "files": [
+        {
+          "path": "config.json",
+          "size": 1241,
+          "sha256": "deaae8f7ea2e3f43a56be516a3982ad5c6feb0e8500a967a0822840c5f7b315e"
+        },
+        {
+          "path": "curves.csv",
+          "size": 1792032,
+          "sha256": "7b32e42dccb9ba18814caa28bf7feb102ca16f2551e9edbe0412d56852f66ec1"
+        },
+        {
+          "path": "efficiency_summary.csv",
+          "size": 382,
+          "sha256": "ca0eb9ba8eed0017d9a89f6d5ed23bc36065be15fb401fa3e5d833170bdbac96"
+        },
+        {
+          "path": "heat_summary.csv",
+          "size": 2426,
+          "sha256": "b2c772e39d39a79350c3f5865d4e677b828ec699c94c3b2877642e8637e71cba"
+        },
+        {
+          "path": "metrics.csv",
+          "size": 4548,
+          "sha256": "91a63d10f2f4f80301f80efdb66ed2ce9f7777d42e809d928b1b763951d718da"
+        },
+        {
+          "path": "run.log",
+          "size": 634,
+          "sha256": "152f13a73963d329ffcbce18dbb921900c2218c023fed338fa9ce393f1829eb7"
+        },
+        {
+          "path": "结果汇总.xlsx",
+          "size": 11084,
+          "sha256": "3065ba3de35961527e5cf4d03512cfdcab28956dd206a2da798c13692656aa43"
+        },
+        {
+          "path": "audit/acceptance_checks.json",
+          "size": 457,
+          "sha256": "d1e9d2d49bf5f1a7bcaf9d2d9cdfd1c4fc045f4f5d1a729b57bb04e1935b3cb8"
+        },
+        {
+          "path": "plots/CW368-1175Ah_0.167P_0.333P_voltage_benchmark.png",
+          "size": 307496,
+          "sha256": "edd0ff7605509d67fd91673279d9aa2ac9e6247813a3cfa64bf6722eade0f074"
+        }
+      ]
+    }
+  ]
+}

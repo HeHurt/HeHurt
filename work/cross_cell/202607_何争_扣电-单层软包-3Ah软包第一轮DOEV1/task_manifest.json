@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "task_id": "202607_何争_扣电-单层软包-3Ah软包第一轮DOEV1",
+  "cell": "cross_cell",
+  "task_name": "扣电-单层软包-3Ah软包第一轮DOE",
+  "owner": "何争",
+  "month": "202607",
+  "version": "V1",
+  "status": "created",
+  "created_at": "2026-07-30T20:13:14",
+  "template": null,
+  "task_notebook": null
+}

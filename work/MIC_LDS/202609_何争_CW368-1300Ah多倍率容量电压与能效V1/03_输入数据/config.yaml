@@ -1,0 +1,17 @@
+cell: CW368-1300Ah
+chemistry: LFP
+temperature_c: 25
+rated_capacity_ah: 1300
+nominal_voltage_v: 3.2
+single_electrode_height_mm: 213.5
+electrode_length_mm: 555
+p_rates: [0.125, 0.167, 0.25, 0.33, 0.5]
+power_targets_w: [520.0, 694.72, 1040.0, 1372.8, 2080.0]
+charge_cutoff_v: 3.65
+discharge_cutoff_v: 2.5
+charge_initial_soc: 0.008
+discharge_initial_soc: 0.995
+effective_area_factor: 1.0
+negative_ocp_warp_enabled: false
+energy_efficiency_definition: discharge_energy_wh / charge_energy_wh
+run_mode: full_sweep

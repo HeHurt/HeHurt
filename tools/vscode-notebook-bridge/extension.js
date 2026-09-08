@@ -148,6 +148,14 @@ async function handleRequest(context, request, response) {
     return;
   }
 
+  if (request.method === "POST" && url.pathname === "/insert-cell") {
+    const body = await readJsonBody(request);
+    const notebook = getTargetNotebookOrThrow(body);
+    const result = await insertNotebookCell(notebook, body);
+    sendJson(response, 200, { ok: true, result });
+    return;
+  }
+
   if (request.method === "POST" && url.pathname === "/apply-edits") {
     const body = await readJsonBody(request);
     const notebook = getTargetNotebookOrThrow(body);
@@ -160,7 +168,13 @@ async function handleRequest(context, request, response) {
   sendJson(response, 404, {
     ok: false,
     error: "Unknown endpoint.",
-    endpoints: ["GET /status", "GET /active-notebook", "POST /replace-cell", "POST /apply-edits"]
+    endpoints: [
+      "GET /status",
+      "GET /active-notebook",
+      "POST /replace-cell",
+      "POST /insert-cell",
+      "POST /apply-edits"
+    ]
   });
 }
 
@@ -287,6 +301,48 @@ async function replaceCellTexts(notebook, edits, body) {
   };
 }
 
+async function insertNotebookCell(notebook, body) {
+  const index = toInsertCellIndex(body.index, notebook.cellCount);
+  const kind = parseCellKind(body.kind);
+  const text = typeof body.text === "string" ? body.text : "";
+  const languageId = typeof body.languageId === "string" && body.languageId.trim()
+    ? body.languageId.trim()
+    : kind === vscode.NotebookCellKind.Code
+      ? "python"
+      : "markdown";
+  const cell = new vscode.NotebookCellData(kind, text, languageId);
+  if (body.metadata && typeof body.metadata === "object") {
+    cell.metadata = safeJson(body.metadata);
+  }
+
+  const workspaceEdit = new vscode.WorkspaceEdit();
+  workspaceEdit.set(notebook.uri, [vscode.NotebookEdit.insertCells(index, [cell])]);
+  const ok = await vscode.workspace.applyEdit(workspaceEdit);
+  if (!ok) {
+    throw httpError(500, "VS Code rejected the notebook cell insertion.");
+  }
+
+  const shouldSave = typeof body.save === "boolean"
+    ? body.save
+    : getConfig().get("saveAfterEdit", false);
+  if (shouldSave && typeof notebook.save === "function") {
+    await notebook.save();
+  }
+
+  return {
+    uri: notebook.uri.toString(),
+    path: notebook.uri.fsPath || undefined,
+    insertedCell: {
+      index,
+      kind: cellKindName(kind),
+      languageId,
+      textLength: text.length
+    },
+    cellCount: notebook.cellCount,
+    saved: Boolean(shouldSave)
+  };
+}
+
 function serializeNotebook(notebook, editor) {
   const selectedCellIndices = getSelectedCellIndices(editor);
   const cells = [];
@@ -377,6 +433,7 @@ function makeConnection(port, context) {
       status: `${baseUrl}/status`,
       activeNotebook: `${baseUrl}/active-notebook`,
       replaceCell: `${baseUrl}/replace-cell`,
+      insertCell: `${baseUrl}/insert-cell`,
       applyEdits: `${baseUrl}/apply-edits`
     }
   };
@@ -504,6 +561,28 @@ function toCellIndex(value, cellCount) {
     throw httpError(400, `Cell index must be an integer from 0 to ${cellCount - 1}.`);
   }
   return index;
+}
+
+function toInsertCellIndex(value, cellCount) {
+  if (value === undefined || value === null || value === "") {
+    return cellCount;
+  }
+  const index = Number(value);
+  if (!Number.isInteger(index) || index < 0 || index > cellCount) {
+    throw httpError(400, `Insert index must be an integer from 0 to ${cellCount}.`);
+  }
+  return index;
+}
+
+function parseCellKind(value) {
+  const kind = String(value || "code").trim().toLowerCase();
+  if (kind === "code") {
+    return vscode.NotebookCellKind.Code;
+  }
+  if (kind === "markdown") {
+    return vscode.NotebookCellKind.Markup;
+  }
+  throw httpError(400, 'Cell kind must be "code" or "markdown".');
 }
 
 function cellKindName(kind) {

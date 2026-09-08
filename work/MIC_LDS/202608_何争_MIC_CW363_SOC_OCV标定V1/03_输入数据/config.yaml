@@ -1,0 +1,23 @@
+cell: MIC_LDS
+task: MIC_CW363_SOC_OCV标定
+parameter_module: params1300CW363
+reference_temperature_c: 25.0
+comparison_temperature_c: 45.0
+nominal_capacity_ah_for_p_rate: 1175.0
+nominal_voltage_v: 3.2
+p_rate: 0.25
+constant_power_w: 940.0
+dynamic_voltage_limits_v:
+  charge: 3.65
+  discharge: 2.50
+measured_discharge_static_ocv:
+  - {temperature_c: 25.0, soc_pct: 0, ocv_v: 2.687}
+  - {temperature_c: 25.0, soc_pct: 5, ocv_v: 3.163}
+  - {temperature_c: 25.0, soc_pct: 10, ocv_v: 3.207}
+  - {temperature_c: 25.0, soc_pct: 15, ocv_v: 3.228}
+  - {temperature_c: 25.0, soc_pct: 90, ocv_v: 3.333}
+  - {temperature_c: 25.0, soc_pct: 95, ocv_v: 3.335}
+  - {temperature_c: 25.0, soc_pct: 100, ocv_v: 3.388}
+  - {temperature_c: 45.0, soc_pct: 90, ocv_v: 3.335}
+  - {temperature_c: 45.0, soc_pct: 95, ocv_v: 3.335}
+  - {temperature_c: 45.0, soc_pct: 100, ocv_v: 3.493}

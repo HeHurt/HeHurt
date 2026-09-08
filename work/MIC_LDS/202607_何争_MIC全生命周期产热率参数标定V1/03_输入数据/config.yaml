@@ -1,0 +1,3 @@
+cell: MIC_LDS
+task: MIC全生命周期产热率参数标定
+run_mode: smoke

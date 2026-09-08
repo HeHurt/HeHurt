@@ -309,6 +309,77 @@ class PulseLifecycleSohDiagnosticTests(unittest.TestCase):
             [100.0, 100.0, 95.0, 95.0, 90.0, 90.0],
         )
 
+    def test_soh_targets_run_each_rate_at_each_diagnostic_temperature(self):
+        class FakeSimulation:
+            solve_count = 0
+
+            def __init__(self, model, parameter_values, experiment, var_pts, solver):
+                pass
+
+            def solve(self, **kwargs):
+                FakeSimulation.solve_count += 1
+                return PulseLifecycleSohDiagnosticTests.FakeSolution(
+                    f"main-{FakeSimulation.solve_count}"
+                )
+
+        diagnostic_calls = []
+
+        def fake_diagnostic(*args, **kwargs):
+            diagnostic_calls.append((kwargs["temperature_k"], kwargs["check_p_rate"]))
+            return self.FakeSolution("diagnostic"), self.diagnostic_summary()
+
+        runtime_config = {
+            "total_cycles": 1,
+            "use_block_acceleration": True,
+            "cycles_per_block": 1,
+            "aging_t_factor": 50,
+            "diagnostic_soh_targets_pct": [100],
+            "diagnostic_p_rates": [0.25, 0.5],
+            "diagnostic_temperatures_k": [298.15, 308.15, 318.15],
+            "return_partial_on_error": True,
+            "showprogress": False,
+        }
+
+        with patch.object(spl.pybamm.lithium_ion, "DFN", return_value=object()), \
+             patch.object(spl.pybamm, "IDAKLUSolver", return_value=object()), \
+             patch.object(spl.pybamm, "Experiment", side_effect=lambda steps, temperature: list(steps)), \
+             patch.object(spl.pybamm, "Simulation", FakeSimulation), \
+             patch.object(spl, "_make_parameter_values", return_value={}), \
+             patch.object(
+                 spl,
+                 "_build_cycle_dataframe",
+                 return_value=pd.DataFrame({"sim_cycle": [1], "discharge_capacity_ah": [100.0]}),
+             ), \
+             patch.object(spl, "_run_capacity_check", side_effect=fake_diagnostic), \
+             patch.object(spl, "_prepare_solution_for_storage", side_effect=lambda sol, keep: sol), \
+             patch.object(spl, "snapshot_degradation_variables", return_value={}):
+            result = spl._run_single_pulse_lifecycle_scenario(
+                {"name": "baseline", "display_name": "baseline", "pulse_p_rate": None},
+                runtime_config,
+                model_options={},
+                var_pts={},
+                nominal_capacity_ah=100.0,
+                temperature_k=298.15,
+                get_hithium_params=lambda t_factor, temperature: {},
+                get_discharge_capacity_func=lambda sol: {},
+            )
+
+        self.assertEqual(
+            diagnostic_calls,
+            [
+                (298.15, 0.25),
+                (298.15, 0.5),
+                (308.15, 0.25),
+                (308.15, 0.5),
+                (318.15, 0.25),
+                (318.15, 0.5),
+            ],
+        )
+        self.assertEqual(
+            result["diagnostic_df"]["diagnostic_temperature_c"].tolist(),
+            [25, 25, 35, 35, 45, 45],
+        )
+
     def test_block_failure_returns_last_valid_soh_for_extrapolation(self):
         class FailingSimulation:
             solve_count = 0

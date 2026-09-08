@@ -1,0 +1,27 @@
+cell: cross_cell
+task: 587Ah_MIC_20C_98SOC_10s充电峰值功率
+version: V3
+parameter_modules:
+  - params587
+  - paramsMIC
+temperature_K: 293.15
+temperature_C: 20
+initial_soc: 0.98
+pulse_seconds: 10
+direction: charge
+search_mode: W
+model_options:
+  contact resistance: "true"
+upper_voltage_cutoff_V: 3.65
+power_ratio_reference_voltage_V: 3.2
+params587_local_override_source: paramsMIC
+params587_local_override_keys:
+  - Negative electrode conductivity [S.m-1]
+  - Positive particle radius [m]
+  - Negative particle diffusivity [m2.s-1]
+  - Positive particle diffusivity [m2.s-1]
+  - Negative electrode exchange-current density [A.m-2]
+  - Positive electrode exchange-current density [A.m-2]
+contact_resistance_override: false
+global_parameter_files_modified: false
+run_mode: full_single_point

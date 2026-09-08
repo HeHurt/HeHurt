@@ -31,7 +31,7 @@
 | `data_processed/<电芯>/` | 清洗/派生结果 | 原始格式无法直接加载时由预处理器生成；**绝不回写原始文件** |
 | `work/<电芯>/` | 任务交付区 | 命名 `YYYYMM_何争_任务名称Vn`；首版必须 V1 |
 | `archive/` | 旧物归档 | 不再用的 notebook/脚本整体迁入，不删 |
-| `runs/`、`output/` | COMSOL/仿真运行 | 带时间戳子目录，不覆盖 baseline |
+| `COMSOL/runs/`、`BatteryProject/output/runs/` | COMSOL/PyBaMM 仿真运行 | 带时间戳子目录，不覆盖 baseline |
 
 - 三层语义不同，**不要合并 data_raw / data_processed / work**——`data_registry`、`datasets.json`、`exp_loader` 都按路径名依赖。
 - 原始实验文件只读保存到 `data_raw/<电芯>/<测试类型>/<工况>/`（见 `.plans/2026-07-23_examples参数化canonical重构_spec.md`）。

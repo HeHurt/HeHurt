@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "task_id": "202608_何争_LDS_CW501膨胀力老化对标V1",
+  "cell": "MIC_LDS",
+  "task_name": "LDS CW501 膨胀力老化对标",
+  "owner": "何争",
+  "month": "202608",
+  "version": "V1",
+  "status": "completed",
+  "created_at": "2026-08-06T17:03:42",
+  "template": "MIC_LDS/202607_何争_LDS CW501模型对标及峰值电流Mapping",
+  "task_notebook": "02_模型/LDS_CW501_膨胀力老化对标.ipynb"
+}

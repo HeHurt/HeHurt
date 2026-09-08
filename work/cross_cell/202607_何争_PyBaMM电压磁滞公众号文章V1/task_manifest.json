@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "task_id": "202607_何争_PyBaMM电压磁滞公众号文章V1",
+  "cell": "cross_cell",
+  "task_name": "PyBaMM电压磁滞公众号文章",
+  "owner": "何争",
+  "month": "202607",
+  "version": "V1",
+  "status": "created",
+  "created_at": "2026-07-31T14:41:26",
+  "template": null,
+  "task_notebook": null
+}

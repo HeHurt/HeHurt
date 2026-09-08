@@ -1,0 +1,3 @@
+cell: AI_virtual_cell
+task: 扣电与软包力电耦合
+run_mode: smoke

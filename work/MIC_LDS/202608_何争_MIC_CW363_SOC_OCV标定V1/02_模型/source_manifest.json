@@ -1,0 +1,9 @@
+{
+  "created_at": "2026-08-25T15:02:04",
+  "template": "BatteryProject/examples/参数敏感性与实测对标.ipynb",
+  "git": {
+    "commit": "3b1d7fb5f38c99fb98eef6fe0e7dcefaa6bdb6d8",
+    "branch": "codex/performance-checkpoint-20260717",
+    "dirty": true
+  }
+}

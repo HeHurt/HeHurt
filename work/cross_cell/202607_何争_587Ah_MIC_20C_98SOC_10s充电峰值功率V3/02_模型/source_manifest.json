@@ -1,0 +1,15 @@
+{
+  "created_at": "2026-07-28T17:07:15",
+  "template": "BatteryProject/examples/峰值电流.ipynb",
+  "task_runner": "run_peak_power_charge_20C_98SOC_contact_on_v3.py",
+  "search_mode": "W",
+  "model_options": {
+    "contact resistance": "true"
+  },
+  "params587_override_scope": "task-local",
+  "git": {
+    "commit": "3b1d7fb5f38c99fb98eef6fe0e7dcefaa6bdb6d8",
+    "branch": "codex/performance-checkpoint-20260717",
+    "dirty": true
+  }
+}

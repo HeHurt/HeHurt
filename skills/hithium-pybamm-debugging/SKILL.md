@@ -10,7 +10,7 @@ Use this skill when the user asks why a BatteryProject/PyBaMM result is wrong, a
 ## Boundaries
 
 - Covers: `BatteryProject/src/`, `params/`, Hithium notebooks/scripts, PyBaMM DFN aging workflows, experiment comparison, Excel export from simulation results.
-- Does not cover: COMSOL `.java` or `.mph` workflows; use `comsol-java-battery-modeling`.
+- Does not cover: COMSOL `.java` or `.mph` workflows; use `comsol-battery-model-automation`.
 - Does not cover patent drafting; use `battery-patent-disclosure`.
 - Prefer project AGENTS rules over this file if there is a conflict.
 

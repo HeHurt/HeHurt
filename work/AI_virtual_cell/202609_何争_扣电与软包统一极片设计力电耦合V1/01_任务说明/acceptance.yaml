@@ -1,0 +1,39 @@
+meta:
+  task: 扣电与软包统一极片设计参数的0.5C完整力电耦合对比
+  max_iterations: 6
+
+physical_sanity:
+  enabled: true
+  rules:
+    - id: voltage_finite
+      expr: 端电压全程有限且无非物理跳变
+    - id: soc_bounded
+      expr: 0 <= SOC <= 1
+    - id: cycle_complete
+      expr: 充电、静置、放电、静置四阶段均完成
+
+numeric_criteria:
+  - id: same_nominal_pressure
+    description: 两模型F_ext/Ac一致
+    bound: 相对偏差<=0.1%
+    severity: hard
+  - id: coin_design_capacity
+    description: 扣电正极限制设计容量
+    bound: 约9.283 mAh
+    severity: hard
+  - id: pouch_design_capacity
+    description: 软包正极限制设计容量
+    bound: 约125.774 mAh
+    severity: hard
+  - id: rate_definition
+    description: 电流等于0.5倍各自设计1C容量
+    bound: 相对偏差<=0.1%
+    severity: hard
+  - id: mesh_valid
+    description: 参数变更后几何和网格重新构建
+    bound: 单元数>0且最小质量>0
+    severity: hard
+
+experimental_reference:
+  enabled: false
+

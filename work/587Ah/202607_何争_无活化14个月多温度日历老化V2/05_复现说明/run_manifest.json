@@ -1,0 +1,64 @@
+{
+  "published_runs": [
+    {
+      "run_id": "20260807_587calander_27SOC_full_v1",
+      "source": "BatteryProject/output/runs/calendar_aging_matrix/20260807_587calander_27SOC_full_v1",
+      "published_at": "2026-08-07",
+      "mode": "full",
+      "storage_soc_pct": 27,
+      "description": "587Ah 无活化14个月多温度日历老化 V2(27% SOC, Ea=39000)",
+      "files": [
+        {
+          "path": "artifacts/587Ah_0to50C_27SOC_calendar_aging_14months.xlsx",
+          "size": 47622,
+          "sha256": "9f1126015e84e954f5cfed901dab08da580a59568fae5f214374095100c672de"
+        },
+        {
+          "path": "artifacts/baseline_25C_C0.csv",
+          "size": 208,
+          "sha256": "63318cf41d9bc0d67e76b42f01cab996bbe9a76c1ecd988e3e35db1b74ce69a2"
+        },
+        {
+          "path": "artifacts/calendar_aging_587Ah_27SOC_matrix.csv",
+          "size": 44790,
+          "sha256": "5e970904744eca6932cab7ee642576b7f3df2272484cb21476f39980e95f65ee"
+        },
+        {
+          "path": "artifacts/run_status.csv",
+          "size": 9473,
+          "sha256": "2655c285d8a1326e6c4142e977e510567646308831775149233a5f50b5d4f5c1"
+        },
+        {
+          "path": "artifacts/summary_month_14.csv",
+          "size": 3628,
+          "sha256": "73cdad7376efa6bba526bf98cffe0f84f394545dcffe868d36f692fdbc76f897"
+        },
+        {
+          "path": "config.json",
+          "size": 786,
+          "sha256": "31becea24730ef83231ff05d30f8d6edcf475ab5f2de77f432cb3dec97d909d9"
+        },
+        {
+          "path": "plots/irreversible_loss_heatmap.png",
+          "size": 59950,
+          "sha256": "6a71ec1bd23445961b607e25e06bf1724de36f3ba972d8b53c236600b5b55c8e"
+        },
+        {
+          "path": "plots/recovery_heatmap.png",
+          "size": 60807,
+          "sha256": "0828a8b272b01d5c579319eb96957457ed16ac1058ca9e26fd82bc5dda986524"
+        },
+        {
+          "path": "plots/retention_heatmap.png",
+          "size": 63273,
+          "sha256": "5dac3a7cbbb2fb27ede39bea0ae96a391a06b4fe2b6b9bb444323ed65432b157"
+        },
+        {
+          "path": "plots/retention_recovery_vs_month.png",
+          "size": 287500,
+          "sha256": "0a2350027ad6fda2295fe53f8609fd534d6b91e2e228fa33aa5dc5e134bab7ad"
+        }
+      ]
+    }
+  ]
+}

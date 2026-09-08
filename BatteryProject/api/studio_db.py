@@ -109,6 +109,10 @@ class StudioDatabase:
                 );
                 """
             )
+            try:
+                connection.execute("ALTER TABLE jobs ADD COLUMN name TEXT")
+            except Exception:
+                pass
 
     def set_setting(self, key: str, value: str) -> None:
         stamp = now_stamp()
@@ -246,9 +250,9 @@ class StudioDatabase:
                 """
                 INSERT INTO jobs(
                   job_id, project_name, status, progress, current_cycle, total_cycles,
-                  created_at, updated_at, job_dir, request_json, status_json
+                  created_at, updated_at, job_dir, request_json, status_json, name
                 )
-                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(job_id) DO UPDATE SET
                   project_name = excluded.project_name,
                   status = excluded.status,
@@ -259,7 +263,8 @@ class StudioDatabase:
                   updated_at = excluded.updated_at,
                   job_dir = excluded.job_dir,
                   request_json = excluded.request_json,
-                  status_json = excluded.status_json
+                  status_json = excluded.status_json,
+                  name = excluded.name
                 """,
                 (
                     job_id,
@@ -273,15 +278,31 @@ class StudioDatabase:
                     str(job_dir),
                     json_dumps(request),
                     json_dumps(status),
+                    status.get("name"),
                 ),
             )
+
+    def rename_job(self, job_id: str, name: str | None) -> None:
+        """Rename a task (optional, <=80 chars). Persists to SQLite and bumps updated_at."""
+        clean = (name or "").strip()[:80]
+        with self.connect() as connection:
+            connection.execute(
+                "UPDATE jobs SET name=?, updated_at=? WHERE job_id=?",
+                (clean or None, now_stamp(), job_id),
+            )
+
+    def delete_job(self, job_id: str) -> bool:
+        """Delete a job record; return whether a row was actually removed."""
+        with self.connect() as connection:
+            cursor = connection.execute("DELETE FROM jobs WHERE job_id=?", (job_id,))
+        return cursor.rowcount > 0
 
     def list_jobs(self, limit: int = 50) -> list[dict[str, Any]]:
         with self.connect() as connection:
             rows = connection.execute(
                 """
                 SELECT job_id, project_name, status, progress, current_cycle,
-                       total_cycles, created_at, updated_at, job_dir
+                       total_cycles, created_at, updated_at, job_dir, name
                 FROM jobs
                 ORDER BY updated_at DESC
                 LIMIT ?

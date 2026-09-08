@@ -861,6 +861,511 @@ def run_cycle_worker(job_dir_raw: str, request: dict[str, Any]) -> None:
         )
 
 
+
+
+# Studio PARAMETER_SETS 键 -> params registry 键(_CELL_PARAM_MODULES)
+_CELL_ALIASES = {
+    "hithium314": "314",
+    "hithium587": "587",
+    "hithium280": "280",
+    "mic1175": "MIC1175",
+}
+
+
+from api.calibration import normalize_calibration_request, run_calibration_worker
+
+
+def _registry_cell(cell: str) -> str:
+    return _CELL_ALIASES.get(cell, cell)
+
+
+
+
+def _json_array_from_text(raw: Any, default: list[Any]) -> list[Any]:
+    """从请求解析 JSON 数组字符串或列表;解析失败回退默认。"""
+    if isinstance(raw, list):
+        return raw
+    if isinstance(raw, str) and raw.strip():
+        try:
+            parsed = json.loads(raw)
+            if isinstance(parsed, list):
+                return parsed
+        except json.JSONDecodeError:
+            pass
+    return list(default)
+
+
+def normalize_calendar_aging_request(request: dict[str, Any]) -> dict[str, Any]:
+    run_mode = _normalize_run_mode(request)
+    return {
+        "job_type": "calendar_aging",
+        "cell": _registry_cell(str(request.get("cell", "MIC"))),
+        "temperature_c": float(request.get("temperature_c", 25.0)),
+        "aging_mode": "activated" if str(request.get("aging_mode", "activated")) != "unactivated" else "unactivated",
+        "activated_months": max(1, int(float(request.get("activated_months", 1)))),
+        "diagnostic_rate_c": float(request.get("diagnostic_rate_c", 0.25)),
+        "run_mode": run_mode,
+        "cycles": 1,
+        "cycles_requested": 1,
+    }
+
+
+def normalize_frequency_request(request: dict[str, Any]) -> dict[str, Any]:
+    run_mode = _normalize_run_mode(request)
+    scenarios = _json_array_from_text(
+        request.get("scenarios"),
+        [{"name": "A", "display_name": "30s/2.5MW", "pulse_seconds": 30, "total_pulses_per_day": 144, "sample_period_seconds": 900}],
+    )
+    real_days = max(1, int(float(request.get("real_days_total", 2))))
+    if run_mode == "smoke":
+        real_days = min(real_days, 1)
+    return {
+        "job_type": "frequency",
+        "cell": _registry_cell(str(request.get("cell", "314"))),
+        "temperature_c": float(request.get("temperature_c", 25.0)),
+        "current_a": float(request.get("current_a", 293.5)),
+        "real_days_total": real_days,
+        "scenarios": scenarios,
+        "run_mode": run_mode,
+        "cycles": len(scenarios),
+        "cycles_requested": len(scenarios),
+    }
+
+
+def normalize_pulse_request(request: dict[str, Any]) -> dict[str, Any]:
+    run_mode = _normalize_run_mode(request)
+    scenarios = _json_array_from_text(
+        request.get("scenarios"),
+        [{"name": "A", "display_name": "每5圈脉冲", "pulse_p_rate": 2.0, "pulse_seconds": 10, "base_p_rate": 0.25, "charge_interval_minutes": 60, "discharge_interval_minutes": 60}],
+    )
+    total_cycles = max(1, int(float(request.get("total_cycles", 4))))
+    if run_mode == "smoke":
+        total_cycles = min(total_cycles, 2)
+    return {
+        "job_type": "pulse",
+        "cell": _registry_cell(str(request.get("cell", "314"))),
+        "temperature_c": float(request.get("temperature_c", 25.0)),
+        "base_p_rate": float(request.get("base_p_rate", 0.25)),
+        "total_cycles": total_cycles,
+        "scenarios": scenarios,
+        "run_mode": run_mode,
+        "cycles": total_cycles,
+        "cycles_requested": total_cycles,
+    }
+
+
+def normalize_lifecycle_heat_request(request: dict[str, Any]) -> dict[str, Any]:
+    run_mode = _normalize_run_mode(request)
+    return {
+        "job_type": "lifecycle_heat",
+        "cell": _registry_cell(str(request.get("cell", "314"))),
+        "temperature_c": float(request.get("temperature_c", 25.0)),
+        "aging_p_rate": float(request.get("aging_p_rate", 0.5)),
+        "diagnostic_p_rates": [float(v) for v in _json_array_from_text(request.get("diagnostic_p_rates"), [0.25, 0.5])],
+        "contact_resistance_mohm": float(request.get("contact_resistance_mohm", 0.0)),
+        "run_mode": run_mode,
+        "cycles": 1,
+        "cycles_requested": 1,
+    }
+
+
+def normalize_psd_request(request: dict[str, Any]) -> dict[str, Any]:
+    run_mode = _normalize_run_mode(request)
+    return {
+        "job_type": "psd",
+        "cell": _registry_cell(str(request.get("cell", "314"))),
+        "selected_strategy": "bimodal" if str(request.get("selected_strategy", "bimodal")) != "single" else "single",
+        "keep_percent": float(request.get("keep_percent", 99.0)),
+        "materials": _json_array_from_text(request.get("materials"), []) or [],
+        "run_mode": run_mode,
+        "cycles": 1,
+        "cycles_requested": 1,
+    }
+
+
+def normalize_regional_coupled_aging_request(request: dict[str, Any]) -> dict[str, Any]:
+    run_mode = _normalize_run_mode(request)
+    return {
+        "job_type": "regional_coupled_aging",
+        "cell": _registry_cell(str(request.get("cell", "314"))),
+        "temperature_c": float(request.get("temperature_c", 25.0)),
+        "run_mode": run_mode,
+        "cycles": 1,
+        "cycles_requested": 1,
+    }
+
+
+def _build_calendar_aging_spec(request: dict[str, Any]):
+    from src.workflows.calendar_aging import CalendarAgingSpec
+
+    return CalendarAgingSpec(
+        cell=request["cell"],
+        run_mode="study" if request["run_mode"] == "production" else "smoke",
+        temperature_c=request["temperature_c"],
+        aging_mode=request["aging_mode"],
+        activated_months=request["activated_months"],
+        diagnostic_rate_c=request["diagnostic_rate_c"],
+        output_name="日历老化",
+    )
+
+
+def _build_frequency_spec(request: dict[str, Any]):
+    from src.workflows.frequency import FrequencyWorkflowSpec
+
+    return FrequencyWorkflowSpec(
+        cell=request["cell"],
+        scenarios=tuple(dict(item) for item in request["scenarios"]),
+        run_mode="study" if request["run_mode"] == "production" else "smoke",
+        real_days_total=request["real_days_total"],
+        current_a=request["current_a"],
+        temperature_c=request["temperature_c"],
+        parallel=False,
+        max_workers=1,
+        output_name="调频",
+    )
+
+
+def _build_pulse_spec(request: dict[str, Any]):
+    from src.workflows.pulse import PulseWorkflowSpec
+
+    return PulseWorkflowSpec(
+        cell=request["cell"],
+        scenarios=tuple(dict(item) for item in request["scenarios"]),
+        run_mode="study" if request["run_mode"] == "production" else "smoke",
+        total_cycles=request["total_cycles"],
+        cycles_per_block=1,
+        base_p_rate=request["base_p_rate"],
+        temperature_c=request["temperature_c"],
+        output_name="插入脉冲",
+    )
+
+
+def _build_lifecycle_heat_spec(request: dict[str, Any]):
+    from src.workflows.lifecycle_heat import (
+        ContactResistanceCase,
+        EntropyCalibrationSpec,
+        LifecycleHeatCondition,
+        LifecycleHeatWorkflowSpec,
+    )
+    from src.workflow_specs import DatasetQuery
+
+    return LifecycleHeatWorkflowSpec(
+        cell=request["cell"],
+        conditions=(
+            LifecycleHeatCondition(
+                temperature_c=request["temperature_c"],
+                aging_p_rate=request["aging_p_rate"],
+                diagnostic_p_rates=tuple(request["diagnostic_p_rates"]),
+            ),
+        ),
+        contact_resistances=(ContactResistanceCase("base", request["contact_resistance_mohm"]),),
+        entropy=EntropyCalibrationSpec(query=DatasetQuery(cell=request["cell"], test_type="熵")),
+        run_mode="study" if request["run_mode"] == "production" else "smoke",
+        total_cycles=1,
+        cycles_per_block=1,
+        output_name="全生命周期产热",
+    )
+
+
+def _build_psd_spec(request: dict[str, Any]):
+    from src.workflows.psd import PsdWorkflowSpec
+
+    materials: dict[str, dict[str, Any]] = {}
+    for item in request.get("materials") or []:
+        if isinstance(item, dict) and item.get("name"):
+            materials[str(item["name"])] = {k: v for k, v in item.items() if k != "name"}
+    return PsdWorkflowSpec(
+        cell=request["cell"],
+        materials=materials,
+        run_mode="study" if request["run_mode"] == "production" else "smoke",
+        selected_strategy=request["selected_strategy"],
+        keep_percent=request["keep_percent"],
+        rate_list=(0.5,),
+        run_simulation=False,
+        run_comsol_conversion=False,
+        output_name="粒径分布",
+    )
+
+
+def _build_regional_coupled_aging_spec(request: dict[str, Any]):
+    from src.workflows.regional_coupled_aging import RegionalCoupledAgingWorkflowSpec
+
+    return RegionalCoupledAgingWorkflowSpec(
+        cell=request["cell"],
+        run_mode="study" if request["run_mode"] == "production" else "smoke",
+        temperature_c=request["temperature_c"],
+        output_name="区域并联耦合老化",
+    )
+
+
+def run_calendar_aging_worker(job_dir_raw: str, request: dict[str, Any]) -> None:
+    from src.workflows.calendar_aging import run_calendar_aging_workflow
+
+    _run_workflow_job(job_dir_raw, request, "calendar_aging", _build_calendar_aging_spec, run_calendar_aging_workflow)
+
+
+def run_frequency_worker(job_dir_raw: str, request: dict[str, Any]) -> None:
+    from src.workflows.frequency import run_frequency_workflow
+
+    _run_workflow_job(job_dir_raw, request, "frequency_regulation", _build_frequency_spec, run_frequency_workflow)
+
+
+def run_pulse_worker(job_dir_raw: str, request: dict[str, Any]) -> None:
+    from src.workflows.pulse import run_pulse_workflow
+
+    _run_workflow_job(job_dir_raw, request, "inserted_pulse", _build_pulse_spec, run_pulse_workflow)
+
+
+def run_lifecycle_heat_worker(job_dir_raw: str, request: dict[str, Any]) -> None:
+    from src.workflows.lifecycle_heat import run_lifecycle_heat_workflow
+
+    _run_workflow_job(job_dir_raw, request, "lifecycle_heat", _build_lifecycle_heat_spec, run_lifecycle_heat_workflow)
+
+
+def run_psd_worker(job_dir_raw: str, request: dict[str, Any]) -> None:
+    from src.workflows.psd import run_psd_workflow
+
+    _run_workflow_job(job_dir_raw, request, "psd", _build_psd_spec, run_psd_workflow)
+
+
+def run_regional_coupled_aging_worker(job_dir_raw: str, request: dict[str, Any]) -> None:
+    from src.workflows.regional_coupled_aging import run_regional_coupled_aging_workflow
+
+    _run_workflow_job(job_dir_raw, request, "regional_coupled_aging", _build_regional_coupled_aging_spec, run_regional_coupled_aging_workflow)
+
+
+def _normalize_run_mode(request: dict[str, Any], default: str = "smoke") -> str:
+    run_mode = str(request.get("run_mode", default)).lower()
+    return run_mode if run_mode in {"smoke", "production"} else "smoke"
+
+
+def normalize_peak_request(request: dict[str, Any]) -> dict[str, Any]:
+    """峰值电流/功率任务请求规范化(progress 单位 = SOC 扫描点数)。"""
+    run_mode = _normalize_run_mode(request)
+    soc_list = [min(max(float(v), 0.02), 0.98) for v in request.get("soc_list", [0.95, 0.5, 0.2])]
+    if run_mode == "smoke":
+        soc_list = soc_list[:2]
+    if not soc_list:
+        soc_list = [0.5]
+    return {
+        "job_type": "peak_current",
+        "cell": _registry_cell(str(request.get("cell", "hithium314"))),
+        "temperature_c": float(request.get("temperature_c", 25.0)),
+        "pulse_duration_s": float(request.get("pulse_duration_s", 10.0)),
+        "mode": "W" if str(request.get("mode", "A")).upper() == "W" else "A",
+        "direction": str(request.get("direction", "both")).lower(),
+        "soc_list": soc_list,
+        "run_mode": run_mode,
+        "cycles": len(soc_list),
+        "cycles_requested": len(soc_list),
+    }
+
+
+def normalize_eis_request(request: dict[str, Any]) -> dict[str, Any]:
+    """EIS 阻抗任务请求规范化(progress 单位 = 频率点数)。"""
+    run_mode = _normalize_run_mode(request)
+    frequencies = [max(float(v), 1e-3) for v in request.get("frequencies_hz", [0.1, 1.0, 10.0, 100.0, 1000.0])]
+    if run_mode == "smoke":
+        frequencies = frequencies[:3]
+    return {
+        "job_type": "eis",
+        "cell": _registry_cell(str(request.get("cell", "hithium314"))),
+        "temperature_c": float(request.get("temperature_c", 25.0)),
+        "soc": min(max(float(request.get("soc", 0.5)), 0.05), 0.95),
+        "frequencies_hz": frequencies,
+        "run_lifecycle": bool(request.get("run_lifecycle", False)),
+        "run_mode": run_mode,
+        "cycles": len(frequencies),
+        "cycles_requested": len(frequencies),
+    }
+
+
+def normalize_rate_benchmark_request(request: dict[str, Any]) -> dict[str, Any]:
+    """倍率对标任务请求规范化(progress 单位 = 倍率组数)。"""
+    run_mode = _normalize_run_mode(request)
+    rates = [max(float(v), 0.05) for v in request.get("rates", [0.5, 1.0])]
+    if run_mode == "smoke":
+        rates = rates[:2]
+    return {
+        "job_type": "rate_benchmark",
+        "cell": _registry_cell(str(request.get("cell", "hithium314"))),
+        "rates": rates,
+        "cycles_per_rate": max(1, int(float(request.get("cycles_per_rate", 1)))),
+        "temperature_c": float(request.get("temperature_c", 25.0)),
+        "compare_dataset": str(request.get("compare_dataset", "")),
+        "run_mode": run_mode,
+        "cycles": len(rates),
+        "cycles_requested": len(rates),
+    }
+
+
+def _build_eis_spec(request: dict[str, Any]):
+    from src.workflows.eis import EisWorkflowSpec
+
+    return EisWorkflowSpec(
+        cell=request["cell"],
+        run_mode="study" if request["run_mode"] == "production" else "smoke",
+        base_temperature_c=request["temperature_c"],
+        base_soc=request["soc"],
+        quick_frequencies_hz=tuple(request["frequencies_hz"]),
+        run_quick_eis=True,
+        run_soc_sweep=False,
+        run_temperature_sweep=False,
+        run_lifecycle=request.get("run_lifecycle", False),
+        output_name="EIS 阻抗分析",
+    )
+
+
+def _build_rate_benchmark_spec(request: dict[str, Any]):
+    from src.workflows.cycle import CycleCondition, CycleWorkflowSpec
+
+    conditions = tuple(CycleCondition(request["temperature_c"], rate) for rate in request["rates"])
+    return CycleWorkflowSpec(
+        cell=request["cell"],
+        conditions=conditions,
+        run_mode="study" if request["run_mode"] == "production" else "smoke",
+        total_cycles=request["cycles_per_rate"],
+        rest_minutes=5.0,
+        period_minutes=1.0,
+        output_name="倍率对标",
+    )
+
+
+def _build_peak_spec(request: dict[str, Any]):
+    from src.workflows.peak_current import PeakCurrentWorkflowSpec
+
+    return PeakCurrentWorkflowSpec(
+        cell=request["cell"],
+        run_mode="study" if request["run_mode"] == "production" else "smoke",
+        temperature_c=request["temperature_c"],
+        pulse_duration_s=request["pulse_duration_s"],
+        mode=request["mode"],
+        direction=request["direction"],
+        soc_list=tuple(request["soc_list"]),
+    )
+
+
+def _json_safe_summary(summary: dict[str, Any]) -> dict[str, Any]:
+    """把 workflow 返回的 summary 收敛为 JSON 安全结构(只保留标量/列表/字典)。"""
+    safe: dict[str, Any] = {}
+    for key, value in summary.items():
+        if value is None or isinstance(value, (str, int, float, bool)):
+            safe[key] = value
+        elif isinstance(value, (list, tuple)):
+            try:
+                json.dumps(list(value))
+                safe[key] = list(value)
+            except TypeError:
+                safe[key] = [str(item) for item in value][:50]
+        elif isinstance(value, dict):
+            try:
+                json.dumps(value)
+                safe[key] = value
+            except TypeError:
+                safe[key] = {k: str(v) for k, v in value.items()}
+        else:
+            safe[key] = str(value)
+    return safe
+
+
+def _run_workflow_job(job_dir_raw: str, request: dict[str, Any], workflow_id: str, build_spec_fn, run_fn) -> None:
+    """通用 workflow worker:构建 spec -> 调 run_*_workflow(run_id=job_id) -> 回写 result.json/status.json。"""
+    job_dir = Path(job_dir_raw)
+    start = time.perf_counter()
+    try:
+        ensure_runtime_env()
+        ensure_project_import_paths()
+        import pybamm  # noqa: F401  环境预热
+
+        job_type = request.get("job_type", workflow_id)
+        log_status(job_dir, "INFO", f"创建 {job_type} 工作流", status="running", progress=10, elapsed_s=0)
+        spec = build_spec_fn(request)
+        log_status(
+            job_dir,
+            "INFO",
+            f"spec 已就绪: {job_type}, cell={request.get('cell')}, run_mode={request.get('run_mode')}",
+            progress=25,
+        )
+        run_out = run_fn(spec, project_root=PROJECT_ROOT, run_id=job_dir.name)
+        elapsed_s = round(time.perf_counter() - start, 1)
+        summary = run_out.get("summary") if isinstance(run_out, dict) and run_out.get("summary") else {}
+        if not summary and isinstance(run_out, dict):
+            metrics = run_out.get("metrics")
+            if metrics is not None:
+                try:
+                    summary = {"rows": int(len(metrics))}
+                except (TypeError, ValueError):
+                    summary = {}
+        metrics_path = (
+            str(run_out.get("metrics_path"))
+            if isinstance(run_out, dict) and run_out.get("metrics_path")
+            else ""
+        )
+        run_dir = str(Path(PROJECT_ROOT) / "output" / "runs" / workflow_id / job_dir.name)
+        manifest = {
+            "workflow_id": workflow_id,
+            "job_type": job_type,
+            "job_id": job_dir.name,
+            "run_mode": request.get("run_mode"),
+            "cell": request.get("cell"),
+            "pybamm_version": pybamm.__version__,
+            "parameter_source": f"params registry: {request.get('cell')}",
+            "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "finished_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "elapsed_s": elapsed_s,
+            "request": request,
+            "run_dir": run_dir,
+        }
+        run_dir_path = Path(run_dir)
+        run_dir_path.mkdir(parents=True, exist_ok=True)
+        atomic_write_json(run_dir_path / "manifest.json", manifest)
+        result = {
+            "job_type": job_type,
+            "run_mode": request.get("run_mode"),
+            "workflow_id": workflow_id,
+            "run_dir": run_dir,
+            "metrics_path": metrics_path,
+            "summary": _json_safe_summary(summary),
+            "manifest": manifest,
+            "elapsed_s": elapsed_s,
+            "finished_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+        }
+        atomic_write_json(job_dir / "result.json", result)
+        log_status(
+            job_dir,
+            "INFO",
+            f"{job_type} 完成: run_dir={run_dir}, rows={len(summary.get('results', []))}",
+            status="completed",
+            progress=100,
+            elapsed_s=elapsed_s,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log_status(job_dir, "ERROR", f"{type(exc).__name__}: {exc}", status="failed", progress=100)
+        log_status(job_dir, "DEBUG", traceback.format_exc())
+
+
+def run_peak_worker(job_dir_raw: str, request: dict[str, Any]) -> None:
+    from src.workflows.peak_current import run_peak_workflow
+
+    _run_workflow_job(job_dir_raw, request, "peak_current", _build_peak_spec, run_peak_workflow)
+
+
+def run_eis_worker(job_dir_raw: str, request: dict[str, Any]) -> None:
+    from src.workflows.eis import run_eis_workflow
+
+    _run_workflow_job(job_dir_raw, request, "eis", _build_eis_spec, run_eis_workflow)
+
+
+def run_rate_benchmark_worker(job_dir_raw: str, request: dict[str, Any]) -> None:
+    from src.workflows.cycle import run_cycle_workflow
+
+    _run_workflow_job(job_dir_raw, request, "cycle_aging", _build_rate_benchmark_spec, run_cycle_workflow)
+
+
+# 尚未接入 Studio 运行时的 workflow(任务中心显示为「规划中」)
+PLANNED_JOB_TYPES: list[tuple[str, str]] = []
+
+
 # 任务类型注册表：每类仿真在此登记 normalize（请求规范化）+ worker（子进程入口）。
 # 新增仿真类型（干涸/RPT/EIS/峰值电流…）时在此注册新条目，
 # worker 必须是模块级函数（spawn 进程要求可 pickle），不要往 run_cycle_worker 里加分支。
@@ -869,6 +1374,156 @@ JOB_TYPES: dict[str, dict[str, Any]] = {
         "label": "循环老化仿真",
         "normalize": normalize_request,
         "worker": run_cycle_worker,
+        "schema": [
+            {"name": "parameter_set", "label": "参数集", "type": "select", "default": "hithium314",
+             "options": ["hithium314", "hithium587", "mic1175", "hithium280", "chen2020", "okane2022"]},
+            {"name": "temperature_c", "label": "环境温度", "type": "number", "default": 25.0, "unit": "°C", "min": -20, "max": 60},
+            {"name": "charge_rate", "label": "充电倍率", "type": "number", "default": 0.5, "unit": "C", "min": 0.05, "max": 10, "step": 0.05},
+            {"name": "discharge_rate", "label": "放电倍率", "type": "number", "default": 0.5, "unit": "C", "min": 0.05, "max": 10, "step": 0.05},
+            {"name": "cycles", "label": "循环次数", "type": "number", "default": 1, "unit": "圈", "min": 1, "max": 2000},
+            {"name": "charge_cutoff_v", "label": "截止电压上限", "type": "number", "default": 3.65, "unit": "V", "min": 2.5, "max": 4.5, "step": 0.01},
+            {"name": "discharge_cutoff_v", "label": "截止电压下限", "type": "number", "default": 2.5, "unit": "V", "min": 1.5, "max": 3.6, "step": 0.01},
+            {"name": "rest_minutes", "label": "静置时长", "type": "number", "default": 5, "unit": "min", "min": 0, "max": 120},
+            {"name": "initial_soc", "label": "初始 SOC", "type": "number", "default": 0.5, "min": 0.05, "max": 0.95, "step": 0.05},
+            {"name": "aging_enabled", "label": "启用老化模型", "type": "checkbox", "default": True},
+            {"name": "run_mode", "label": "运行模式", "type": "select", "default": "smoke",
+             "options": ["smoke", "production"], "desc": "smoke 自动收敛到 ≤3 圈;production 最多 2000 圈"},
+        ],
+    },
+    "peak_current": {
+        "label": "峰值电流/功率",
+        "normalize": normalize_peak_request,
+        "worker": run_peak_worker,
+        "schema": [
+            {"name": "cell", "label": "电芯参数集", "type": "text", "default": "314",
+             "desc": "params registry 键:314 / 587 / MIC / MIC1175 / 280 / 50 等"},
+            {"name": "temperature_c", "label": "环境温度", "type": "number", "default": 25.0, "unit": "°C", "min": -20, "max": 60},
+            {"name": "pulse_duration_s", "label": "脉冲时长", "type": "number", "default": 10.0, "unit": "s", "min": 1, "max": 120},
+            {"name": "mode", "label": "搜索模式", "type": "select", "default": "A", "options": ["A", "W"], "desc": "A=恒流 / W=恒功率"},
+            {"name": "direction", "label": "搜索方向", "type": "select", "default": "both", "options": ["both", "charge", "discharge"]},
+            {"name": "soc_list", "label": "扫描 SOC 列表", "type": "text", "default": "0.9,0.5,0.2", "desc": "逗号分隔,取值 0-1"},
+            {"name": "run_mode", "label": "运行模式", "type": "select", "default": "smoke", "options": ["smoke", "production"]},
+        ],
+    },
+    "eis": {
+        "label": "EIS 阻抗分析",
+        "normalize": normalize_eis_request,
+        "worker": run_eis_worker,
+        "schema": [
+            {"name": "cell", "label": "电芯参数集", "type": "text", "default": "314",
+             "desc": "params registry 键:314 / 587 / MIC / MIC1175 / 280 / 50 等"},
+            {"name": "temperature_c", "label": "环境温度", "type": "number", "default": 25.0, "unit": "°C", "min": -20, "max": 60},
+            {"name": "soc", "label": "测试 SOC", "type": "number", "default": 0.5, "min": 0.05, "max": 0.95, "step": 0.05},
+            {"name": "frequencies_hz", "label": "频率点 (Hz)", "type": "text", "default": "0.1,1,10,100,1000", "desc": "逗号分隔"},
+            {"name": "run_lifecycle", "label": "生命周期 EIS 扫描", "type": "checkbox", "default": False},
+            {"name": "run_mode", "label": "运行模式", "type": "select", "default": "smoke", "options": ["smoke", "production"]},
+        ],
+    },
+    "rate_benchmark": {
+        "label": "倍率对标",
+        "normalize": normalize_rate_benchmark_request,
+        "worker": run_rate_benchmark_worker,
+        "schema": [
+            {"name": "cell", "label": "电芯参数集", "type": "text", "default": "314",
+             "desc": "params registry 键:314 / 587 / MIC / MIC1175 / 280 / 50 等"},
+            {"name": "temperature_c", "label": "环境温度", "type": "number", "default": 25.0, "unit": "°C", "min": -20, "max": 60},
+            {"name": "rates", "label": "倍率组", "type": "text", "default": "0.5,1.0", "desc": "逗号分隔"},
+            {"name": "cycles_per_rate", "label": "每倍率圈数", "type": "number", "default": 1, "unit": "圈", "min": 1, "max": 200},
+            {"name": "compare_dataset", "label": "对标数据集 (可选)", "type": "text", "default": "", "desc": "registry 数据集路径关键字"},
+            {"name": "run_mode", "label": "运行模式", "type": "select", "default": "smoke", "options": ["smoke", "production"]},
+        ],
+    },
+    "calendar_aging": {
+        "label": "日历老化",
+        "normalize": normalize_calendar_aging_request,
+        "worker": run_calendar_aging_worker,
+        "schema": [
+            {"name": "cell", "label": "电芯参数集", "type": "text", "default": "MIC", "desc": "params registry 键:MIC / 314 / 587 等"},
+            {"name": "temperature_c", "label": "环境温度", "type": "number", "default": 25.0, "unit": "°C", "min": -20, "max": 60},
+            {"name": "aging_mode", "label": "老化模式", "type": "select", "default": "activated", "options": ["activated", "unactivated"]},
+            {"name": "activated_months", "label": "活化后时长", "type": "number", "default": 1, "unit": "月", "min": 1, "max": 60},
+            {"name": "diagnostic_rate_c", "label": "诊断倍率", "type": "number", "default": 0.25, "unit": "C", "min": 0.05, "max": 2},
+            {"name": "run_mode", "label": "运行模式", "type": "select", "default": "smoke", "options": ["smoke", "production"]},
+        ],
+    },
+    "frequency": {
+        "label": "调频",
+        "normalize": normalize_frequency_request,
+        "worker": run_frequency_worker,
+        "schema": [
+            {"name": "cell", "label": "电芯参数集", "type": "text", "default": "314", "desc": "params registry 键:314 / 587 / MIC 等"},
+            {"name": "temperature_c", "label": "环境温度", "type": "number", "default": 25.0, "unit": "°C", "min": -20, "max": 60},
+            {"name": "current_a", "label": "脉冲电流", "type": "number", "default": 293.5, "unit": "A", "min": 1, "max": 5000},
+            {"name": "real_days_total", "label": "模拟真实天数", "type": "number", "default": 2, "unit": "天", "min": 1, "max": 30},
+            {"name": "scenarios", "label": "场景 JSON", "type": "text", "default": "[{\"name\": \"A\", \"display_name\": \"30s/2.5MW\", \"pulse_seconds\": 30, \"total_pulses_per_day\": 144, \"sample_period_seconds\": 900}]", "desc": "JSON 数组,字段 name/display_name/pulse_seconds/total_pulses_per_day/sample_period_seconds"},
+            {"name": "run_mode", "label": "运行模式", "type": "select", "default": "smoke", "options": ["smoke", "production"]},
+        ],
+    },
+    "pulse": {
+        "label": "插入脉冲",
+        "normalize": normalize_pulse_request,
+        "worker": run_pulse_worker,
+        "schema": [
+            {"name": "cell", "label": "电芯参数集", "type": "text", "default": "314", "desc": "params registry 键:314 / 587 / MIC 等"},
+            {"name": "temperature_c", "label": "环境温度", "type": "number", "default": 25.0, "unit": "°C", "min": -20, "max": 60},
+            {"name": "base_p_rate", "label": "基准 P 倍率", "type": "number", "default": 0.25, "min": 0.05, "max": 2},
+            {"name": "total_cycles", "label": "循环次数", "type": "number", "default": 4, "unit": "圈", "min": 1, "max": 500},
+            {"name": "scenarios", "label": "场景 JSON", "type": "text", "default": "[{\"name\": \"A\", \"display_name\": \"每5圈脉冲\", \"pulse_p_rate\": 2.0, \"pulse_seconds\": 10, \"base_p_rate\": 0.25, \"charge_interval_minutes\": 60, \"discharge_interval_minutes\": 60}]", "desc": "JSON 数组,字段 name/display_name/pulse_p_rate/pulse_seconds"},
+            {"name": "run_mode", "label": "运行模式", "type": "select", "default": "smoke", "options": ["smoke", "production"]},
+        ],
+    },
+    "lifecycle_heat": {
+        "label": "全生命周期产热",
+        "normalize": normalize_lifecycle_heat_request,
+        "worker": run_lifecycle_heat_worker,
+        "schema": [
+            {"name": "cell", "label": "电芯参数集", "type": "text", "default": "314", "desc": "params registry 键:314 / 587 / MIC 等"},
+            {"name": "temperature_c", "label": "环境温度", "type": "number", "default": 25.0, "unit": "°C", "min": -20, "max": 60},
+            {"name": "aging_p_rate", "label": "老化 P 倍率", "type": "number", "default": 0.5, "min": 0.05, "max": 2},
+            {"name": "diagnostic_p_rates", "label": "诊断 P 倍率", "type": "text", "default": "[0.25, 0.5]", "desc": "JSON 数组"},
+            {"name": "contact_resistance_mohm", "label": "接触电阻", "type": "number", "default": 0.0, "unit": "mΩ", "min": 0, "max": 10},
+            {"name": "run_mode", "label": "运行模式", "type": "select", "default": "smoke", "options": ["smoke", "production"]},
+        ],
+    },
+    "psd": {
+        "label": "粒径分布 (PSD)",
+        "normalize": normalize_psd_request,
+        "worker": run_psd_worker,
+        "schema": [
+            {"name": "cell", "label": "电芯参数集", "type": "text", "default": "314", "desc": "params registry 键:314 / 587 / MIC 等"},
+            {"name": "selected_strategy", "label": "拟合策略", "type": "select", "default": "bimodal", "options": ["bimodal", "single"]},
+            {"name": "keep_percent", "label": "保留质量占比", "type": "number", "default": 99.0, "unit": "%", "min": 1, "max": 100},
+            {"name": "materials", "label": "材料 JSON", "type": "text", "default": "[]", "desc": "JSON 数组,如 [{\"name\": \"NMC\", \"d50_um\": 5.0}]"},
+            {"name": "run_mode", "label": "运行模式", "type": "select", "default": "smoke", "options": ["smoke", "production"]},
+        ],
+    },
+    "regional_coupled_aging": {
+        "label": "区域并联耦合老化",
+        "normalize": normalize_regional_coupled_aging_request,
+        "worker": run_regional_coupled_aging_worker,
+        "schema": [
+            {"name": "cell", "label": "电芯参数集", "type": "text", "default": "314", "desc": "params registry 键:314 / 587 / MIC 等"},
+            {"name": "temperature_c", "label": "环境温度", "type": "number", "default": 25.0, "unit": "°C", "min": -20, "max": 60},
+            {"name": "run_mode", "label": "运行模式", "type": "select", "default": "smoke", "options": ["smoke", "production"]},
+        ],
+    },
+    "calibration": {
+        "label": "参数标定",
+        "normalize": normalize_calibration_request,
+        "worker": run_calibration_worker,
+        "schema": [
+            {"name": "cell", "label": "电芯参数集", "type": "text", "default": "314", "desc": "params registry 键:314 / 587 / MIC 等"},
+            {"name": "dataset_id", "label": "实验数据集 ID", "type": "text", "default": "", "desc": "已导入数据集 id(数据管理视图可查)"},
+            {"name": "method", "label": "优化器", "type": "select", "default": "MO",
+             "options": ["MO", "DA", "BO", "GO"], "desc": "MO=SLSQP(推荐,带损失收敛历史);DA=模拟退火;BO/GO 需 bayes-opt/pygad"},
+            {"name": "n_iter", "label": "最大迭代", "type": "number", "default": 20, "min": 3, "max": 60},
+            {"name": "cycles", "label": "每条件仿真圈数", "type": "number", "default": 1, "unit": "圈", "min": 1, "max": 3},
+            {"name": "t_factor", "label": "等效圈加速", "type": "number", "default": 50, "min": 10, "max": 100, "desc": "1 仿真圈 = t_factor 等效圈"},
+            {"name": "change_params", "label": "待辨识参数 JSON", "type": "text",
+             "default": "{\"Negative electrode diffusivity [m2.s-1]\": {\"low\": 1e-15, \"high\": 1e-13}}",
+             "desc": "JSON 对象:参数名 -> {low, high}(scope=user, log 缩放)"},
+            {"name": "run_mode", "label": "运行模式", "type": "select", "default": "smoke", "options": ["smoke", "production"]},
+        ],
     },
 }
 
@@ -881,14 +1536,20 @@ def resolve_job_type(request: dict[str, Any]) -> tuple[str, dict[str, Any]]:
     return job_type, spec
 
 
+def _upsert_job_record(status: dict[str, Any], job_dir: Path) -> None:
+    """把任务快照写入 sqlite jobs 表(持久化队列的事实源,供独立 worker 消费)。"""
+    from api.studio_db import StudioDatabase
+
+    StudioDatabase().upsert_job(status, job_dir)
+
+
 class JobManager:
     def __init__(self, job_root: Path = JOB_ROOT) -> None:
         self.job_root = job_root
         self.job_root.mkdir(parents=True, exist_ok=True)
-        self.processes: dict[str, mp.Process] = {}
-        self.context = mp.get_context("spawn")
 
     def create_job(self, request: dict[str, Any]) -> dict[str, Any]:
+        """入队模式:写 status.json(queued) + sqlite jobs 表,由独立 worker 消费。"""
         job_type, spec = resolve_job_type(request)
         normalized = spec["normalize"](request)
         normalized["job_type"] = job_type
@@ -910,30 +1571,15 @@ class JobManager:
             "request": normalized,
             "logs": [],
         }
-        append_log(status, "INFO", "仿真任务已创建")
+        append_log(status, "INFO", "仿真任务已入队，等待独立 worker 执行")
         atomic_write_json(job_dir / "status.json", status)
-        process = self.context.Process(target=spec["worker"], args=(str(job_dir), normalized), daemon=False)
-        process.start()
-        self.processes[job_id] = process
-        update_status(job_dir, status="running", worker_pid=process.pid)
-        return self.get_status(job_id)
+        _upsert_job_record(status, job_dir)
+        return status
 
     def get_status(self, job_id: str) -> dict[str, Any]:
-        job_dir = self.job_root / job_id
-        status = read_json(job_dir / "status.json", None)
+        status = read_json(self.job_root / job_id / "status.json", None)
         if not status:
             raise KeyError(job_id)
-        process = self.processes.get(job_id)
-        if status.get("status") in {"running", "queued"} and (process is None or not process.is_alive()):
-            message = (
-                "Worker process exited unexpectedly."
-                if process is not None
-                else "Server restarted; the worker process for this job is gone."
-            )
-            status["status"] = "failed"
-            status["error"] = message
-            append_log(status, "ERROR", message)
-            atomic_write_json(job_dir / "status.json", status)
         return status
 
     def get_result(self, job_id: str) -> dict[str, Any]:
@@ -945,12 +1591,43 @@ class JobManager:
     def stop_job(self, job_id: str) -> dict[str, Any]:
         job_dir = self.job_root / job_id
         status = self.get_status(job_id)
-        process = self.processes.get(job_id)
-        if process and process.is_alive():
-            process.terminate()
-            process.join(timeout=3)
-        log_status(job_dir, "WARN", "用户已停止仿真任务", status="canceled", progress=status.get("progress", 0))
+        if status.get("status") in {"queued", "running"}:
+            log_status(
+                job_dir,
+                "WARN",
+                "用户已请求停止任务(worker 将终止执行)",
+                status="canceled",
+                progress=status.get("progress", 0),
+                cancel_requested=True,
+            )
         return self.get_status(job_id)
+
+    def delete_job(self, job_id: str) -> dict[str, Any]:
+        """删除任务:sqlite 删除 + 删 job_dir + 删 run_dir(若存在)。running/queued 拒绝。"""
+        status = read_json(self.job_root / job_id / "status.json", None)
+        if not status:
+            from api.studio_db import StudioDatabase as _SD
+
+            _SD().delete_job(job_id)
+            return {"ok": True, "deleted": False, "reason": "sqlite-only(无 status.json)"}
+        if status.get("status") in {"running", "queued"}:
+            raise ValueError(f"任务 {job_id} 正在 {status.get('status')},请先停止或等待完成后再删除")
+        job_dir = self.job_root / job_id
+        run_dir_text = (read_json(job_dir / "status.json", {}) or {}).get("request", {})
+        from api.studio_db import StudioDatabase as _SD
+
+        deleted_db = _SD().delete_job(job_id)
+        from pathlib import Path as _Path
+
+        removed_files: list[str] = []
+        for path in (job_dir, _Path(str(status.get("run_dir", "") or "")) if status.get("run_dir") else None):
+            if path and _Path(str(path)).exists():
+                try:
+                    shutil.rmtree(str(path))
+                    removed_files.append(str(path))
+                except OSError as exc:
+                    removed_files.append(f"{path}(删除失败:{exc})")
+        return {"ok": True, "deleted": deleted_db, "removed": removed_files}
 
     def export_csv(self, job_id: str) -> str:
         result = self.get_result(job_id)

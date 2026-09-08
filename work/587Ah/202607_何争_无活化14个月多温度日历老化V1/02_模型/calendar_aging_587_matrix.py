@@ -36,9 +36,11 @@ for import_root in (PROJECT_ROOT, WORKSPACE_ROOT):
     if str(import_root) not in sys.path:
         sys.path.insert(0, str(import_root))
 
-from src.workflows.calendar_aging import (  # noqa: E402
-    CalendarAgingSpec,
-    run_calendar_aging_workflow,
+from src.workflows.calendar_aging import CalendarAgingSpec  # noqa: E402
+from src.workflows.calendar_aging_half_soc import (  # noqa: E402
+    AGING_T_FACTOR,
+    prepare_half_soc_baseline,
+    run_half_soc_case_workflow,
 )
 
 
@@ -46,7 +48,7 @@ FULL_TEMPERATURES_C = tuple(range(0, 51, 5))
 FULL_MONTHS = tuple(range(1, 15))
 SMOKE_TEMPERATURES_C = (0, 25, 50)
 SMOKE_MONTHS = (1,)
-CELL = "587"
+CELL = "587calander"
 NOMINAL_CAPACITY_AH = 587.0
 NOMINAL_VOLTAGE_V = 3.2
 DIAGNOSTIC_RATE_P = 0.5
@@ -66,6 +68,10 @@ def _matrix_config(
         "temperatures_c": list(temperatures_c),
         "months": list(months),
         "days_per_month": DAYS_PER_MONTH,
+        "storage_soc_pct": 50,
+        "test_temperature_c": 25,
+        "relaxation_hours_at_25c": 1,
+        "aging_t_factor": AGING_T_FACTOR,
         "diagnostic_rate_p": DIAGNOSTIC_RATE_P,
         "diagnostic_power_w": DIAGNOSTIC_POWER_W,
         "nominal_capacity_ah": NOMINAL_CAPACITY_AH,
@@ -96,10 +102,10 @@ def _case_metrics_path(
         project_root
         / "output"
         / "runs"
-        / "calendar_aging"
+        / "calendar_aging_half_soc"
         / run_id
         / "artifacts"
-        / "calendar_aging_metrics.csv"
+        / "calendar_aging_half_soc_metrics.csv"
     )
 
 
@@ -155,6 +161,10 @@ def _decorate_metrics(
     result.insert(1, "storage_month", month)
     result["diagnostic_rate_p"] = DIAGNOSTIC_RATE_P
     result["diagnostic_power_w"] = DIAGNOSTIC_POWER_W
+    result["storage_soc_pct"] = 50.0
+    result["test_temperature_c"] = 25.0
+    result["relaxation_hours_at_25c"] = 1.0
+    result["aging_t_factor"] = AGING_T_FACTOR
     result["run_id"] = run_id
     return result
 
@@ -170,7 +180,7 @@ def _write_checkpoints(
             ["temperature_c", "storage_month"],
         ).reset_index(drop=True)
         metrics.to_csv(
-            artifacts_dir / "calendar_aging_587Ah_matrix.csv",
+            artifacts_dir / "calendar_aging_587Ah_50SOC_matrix.csv",
             index=False,
             encoding="utf-8-sig",
         )
@@ -212,6 +222,15 @@ def run_matrix(
     config = _matrix_config(temperatures, months)
     config.update({"mode": mode, "batch_id": batch_id})
     _write_json(matrix_dir / "config.json", config)
+    baseline = prepare_half_soc_baseline(
+        _case_spec(25, 1),
+        test_temperature_c=25,
+    )
+    pd.DataFrame([baseline.metrics()]).to_csv(
+        artifacts_dir / "baseline_25C_C0.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
 
     metric_frames: list[pd.DataFrame] = []
     status_rows: list[dict] = []
@@ -235,10 +254,13 @@ def run_matrix(
                     case_metrics = pd.read_csv(existing_metrics)
                     status = "reused"
                 else:
-                    result = run_calendar_aging_workflow(
+                    result = run_half_soc_case_workflow(
                         _case_spec(temperature_c, month),
+                        storage_days=month * DAYS_PER_MONTH,
+                        baseline=baseline,
                         project_root=project_root,
                         run_id=run_id,
+                        relaxation_hours=1,
                     )
                     case_metrics = result["metrics"]
                     status = "completed"
@@ -314,8 +336,8 @@ def _pivot_percent(
         values=value,
     )
     pivot.index.name = "Temperature (°C)"
-    pivot.columns = [f"Month {int(month)}" for month in pivot.columns]
-    return pivot * 100
+    pivot.columns = [int(month) for month in pivot.columns]
+    return pivot
 
 
 def _format_workbook(path: Path) -> None:
@@ -347,20 +369,48 @@ def _format_workbook(path: Path) -> None:
                 max(len(str(cell.value or "")) for cell in column) + 2,
             )
             sheet.column_dimensions[column[0].column_letter].width = width
-        if sheet.max_row > 1 and sheet.max_column > 1:
+        if (
+            sheet.title
+            in {
+                "Retention_pct",
+                "Recovery_pct",
+                "Half_SOC_loss_pct",
+                "Irreversible_loss_pct",
+            }
+            and sheet.max_row > 1
+            and sheet.max_column > 1
+        ):
+            for cell in sheet[1][1:]:
+                cell.number_format = '"Month "0'
+            for row in sheet.iter_rows(
+                min_row=2,
+                min_col=2,
+                max_row=sheet.max_row,
+                max_col=sheet.max_column,
+            ):
+                for cell in row:
+                    cell.number_format = "0.00%"
             data_range = (
                 f"B2:{sheet.cell(sheet.max_row, sheet.max_column).coordinate}"
             )
+            higher_is_better = sheet.title in {
+                "Retention_pct",
+                "Recovery_pct",
+            }
             sheet.conditional_formatting.add(
                 data_range,
                 ColorScaleRule(
                     start_type="min",
-                    start_color="63BE7B",
+                    start_color=(
+                        "F8696B" if higher_is_better else "63BE7B"
+                    ),
                     mid_type="percentile",
                     mid_value=50,
                     mid_color="FFEB84",
                     end_type="max",
-                    end_color="F8696B",
+                    end_color=(
+                        "63BE7B" if higher_is_better else "F8696B"
+                    ),
                 ),
             )
     workbook.save(path)
@@ -410,6 +460,7 @@ def _plot_heatmap(
     value: str,
     title: str,
     output_path: Path,
+    cmap: str = "RdYlGn",
 ) -> Path:
     pivot = metrics.pivot(
         index="temperature_c",
@@ -417,7 +468,7 @@ def _plot_heatmap(
         values=value,
     ) * 100
     fig, ax = plt.subplots(figsize=(11, 5.5))
-    image = ax.imshow(pivot.values, aspect="auto", cmap="RdYlGn")
+    image = ax.imshow(pivot.values, aspect="auto", cmap=cmap)
     ax.set_xticks(np.arange(len(pivot.columns)), pivot.columns)
     ax.set_yticks(
         np.arange(len(pivot.index)),
@@ -441,11 +492,21 @@ def build_reports(
     plots_dir: Path,
 ) -> dict:
     """Create the consolidated Excel workbook and summary plots."""
-    csv_path = artifacts_dir / "calendar_aging_587Ah_matrix.csv"
+    csv_path = artifacts_dir / "calendar_aging_587Ah_50SOC_matrix.csv"
     metrics.to_csv(csv_path, index=False, encoding="utf-8-sig")
+    final_month = int(metrics["storage_month"].max())
+    final_month_summary = metrics.loc[
+        metrics["storage_month"] == final_month
+    ].copy()
+    summary_path = artifacts_dir / f"summary_month_{final_month}.csv"
+    final_month_summary.to_csv(
+        summary_path,
+        index=False,
+        encoding="utf-8-sig",
+    )
     workbook_path = (
         artifacts_dir
-        / "587Ah_0to50C_unactivated_calendar_aging_14months.xlsx"
+        / "587Ah_0to50C_50SOC_calendar_aging_14months.xlsx"
     )
     with pd.ExcelWriter(workbook_path, engine="openpyxl") as writer:
         metrics.to_excel(writer, sheet_name="All_results", index=False)
@@ -459,13 +520,18 @@ def build_reports(
         )
         _pivot_percent(
             metrics,
-            "reversible_self_discharge_rate",
-        ).to_excel(writer, sheet_name="Self_discharge_pct")
+            "half_soc_capacity_loss_rate",
+        ).to_excel(writer, sheet_name="Half_SOC_loss_pct")
         _pivot_percent(
             metrics,
             "irreversible_capacity_loss_rate",
         ).to_excel(writer, sheet_name="Irreversible_loss_pct")
         status.to_excel(writer, sheet_name="Run_status", index=False)
+        final_month_summary.to_excel(
+            writer,
+            sheet_name=f"Month{final_month}_summary",
+            index=False,
+        )
     _format_workbook(workbook_path)
     line_plot = _plot_lines(metrics, plots_dir)
     retention_heatmap = _plot_heatmap(
@@ -485,9 +551,11 @@ def build_reports(
         value="irreversible_capacity_loss_rate",
         title="Irreversible Capacity Loss: Temperature vs Storage Month",
         output_path=plots_dir / "irreversible_loss_heatmap.png",
+        cmap="RdYlGn_r",
     )
     return {
         "csv_path": csv_path,
+        "summary_path": summary_path,
         "workbook_path": workbook_path,
         "plot_paths": [
             line_plot,

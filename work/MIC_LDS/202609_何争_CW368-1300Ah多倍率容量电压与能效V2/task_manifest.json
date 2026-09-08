@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "task_id": "202609_何争_CW368-1300Ah多倍率容量电压与能效V2",
+  "cell": "MIC_LDS",
+  "task_name": "CW368-1300Ah多倍率容量电压与能效",
+  "owner": "何争",
+  "month": "202609",
+  "version": "V2",
+  "status": "published",
+  "created_at": "2026-09-04T15:16:18",
+  "template": null,
+  "task_notebook": null,
+  "latest_run_id": "20260904_CW368_1300Ah_EU_DCR_25C"
+}

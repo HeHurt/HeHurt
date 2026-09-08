@@ -44,11 +44,12 @@
 - `exp_loader.py` / `data_cleaning.py` / `lifecycle_exp.py` — 实验数据加载与清洗
 - `data_registry.py` — 实验数据 registry CLI（见「数据 registry」节）
 - `easy_imports.py` — legacy 便捷导入（旧 notebook 用，新代码勿扩展）
-- `api/` — Studio 后端（FastAPI + SQLite）；`JOB_TYPES` 目前仅 `cycle` 一种，Phase 2 将改为消费统一 spec→run 运行时
+- `api/` — Studio 后端（FastAPI + SQLite）；Phase 2 已完成，`JOB_TYPES` 注册 10 类(cycle / calendar_aging / frequency / pulse / lifecycle_heat / psd / regional_coupled_aging / peak_current / eis / rate_benchmark)，统一走 `_run_workflow_job` 消费 spec→run 运行时
 
 ### 参数文件 (`params/`)
 - 每个文件导出 `get_hithium_params(t_factor, temperature)` 函数；`params/__init__.py` 提供 `load_cell_params` registry
-- 锂电：`paramsMIC.py` (1175Ah) / `paramsMICCW500.py` / `params280.py` / `params314.py` / `params314_5plus3.py` / `params587.py` / `params50方壳.py` / `params64150.py`
+- 锂电：`paramsMIC.py` (1175Ah) / `params280.py` / `params314.py` / `params314_5plus3.py` / `params587.py` / `params50方壳.py` / `params64150.py`
+- 锂电（续）：`params650.py` / `params1300CW363.py` (1199Ah) / `paramsLDSCW368.py` (1362Ah) / `paramsLDSCW501.py` (1362Ah)
 - 软包/其他：`paramsCW362_pouch.py` / `paramsCW391_pouch.py` / `paramsNa.py`（钠电）
 - 同目录 `.csv` 为 OCP/扩散等查表数据
 
@@ -56,10 +57,10 @@
 - `data_raw/` / `data_processed/` — 实验数据（按电芯分目录）；索引见根目录 `datasets.json`
 - `datasets.json` — 数据 registry（git 跟踪，由 `data_registry.py` 维护）
 - `work/` — 按电芯/体系组织的任务交付区；新任务以 `YYYYMM_何争_任务名称Vn` 为完整可上传单元
-- `runs/` / `results/` / `scripts/` / `models/` / `logs/` — COMSOL/MATLAB 闭环工作目录（见下方 COMSOL 规范）
+- `COMSOL/runs/` / `COMSOL/results/` / `COMSOL/scripts/` / `COMSOL/models/` / `COMSOL/logs/` — COMSOL/MATLAB 闭环工作目录（见下方 COMSOL 规范）
 - `archive/` — 归档的 legacy 脚本与旧 notebook
 - `tools/` — 预处理与运维脚本（`git_dlp_clean.py`、`0_preprocess_*.py` 等）
-- `skills/` — Claude/Codex 共享 skill 池真源（junction 机制见「共享基础设施」）
+- `skills/` — Codex 项目 skill 池真源（junction 机制见「共享基础设施」）
 
 ### Notebook 工作区 (`work/`)
 | 目录 | 电芯型号 | 主要内容 |
@@ -86,6 +87,8 @@
   矩阵，未验证通过不得视为完成整合。
 - 原始运行、中间结果和日志写入 `BatteryProject/output/runs/<workflow>/<run_id>/`，不得再新建
   `work/**/notebooks/output`、`outputs` 或 `results/output`。
+- `.codex`、Codex scratch、聊天附件临时目录只允许短期工具中转，禁止作为仿真数据、结果或交付物
+  的保存位置；任务结束前必须把有效文件归档到对应版本任务包，工具中转文件应清理。
 - 验证后的 run 使用 `python tools/task_delivery.py publish-task ...` 复制并固化到任务包
   `04_输出结果/`；发布不移动、不覆盖原始 run。
 - 一个任务包至少包含任务说明、仿真报告、模型、输入数据、输出结果和复现说明，完成后可整包上传。
@@ -136,6 +139,11 @@
 
 ## Pre-Commit 验证协议
 
+> **解释器**：本机 `python` 指向 WorkBuddy 自带 3.13（**无 pytest / flake8 / pybamm**）。
+> 项目真实环境是系统 Python 3.11，下列命令中的 `python` 一律替换为：
+> `C:/Users/hez/AppData/Local/Programs/Python/Python311/python.exe`（pytest 9.0.3 / flake8 7.3.0 / pybamm 26.4.2）。
+> `.venv` 与 `.venv-liionpack` 都没有装 pytest，不能用来跑测试。
+
 修改 `BatteryProject/src/` 下的代码后，必须按顺序完成：
 
 1. **Lint**: `python -m flake8 BatteryProject/src/ --max-line-length=120 --ignore=E501,W503` — 必须通过
@@ -158,8 +166,7 @@
    - **harness 空白** → 更新对应的 AGENTS.md 文件填补规则
    - **一次性失误** → 当场修正即可
    - **反复出现的模式** → 加入对应 AGENTS.md 的「禁止事项」段落
-2. 更新 `.github/copilot-instructions.md` 记录该规则
-3. 确保后续会话能读取到更新后的指导
+2. 确保后续会话能读取到更新后的指导
 
 这形成棘轮效应：harness 在每次 review 后只会变得更好。
 
@@ -170,26 +177,27 @@
 - 每次换温度必须重新 `pybamm.ParameterValues("OKane2022")` + `params.update()`，防止参数污染
 - 修改 src 后 Notebook 需 `importlib.reload()` 并重新绑定函数符号
 - `var_pts` 标准配置: `{"x_n": 5, "x_s": 5, "x_p": 5, "r_n": 20, "r_p": 20}`
-- 本机工作区文件可能受加密软件保护；如果 PowerShell/`Get-Content`/`cmd type` 看到 `%TSD-Header-###%` 或乱码，不要反复排查编码，改用 Python 读取/解析文件内容。
+- 本机工作区文件可能受加密软件保护；对 `D:\Users\hez\Desktop\hithium` 下的工程文件默认直接走白名单读取，不再先用 PowerShell、ripgrep 或普通第三方进程试读：`.py/.csv/.xlsx` 优先用 Python，`.ipynb` 或 Python 仍无法解密的高密级文件直接用 `Code.exe` Node bridge；Spreadsheet/文档工具读取加密文件前先通过 Python/`Code.exe` 生成明文中转副本。
+- DLP 保护的 Office 二进制容器（尤其 `.pptx/.docx/.xlsx`）禁止使用 `Code.exe` 的 UTF-8/文本读取桥；该桥可能直接返回 `%TSD-Header-###%` 密文且会破坏二进制内容。必须先用白名单 Python 按 bytes 读取并写入 `C:\Users\hez\AppData\Local\Temp\codex-hithium\` 明文中转副本，确认文件头为 `PK\x03\x04` 且 `zipfile.is_zipfile(...) == True`，再交给 Presentations/Documents/Spreadsheets 工具。若 Python 仍读到 TSD 密文，则改走对应 Office 应用的原生 COM 打开/另存通道，不得回退到 `Code.exe` 文本桥。
+- 以后通过 PowerPoint 或其他 Office 应用保存/导出 PDF 时，默认只交付一个明文正式 PDF：Office 原生导出文件仅作为内部中转，由白名单 Python 读取其解密后的 bytes，并把该明文内容作为最终 PDF 写到用户指定路径；不得同时保留或交付一个 DLP 正式版和一个明文副本。PDF 解析、页数/加密检查、渲染和视觉 QA 均针对最终文件；交付前必须从非白名单读取视角复核文件头为 `%PDF-`、不是 `%TSD-Header-###%`。若指定目录的 DLP 策略会在落盘时重新加密，必须明确告知用户，不能把仍带 TSD 外壳的文件称为明文 PDF。
+- PowerPoint COM 自动化不得无条件调用 `Application.Quit()`：PowerPoint 可能复用用户已打开的应用实例，`Quit()` 会关闭所有无关演示文稿。必须只关闭本次由 Agent 打开的 `Presentation`；仅当任务开始前不存在 PowerPoint 进程、且关闭目标文件后确认没有任何其他演示文稿时，才允许退出应用。任务前后应记录已有 PowerPoint 进程/文稿，禁止影响用户正在编辑的窗口。
 - 在编写代码前先描述方案并等待批准；需求不明确时先提问
 - 单次任务修改超过 7 个文件时，先分解为更小任务
 
 ---
 
-## 共享基础设施（Claude / Codex 公共记忆）
+## 共享基础设施（Codex）
 
-> 本节是 Claude 与 Codex 的**单一真源**。Codex 原生读本文件；Claude 经 `CLAUDE.md`
-> 里的 `@AGENTS.md` 导入。需要两边共享的机器/工程级长期事实写在这里，改一处两边生效。
-> 各自的自动记忆（Claude `…\.claude\projects\<hash>\memory\*.md` / Codex
-> `…\.codex\memories\memories_1.sqlite`）格式与存储不同，无法合并，仍各自私有。
+> 本节是 Codex 在本项目中的机器/工程级单一真源。Claude Code 已封禁、GitHub Copilot 已停用，
+> 相关项目资产于 2026-07-31 外移；恢复方法见本节末尾。
 
 ### 1. 本机 DLP 文件加密（Trend Micro）
-受保护文件头含 `%TSD-Header-###%`，非白名单进程（claude.exe / PowerShell / ripgrep /
-git.exe）读取会得到密文/乱码。
+受保护文件头含 `%TSD-Header-###%`，非白名单进程（PowerShell / ripgrep / git.exe）
+读取会得到密文/乱码。
 - **判断**：文件前几字节含 `%TSD-Header-###%` 即密文。
 - **读**：改用白名单 `python`：`python -c "print(open('path', encoding='utf-8').read())"`
   （stdout 不过 DLP）。看到乱码不要反复排查编码，直接换 python。
-- **写**：先 Write 到 `…\.claude\projects\…\scratch\` 中转，再用 python 读出写入目标
+- **写**：先写到 `C:\Users\hez\AppData\Local\Temp\codex-hithium\` 中转，再用 python 读出写入目标
   路径（python 写入会被 DLP 按原级别重新加密）。直接 Edit 受保护 `.py` 会失败。
 - **范围**：BatteryProject 下所有 `.py` 和大部分 `.ipynb`；`.md`/`.toml`/`.bat`/
   `run_frontend.py` 是明文，可直接读写。
@@ -217,18 +225,19 @@ git.exe 非白名单，直接 add 会把密文存进仓库。已配 clean filter
 - **规则**：不要绕过 filter 塞密文；换机克隆后先重跑上面两条 `git config` 并恢复
   pre-commit hook。解不开的文件 `git rm --cached` 不跟踪，而非提交密文。
 
-### 3. Skill 共享池（Claude ↔ Codex）
-两边 skill 经**整目录 junction** 指向同一真源，改一处两边同步。
+### 3. Codex Skill 池
+Codex skill 入口通过整目录 junction 指向项目真源。
 - **真源**：`D:\Users\hez\Desktop\hithium\skills\`（已纳入 git）。
-- **入口 junction**：`…\.claude\skills` 和 `…\.codex\skills` 均 → 真源。
-- **内层 junction**：`skills\comsol-java-battery-modeling` → `…\hithium\COMSOL\comsol-java-battery-modeling`。
+- **入口 junction**：`…\.codex\skills` → 真源。
+- **COMSOL Skill 真源**：`skills\comsol-battery-model-automation\`（普通目录，直接纳入 git；不再使用内层 junction）。
 - **不跟踪**：`skills/.system/`（Codex 自带系统 skill，随版本重建）。
-- **换机重建**（3 条 mklink）：两个入口 junction + comsol 内层 junction。
-- 新建 skill 直接落进真源目录即可，两边自动可见。
+- **换机重建**（1 条 mklink）：只需重建 Codex 入口 junction；COMSOL Skill 会随仓库直接存在。
+- 新建 skill 直接落进真源目录即可由 Codex 使用。
 
-### 4. 跨工具共享记忆的用法
-想让一条事实两边都记住时，**显式让当前工具写进本节**（而不是它私有的自动记忆）。
-两边启动都读 AGENTS.md，下次双方都能看到。自动攒的会话记忆不跨工具，需手动落到这里。
+### 4. 已停用工具资产
+Claude Code、GitHub Copilot 与通用 agent 兼容入口已外移到
+`D:\Users\hez\Desktop\hithium-外移\disabled-tooling\20260731_claudecode_copilot_V1\`。
+后续恢复时按该目录中的 `RESTORE.md` 放回，不要重新手工创建不同版本。
 
 ---
 
@@ -244,36 +253,50 @@ COMSOL with MATLAB / LiveLink for MATLAB 已经可以正常连接；除非当前
 - 优先基于已有 `.mph` 文件或 COMSOL Desktop 导出的 `.m` 文件改造。
 - 不要凭空编写复杂 COMSOL API；不确定 API 时，优先参考已有导出脚本、COMSOL LiveLink for MATLAB 文档、COMSOL Programming Reference、COMSOL Knowledge Base 和 MATLAB/COMSOL 报错。
 - 每次修改后必须运行最小可验证案例，再扩展到参数化或批量仿真。
-- 每次运行必须生成日志、结果文件和错误报告。
+- 每个大任务维护一份内部运行日志；仅在实际失败时生成错误报告，不为成功运行创建空错误文件。
 - 失败后必须读取报错、定位原因、修复并再次验证。
-- 每次失败和修复都要追加写入 `logs/lessons_learned.md`，避免重复犯错。
+- 每次失败和修复都要追加写入 `COMSOL/logs/lessons_learned.md`，避免重复犯错。
 
 ### 文件保护规则
 - 不要删除 `.mph`、`.m`、日志、结果文件。
 - 不要覆盖成功运行结果。
-- 新结果必须写入带时间戳的 `runs/` 子目录。
-- 保存模型快照前确认目标路径在当前 run folder 内，避免覆盖 baseline 模型。
+- 一个大任务从建模到后处理只创建一个中文任务包，命名沿用 `work` 规范：
+  `YYYYMM_何争_中文任务名称Vn`。同一任务的后续计算不得反复新增顶层英文时间戳文件夹。
+- 正式任务包优先放在对应的 `work/<体系>/` 下；COMSOL 临时运行记录统一收进该任务包的
+  `99_内部文件/运行记录/`，不得散落到用户可见的结果目录。
+- 保存模型快照前确认目标路径位于当前任务包内，使用 V1/V2 或 baseline/coupled 等明确文件名，
+  避免覆盖已成功模型。
 
 ### 标准目录
-- `models/` 保存 `.mph` 和 COMSOL Desktop 导出的 `.m` 模型文件。
-- `scripts/` 保存 MATLAB 自动化脚本。
-- `runs/` 保存每次仿真运行记录。
-- `results/` 保存汇总结果。
-- `logs/` 保存错误与经验沉淀。
+- `COMSOL/models/` 保存 `.mph` 和 COMSOL Desktop 导出的 `.m` 模型文件。
+- `COMSOL/scripts/` 保存 MATLAB 自动化脚本。
+- `COMSOL/runs/` 仅保留历史任务和无法归属任务包的临时诊断；新正式任务不得按每次运行新增顶层目录。
+- `COMSOL/results/` 保存汇总结果。
+- `COMSOL/logs/` 保存错误与经验沉淀。
 
-### 标准运行记录
-每次运行创建如下结构：
+### 标准任务包与精简交付
+一个大任务只创建一次如下中文目录；已上传版本冻结，正式返修再创建 V2/V3：
 
 ```text
-runs/YYYYMMDD_HHMMSS_case_name/
-├─ config.json
-├─ run.log
-├─ error_report.txt
-├─ model_snapshot.mph
-├─ metrics.csv
-├─ plots/
-└─ exported_data/
+work/<体系>/YYYYMM_何争_中文任务名称V1/
+├─ 01_任务说明/
+├─ 02_模型/                 # 仅保留需要审核或交付的 .mph
+├─ 03_输入数据/
+├─ 04_输出结果/
+│  ├─ 图表/                 # 最终 PNG/PDF
+│  └─ 结果汇总.xlsx          # 优先用一个工作簿收纳指标和必要明细
+├─ 05_复现说明/
+└─ 99_内部文件/
+   ├─ 脚本/
+   ├─ 运行记录/
+   ├─ JSON/
+   └─ 中间数据/
 ```
+
+- 用户可见的任务包根目录和 `04_输出结果` 不放 JSON、日志、脚本、session 文件或成百上千个空间场 CSV。
+- `config.json` 用于记录仿真输入，audit/verify JSON 用于机器回读验收，summary JSON 用于驱动作图；
+  它们都是内部可复现文件，统一放入 `99_内部文件/JSON/`，不作为正式交付物。
+- 正式交付默认精简为：最终 `.mph`、最终图、一个结果汇总工作簿和一份简短说明。只有用户明确要求时才额外交付原始 CSV/JSON。
 
 ### COMSOL API 安全规则
 - 物理参数必须显式带单位，例如 `"10[mm]"`、`"293.15[K]"`、`"1[A]"`。

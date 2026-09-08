@@ -1,0 +1,18 @@
+cell: CW368-1175Ah
+chemistry: LFP
+temperature_c: 25
+rated_capacity_ah: 1175
+nominal_voltage_v: 3.2
+single_electrode_height_mm: 195.5
+electrode_length_mm: 555
+source_rate_map:
+  0.125P: 0.167P
+  0.25P: 0.333P
+power_targets_w:
+  0.167P: 627.905
+  0.333P: 1255.813
+calibration_sample: 00029_CH2
+validation_sample: 00030_CH1
+benchmark_effective_area_factor: 1.0
+negative_ocp_warp_enabled: false
+run_mode: full_benchmark

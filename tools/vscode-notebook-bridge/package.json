@@ -2,7 +2,7 @@
   "name": "notebook-bridge",
   "displayName": "Hithium Notebook Bridge",
   "description": "Local VS Code notebook bridge for Codex and Claude Code sidebars.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "hithium",
   "engines": {
     "vscode": "^1.90.0"

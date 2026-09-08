@@ -1,0 +1,12 @@
+cell: CW368-1300Ah
+rated_capacity_Ah: 1300
+nominal_voltage_V: 3.2
+electrode_height_mm: 213.5
+protocol: constant_power_charge_discharge
+temperature_mode: fixed_average_temperature
+cases:
+  - {p_rate: 0.125, power_W: 520.00, temperature_C: 25}
+  - {p_rate: 0.167, power_W: 694.72, temperature_C: 26}
+  - {p_rate: 0.25, power_W: 1040.00, temperature_C: 32}
+  - {p_rate: 0.33, power_W: 1372.80, temperature_C: 34}
+  - {p_rate: 0.5, power_W: 2080.00, temperature_C: 38}

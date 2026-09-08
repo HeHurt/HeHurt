@@ -1,0 +1,3 @@
+cell: cross_cell
+task: 扣电-单层软包-3Ah软包第一轮DOE
+run_mode: smoke

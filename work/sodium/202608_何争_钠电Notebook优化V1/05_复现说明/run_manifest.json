@@ -1,0 +1,328 @@
+{
+  "published_runs": [
+    {
+      "run_id": "20260813_152930_notebook",
+      "source": "BatteryProject/output/runs/sodium_rate_benchmark/20260813_152930_notebook",
+      "published_at": "2026-08-13T15:32:27",
+      "mode": "full",
+      "files": [
+        {
+          "path": "benchmark_curves.csv",
+          "size": 3002374,
+          "sha256": "3fa2414f95a626c2ef66367a181ab7ef42e9b6c228002520d68daa0e52ea5600"
+        },
+        {
+          "path": "benchmark_metrics.csv",
+          "size": 14394,
+          "sha256": "ef63d5824b7edca29aa1c49bb5c6aa5596208945bdd5c1fbaa816eea24b2142e"
+        },
+        {
+          "path": "case_coverage.csv",
+          "size": 11391,
+          "sha256": "292e4b48ee986155119aead996faa4a7a8ed7af127874c4e5de2b5da1377a7e5"
+        },
+        {
+          "path": "run_manifest.json",
+          "size": 360,
+          "sha256": "7640e8be8d26249b59c4f67188a327caa3301585f7fe9db30f690c199ad0268a"
+        },
+        {
+          "path": "plots/charge_capacity_error_pct_heatmap.png",
+          "size": 55508,
+          "sha256": "8f86fcc6da2f0ff8194ba3330c9e324432873b6a750e73edbbe8017da87576c6"
+        },
+        {
+          "path": "plots/charge_p0C_sim_exp.png",
+          "size": 132034,
+          "sha256": "b01a00b850344c8161e6181bfcecd4b419f1b6b57dade29d0179c51fa2284238"
+        },
+        {
+          "path": "plots/charge_p10C_sim_exp.png",
+          "size": 138264,
+          "sha256": "345ddda30825dbcfdd248a1dfb9068be63c79901eb645e147d517b70ca95850a"
+        },
+        {
+          "path": "plots/charge_p15C_sim_exp.png",
+          "size": 136185,
+          "sha256": "1e622c57b589183ea0911261c94e7d5636ee95d966c8733da5fbc67c359b77b4"
+        },
+        {
+          "path": "plots/charge_p20C_sim_exp.png",
+          "size": 132422,
+          "sha256": "b7fa86c69e9f66718556e60c8f355174c9fc5e65b7149ea6e4d97f727f613306"
+        },
+        {
+          "path": "plots/charge_p25C_sim_exp.png",
+          "size": 129289,
+          "sha256": "16904bb1e85b9577d6a990ce6b6324f06a87cb3f64b37124703bc79311c8444d"
+        },
+        {
+          "path": "plots/charge_p35C_sim_exp.png",
+          "size": 127156,
+          "sha256": "1ee023be8fe325e3617ea4aea790eab5e59a0628c3f7dbb4d8e609c1dcbf3d7b"
+        },
+        {
+          "path": "plots/charge_p45C_sim_exp.png",
+          "size": 123388,
+          "sha256": "28bbd14cf9c1d6dabfd0648f5a8968abaa51ac22c329fa1fd23c0467213e2fe8"
+        },
+        {
+          "path": "plots/charge_voltage_rmse_v_heatmap.png",
+          "size": 55058,
+          "sha256": "445b01445ca15078c17fb10e767c2cf8098d5f2455b91b286e9e4a896a054c03"
+        },
+        {
+          "path": "plots/diagnostic_charge_25C_1C.png",
+          "size": 105501,
+          "sha256": "f8e38e86948ebbd3998d58975df48a9cc45bcab5b0c2a88b29a1986dbaf895a0"
+        },
+        {
+          "path": "plots/discharge_capacity_error_pct_heatmap.png",
+          "size": 30274,
+          "sha256": "ea22ed461b650233a57a67f263742413a0466d97f6a6a00920970ebe543fbd04"
+        },
+        {
+          "path": "plots/discharge_m20C_sim_exp.png",
+          "size": 119395,
+          "sha256": "4964cad078328ecde8c5098fd9b49e5a8afa97c1a71ad54c0be5df8ae369746f"
+        },
+        {
+          "path": "plots/discharge_p25C_sim_exp.png",
+          "size": 133339,
+          "sha256": "2cfea4291d0b13f92399d44c8828369578a3ca1cfe4c4e856965876de305772d"
+        },
+        {
+          "path": "plots/discharge_voltage_rmse_v_heatmap.png",
+          "size": 33377,
+          "sha256": "3dc517d452c17ac63d546fe5d23d390b6107f003d1d132e8e088068d1f7761a7"
+        },
+        {
+          "path": "plots/ocp_parameter_profiles.png",
+          "size": 47663,
+          "sha256": "005b0dfe56a8b8de7c80b212aa4fd40011fd8f72b0cf0117ebeb5705d6c9409f"
+        }
+      ]
+    },
+    {
+      "run_id": "20260813_153445_notebook",
+      "source": "BatteryProject/output/runs/sodium_rate_benchmark/20260813_153445_notebook",
+      "published_at": "2026-08-13T15:36:11",
+      "mode": "full",
+      "files": [
+        {
+          "path": "benchmark_curves.csv",
+          "size": 3002374,
+          "sha256": "3fa2414f95a626c2ef66367a181ab7ef42e9b6c228002520d68daa0e52ea5600"
+        },
+        {
+          "path": "benchmark_metrics.csv",
+          "size": 14397,
+          "sha256": "5e0233517389fdb78324a4b97d96154c6af0e600a07534047ea05e6843e59022"
+        },
+        {
+          "path": "case_coverage.csv",
+          "size": 14955,
+          "sha256": "3fc8cd0a32659927fbc9899edb32b36b7b8ae3b6c7ad4b4c24c601219d7ecb24"
+        },
+        {
+          "path": "run_manifest.json",
+          "size": 430,
+          "sha256": "a7ce7e762d0cbd7aefe03d1eef40040bfafd99339c364b580629223c4d0df65f"
+        },
+        {
+          "path": "plots/charge_capacity_error_pct_heatmap.png",
+          "size": 55508,
+          "sha256": "8f86fcc6da2f0ff8194ba3330c9e324432873b6a750e73edbbe8017da87576c6"
+        },
+        {
+          "path": "plots/charge_p0C_sim_exp.png",
+          "size": 132034,
+          "sha256": "b01a00b850344c8161e6181bfcecd4b419f1b6b57dade29d0179c51fa2284238"
+        },
+        {
+          "path": "plots/charge_p10C_sim_exp.png",
+          "size": 138264,
+          "sha256": "345ddda30825dbcfdd248a1dfb9068be63c79901eb645e147d517b70ca95850a"
+        },
+        {
+          "path": "plots/charge_p15C_sim_exp.png",
+          "size": 136185,
+          "sha256": "1e622c57b589183ea0911261c94e7d5636ee95d966c8733da5fbc67c359b77b4"
+        },
+        {
+          "path": "plots/charge_p20C_sim_exp.png",
+          "size": 132422,
+          "sha256": "b7fa86c69e9f66718556e60c8f355174c9fc5e65b7149ea6e4d97f727f613306"
+        },
+        {
+          "path": "plots/charge_p25C_sim_exp.png",
+          "size": 129289,
+          "sha256": "16904bb1e85b9577d6a990ce6b6324f06a87cb3f64b37124703bc79311c8444d"
+        },
+        {
+          "path": "plots/charge_p35C_sim_exp.png",
+          "size": 127156,
+          "sha256": "1ee023be8fe325e3617ea4aea790eab5e59a0628c3f7dbb4d8e609c1dcbf3d7b"
+        },
+        {
+          "path": "plots/charge_p45C_sim_exp.png",
+          "size": 123388,
+          "sha256": "28bbd14cf9c1d6dabfd0648f5a8968abaa51ac22c329fa1fd23c0467213e2fe8"
+        },
+        {
+          "path": "plots/charge_voltage_rmse_v_heatmap.png",
+          "size": 55058,
+          "sha256": "445b01445ca15078c17fb10e767c2cf8098d5f2455b91b286e9e4a896a054c03"
+        },
+        {
+          "path": "plots/diagnostic_charge_25C_1C.png",
+          "size": 105501,
+          "sha256": "f8e38e86948ebbd3998d58975df48a9cc45bcab5b0c2a88b29a1986dbaf895a0"
+        },
+        {
+          "path": "plots/discharge_capacity_error_pct_heatmap.png",
+          "size": 30274,
+          "sha256": "ea22ed461b650233a57a67f263742413a0466d97f6a6a00920970ebe543fbd04"
+        },
+        {
+          "path": "plots/discharge_m20C_sim_exp.png",
+          "size": 119395,
+          "sha256": "4964cad078328ecde8c5098fd9b49e5a8afa97c1a71ad54c0be5df8ae369746f"
+        },
+        {
+          "path": "plots/discharge_p25C_sim_exp.png",
+          "size": 133339,
+          "sha256": "2cfea4291d0b13f92399d44c8828369578a3ca1cfe4c4e856965876de305772d"
+        },
+        {
+          "path": "plots/discharge_voltage_rmse_v_heatmap.png",
+          "size": 33377,
+          "sha256": "3dc517d452c17ac63d546fe5d23d390b6107f003d1d132e8e088068d1f7761a7"
+        },
+        {
+          "path": "plots/ocp_parameter_profiles.png",
+          "size": 47663,
+          "sha256": "005b0dfe56a8b8de7c80b212aa4fd40011fd8f72b0cf0117ebeb5705d6c9409f"
+        }
+      ]
+    },
+    {
+      "run_id": "20260813_155603_notebook",
+      "source": "BatteryProject/output/runs/sodium_rate_benchmark/20260813_155603_notebook",
+      "published_at": "2026-08-13T15:58:40",
+      "mode": "full",
+      "files": [
+        {
+          "path": "benchmark_curves.csv",
+          "size": 3078965,
+          "sha256": "e902244d792cd84c8480aa853bc28261311d3ae5f3ad98d2089f8b80051ac55f"
+        },
+        {
+          "path": "benchmark_metrics.csv",
+          "size": 14518,
+          "sha256": "56324c52cca64b9ea467b75454c762e0871c2325bf67aa319515c9642d447953"
+        },
+        {
+          "path": "calibration_comparison.csv",
+          "size": 12350,
+          "sha256": "522c7bce60903aad96cbd37db2a9cdfda2011c4870a8d86d26f55409ccbcb815"
+        },
+        {
+          "path": "calibration_summary.csv",
+          "size": 539,
+          "sha256": "4e77cbb4bdf1dc061142601e646dc8b60986067d72d6a5b43a42998ae6baa920"
+        },
+        {
+          "path": "case_coverage.csv",
+          "size": 14955,
+          "sha256": "3fc8cd0a32659927fbc9899edb32b36b7b8ae3b6c7ad4b4c24c601219d7ecb24"
+        },
+        {
+          "path": "run_manifest.json",
+          "size": 646,
+          "sha256": "83c7a10e82ef6956572f2384246ae1aff832a2a3092899bac80b7e893b3c42a0"
+        },
+        {
+          "path": "plots/calibration_before_after.png",
+          "size": 48803,
+          "sha256": "2852cad835d32e05801b30a0c5c1dcb12a17232bfd3b11731a60d82f23941010"
+        },
+        {
+          "path": "plots/charge_capacity_error_pct_heatmap.png",
+          "size": 54972,
+          "sha256": "b1ff04f29ee3895e4c164a7734c2b363c83d317d45cf6d313217f182ca448d7e"
+        },
+        {
+          "path": "plots/charge_p0C_sim_exp.png",
+          "size": 137691,
+          "sha256": "a3343ffb05f9de5aeb580de1ba30e94ab5f288bcf1b8d9a22980d32f1f6abba4"
+        },
+        {
+          "path": "plots/charge_p10C_sim_exp.png",
+          "size": 136947,
+          "sha256": "e7257bc3aa01c593d4d6e339d476f21844d8cd4ba94d0a1db6b6a234b299b4a6"
+        },
+        {
+          "path": "plots/charge_p15C_sim_exp.png",
+          "size": 135657,
+          "sha256": "8ba85836bd5aa10723dae4963823a915cd3a8f05b9f83a3cb97073bf283137c7"
+        },
+        {
+          "path": "plots/charge_p20C_sim_exp.png",
+          "size": 132414,
+          "sha256": "768314e705c7bd9e5a09c3cbac33bcc00b5af83c56a6fae09148bf0e51547d8d"
+        },
+        {
+          "path": "plots/charge_p25C_sim_exp.png",
+          "size": 129861,
+          "sha256": "603654a8f91d057e4b1db08f5fc85a5f216c96045bc638c7678b22276c160cb7"
+        },
+        {
+          "path": "plots/charge_p35C_sim_exp.png",
+          "size": 126573,
+          "sha256": "3e8e14e9bd01d7d47e0fec5ec37c9d270b84a7849bf667ce80f2e0f24b8cd5b5"
+        },
+        {
+          "path": "plots/charge_p45C_sim_exp.png",
+          "size": 123053,
+          "sha256": "02a5b7acf1bc31198e30459ba1c94705e118bbed21232b92f88a4bfb491c19d8"
+        },
+        {
+          "path": "plots/charge_voltage_rmse_v_heatmap.png",
+          "size": 52477,
+          "sha256": "3bc28370fb76c65e5c71e7fbb264eda9b2bd34ff903c669b9e4280c6584877e0"
+        },
+        {
+          "path": "plots/diagnostic_charge_25C_1C.png",
+          "size": 102529,
+          "sha256": "bc933e2f1555af9aa89a113be87a04e1fcca9e875054bb5f3ea73b714653e58a"
+        },
+        {
+          "path": "plots/discharge_capacity_error_pct_heatmap.png",
+          "size": 27984,
+          "sha256": "c06c2302557dfb7a7aa0321ae34af826e9df222e31147595328970ec3f21fa86"
+        },
+        {
+          "path": "plots/discharge_m20C_sim_exp.png",
+          "size": 139518,
+          "sha256": "c5799843234fe308fe05348764dcbeaf80e6d4c52a4453eb7e2bf3837f497943"
+        },
+        {
+          "path": "plots/discharge_p25C_sim_exp.png",
+          "size": 133174,
+          "sha256": "8e1421313a96482f2b802e299e1fd9fb1b0f5276bf962e109787ea5b6d54b9f3"
+        },
+        {
+          "path": "plots/discharge_voltage_rmse_v_heatmap.png",
+          "size": 33298,
+          "sha256": "2aa975e8fe9dc00b4143c49c9ee016d53cb769ad71e0dbdb4cf5de8ddd84f4bc"
+        },
+        {
+          "path": "plots/ocp_parameter_profiles.png",
+          "size": 47663,
+          "sha256": "005b0dfe56a8b8de7c80b212aa4fd40011fd8f72b0cf0117ebeb5705d6c9409f"
+        }
+      ]
+    }
+  ]
+}

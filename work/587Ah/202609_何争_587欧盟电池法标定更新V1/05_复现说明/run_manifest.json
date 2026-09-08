@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "task_id": "202609_何争_587欧盟电池法标定更新V1",
+  "nature": "conclusion_slide_publication",
+  "rerun_required": false,
+  "source_task": "202608_何争_587欧盟电池法循环DCR实测复核V1",
+  "source_run_id": "20260831_587eu_final_sched_3_1p3_1p2_13000",
+  "source_run_dir": "BatteryProject/output/runs/eu_battery_regulation/20260831_587eu_final_sched_3_1p3_1p2_13000",
+  "reuse": {
+    "t_factor": 50,
+    "capacity_scale": 1.0106,
+    "early_ec_schedule": [3.0, 1.3, 1.2],
+    "params_writeback": false
+  },
+  "deliverables": [
+    "01_仿真报告/587Ah欧盟电池法标定更新仿真结论.md",
+    "04_输出结果/RE_HC587Base_E212_587电池循环与DCR标定更新_20260902.png",
+    "04_输出结果/results_summary.json"
+  ]
+}

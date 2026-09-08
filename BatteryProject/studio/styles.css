@@ -972,6 +972,27 @@ th {
   font-size: 12px;
 }
 
+/* P0：占位/规划中徽标 */
+.badge-planning {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  color: #6b7280;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 1.6;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .model-panel .panel-body {
   padding-top: 12px;
   padding-bottom: 12px;
@@ -1789,4 +1810,257 @@ body.light-alt {
   .result-tabs {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .module-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .module-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .module-tabs a {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .stepper {
+    overflow-x: auto;
+  }
+}
+
+/* ===== P1 数据 registry 浏览器(2026-08-05) ===== */
+.data-tabs {
+  margin-bottom: 12px;
+}
+.data-tab-pane {
+  margin-top: 4px;
+}
+.registry-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.registry-select {
+  min-width: 128px;
+  padding: 5px 8px;
+  border: 1px solid var(--line-200);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  color: var(--ink-900);
+  font-size: 13px;
+  font-family: var(--font-sans);
+}
+.registry-path {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+}
+.status-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.7;
+  white-space: nowrap;
+}
+.status-auto {
+  background: var(--blue-100);
+  color: var(--blue-700);
+}
+.status-curated {
+  background: #dcfce7;
+  color: #15803d;
+}
+.status-ignore {
+  background: var(--line-100);
+  color: var(--ink-500);
+}
+.status-missing {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* ===== P2 任务中心(2026-08-05) ===== */
+.tasks-layout {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.task-types-pane {
+  width: 208px;
+  flex-shrink: 0;
+}
+.task-types-pane h3 {
+  margin-bottom: 8px;
+}
+.task-type-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.task-type-item {
+  text-align: left;
+  padding: 8px 10px;
+  border: 1px solid var(--line-200);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: border-color 0.15s ease;
+}
+.task-type-item:hover:not(.disabled) {
+  border-color: var(--blue-500);
+}
+.task-type-item.active {
+  border-color: var(--blue-500);
+  background: var(--panel-soft);
+}
+.task-type-item.disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.task-type-item strong {
+  display: block;
+  font-size: 13px;
+  color: var(--ink-900);
+}
+.task-type-item small {
+  font-size: 11px;
+  color: var(--ink-500);
+}
+.task-work-pane {
+  flex: 1;
+  min-width: 0;
+}
+.task-work-pane h3 {
+  margin-bottom: 6px;
+}
+.task-work-pane h4 {
+  margin: 14px 0 6px;
+  font-size: 13px;
+  color: var(--ink-700);
+}
+.task-check {
+  margin: 4px 0;
+}
+.field-desc {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--ink-500);
+}
+.task-status-grid {
+  margin: 10px 0;
+}
+@media (max-width: 900px) {
+  .tasks-layout {
+    flex-direction: column;
+  }
+  .task-types-pane {
+    width: 100%;
+  }
+}
+
+/* ===== Sim-Exp 对标工作台(2026-08-05) ===== */
+.bench-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+  margin-bottom: 14px;
+}
+.bench-controls .field {
+  flex: 1 1 200px;
+  max-width: 320px;
+}
+.bench-controls .btn {
+  align-self: flex-end;
+  white-space: nowrap;
+}
+.bench-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 10px 0 14px;
+}
+.bench-metric {
+  min-width: 150px;
+  padding: 10px 14px;
+  border: 1px solid var(--line-200);
+  border-radius: var(--radius-md);
+  background: var(--panel-soft);
+}
+.bench-metric strong {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-500);
+  margin-bottom: 2px;
+}
+.bench-metric span {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink-900);
+}
+.bench-metric small {
+  display: block;
+  font-size: 11px;
+  color: var(--ink-500);
+}
+.bench-metric.note {
+  display: flex;
+  align-items: center;
+  color: var(--ink-700);
+}
+#benchChart {
+  margin: 6px 0 14px;
+  border: 1px solid var(--line-100);
+  border-radius: var(--radius-md);
+}
+#benchResultPane h4,
+#benchDiffPane h4 {
+  margin: 14px 0 6px;
+  font-size: 13px;
+  color: var(--ink-700);
+}
+#benchDiffPane {
+  margin-top: 6px;
+}
+
+#benchCurveChart,
+#benchCurveMeta {
+  margin: 6px 0 10px;
+}
+#benchCurveMeta .bench-metrics {
+  margin-bottom: 4px;
+}
+
+.job-id-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.job-id-cell code {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+  color: var(--ink-700);
+}
+.job-name {
+  font-size: 12px;
+  color: var(--ink-500);
+  margin-top: 2px;
+}
+.icon-button.danger {
+  color: #b91c1c;
+}
+.icon-button.danger:hover {
+  background: rgba(239, 68, 68, 0.08);
 }

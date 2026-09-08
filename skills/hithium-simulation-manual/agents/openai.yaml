@@ -1,0 +1,4 @@
+interface:
+  display_name: "仿真秘籍编写"
+  short_description: "以部门Word模板为真源的可验证电池仿真技术秘籍工作流"
+  default_prompt: "使用 $hithium-simulation-manual，按现有部门模板编写关于电池仿真的秘籍。"

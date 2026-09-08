@@ -1,4 +1,0 @@
-interface:
-  display_name: "COMSOL Battery Model Automation"
-  short_description: "Audit, patch, run, and validate COMSOL battery models"
-  default_prompt: "Use $comsol-java-battery-modeling to inspect or safely patch a COMSOL battery .mph model, or to build and run its reproducible Java workflow."

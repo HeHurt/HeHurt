@@ -47,7 +47,7 @@ def get_hithium_params(t_factor=1,temperature=298.15):
         D_sei = 3.5
     else:
         k_sei = .1
-        D_sei = .5
+        D_sei = 1.5
     
     hithium_params = build_lfp_cell_params(temperature, {
         # 电池几何参数
@@ -72,7 +72,7 @@ def get_hithium_params(t_factor=1,temperature=298.15):
         'Separator porosity': 0.38,
     
         # 初始条件
-        "Initial concentration in negative electrode [mol.m-3]": 396.87+0,
+        "Initial concentration in negative electrode [mol.m-3]": 396.87,
         "Initial concentration in positive electrode [mol.m-3]": 19000,
         "Initial concentration in electrolyte [mol.m-3]": 1000.0,
         
@@ -98,22 +98,23 @@ def get_hithium_params(t_factor=1,temperature=298.15):
         "Positive electrode OCP entropic change [V.K-1]": LFP_entropic,
 
         # 其他电参数
-        'Contact resistance [Ohm]': 7.018e-5,
+        'Contact resistance [Ohm]': 7.48e-5,
         
         # 老化参数
         "Positive electrode cracking rate": 0,
         "Positive electrode initial crack length [m]": 0,
         "Positive electrode initial crack width [m]": 0,
-        "Ratio of lithium moles to SEI moles":2,
-        "SEI partial molar volume [m3.mol-1]": 0.00009645*0.8 ,
-        "Negative electrode LAM constant proportional term [s-1]":2 * 1e-7 * t_factor,
-        "SEI kinetic rate constant [m.s-1]": 4.8e-14 * k_sei * t_factor,
-        "EC diffusivity [m2.s-1]": 3.5e-22 * D_sei * t_factor,
+        "Ratio of lithium moles to SEI moles":1.5,
+        "SEI partial molar volume [m3.mol-1]": 0.00009645,
+        "Negative electrode LAM constant proportional term [s-1]": 2.058e-7 * t_factor,
+        "SEI kinetic rate constant [m.s-1]": 2.16e-14 * k_sei * t_factor,
+        "EC diffusivity [m2.s-1]": 1.575e-22 * D_sei * t_factor,
+        "SEI resistivity [Ohm.m]": 2e5,
         "Negative electrode cracking rate": cracking_rate_Ai2020,
         "Lithium plating kinetic rate constant [m.s-1]": 0.00003181158194366325 * t_factor,
         "SEI growth activation energy [J.mol-1]": 49887.19876117447 * 0.6,
-        "Exchange-current density for stripping [A.m-2]": 2e-3,
-        "Exchange-current density for plating [A.m-2]": 2e-3,
+        "Exchange-current density for stripping [A.m-2]": 1e-3,
+        "Exchange-current density for plating [A.m-2]": 1.5e-3,
 
         # 电解液干涸相关参数
         "Current solvent concentration in the reservoir [mol.m-3]": 1000,

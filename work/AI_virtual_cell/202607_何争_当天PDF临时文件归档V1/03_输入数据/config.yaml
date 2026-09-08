@@ -1,0 +1,3 @@
+cell: AI_virtual_cell
+task: 当天PDF临时文件归档
+run_mode: smoke

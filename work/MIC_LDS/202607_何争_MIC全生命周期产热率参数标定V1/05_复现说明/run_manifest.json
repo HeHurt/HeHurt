@@ -1,0 +1,108 @@
+{
+  "published_runs": [
+    {
+      "run_id": "20260730_scan_v2",
+      "source": "BatteryProject/output/runs/mic_lifecycle_calibration/20260730_scan_v2",
+      "published_at": "2026-07-30T20:37:30",
+      "mode": "full",
+      "files": [
+        {
+          "path": "MIC_25C容量_DCR参数标定结果.xlsx",
+          "size": 11308,
+          "sha256": "cbb7d0c81cf7901d5ef5ff3a7aaa1f48c53be0c411fe1b08afa5dacd13f394be"
+        },
+        {
+          "path": "候选参数汇总.csv",
+          "size": 1520,
+          "sha256": "3ccb9aaa705992c0463fad6b3627379ef5a810a843952a9005cd15f08bbec613"
+        },
+        {
+          "path": "候选参数汇总_进行中.csv",
+          "size": 837,
+          "sha256": "069b9b84437e945dbeab4aef7d509264a4d86093e82e181d40651db0bf4d7c5e"
+        },
+        {
+          "path": "容量_DCR逐点对比.csv",
+          "size": 5313,
+          "sha256": "c1fef917ce4f8b9036905cb922d358069cd8be09d9b712cf92de5bf2a846a0b9"
+        },
+        {
+          "path": "最佳参数_容量_DCR对比.png",
+          "size": 153886,
+          "sha256": "a4f23acacedf538f30aa3c2458c41aa958cef79a64ab238ac5852ac6b86477fe"
+        },
+        {
+          "path": "运行配置.json",
+          "size": 747,
+          "sha256": "6f301909b1a8819179f528ed63502f20cf68086d2591f99a04b483a5eb61a5cd"
+        }
+      ]
+    },
+    {
+      "run_id": "20260731_lam2p94_sei0p9_15k_af50_final",
+      "source": "BatteryProject/output/runs/mic_fixed_parameter_knee_calibration/20260731_lam2p94_sei0p9_15k_af50_final",
+      "published_at": "2026-07-31T16:00:58",
+      "mode": "full",
+      "files": [
+        {
+          "path": "全生命周期主线.csv",
+          "size": 58127,
+          "sha256": "f8646d988297139e982057a56589673854866d0ca91c7763ddd1e8681623aeb6"
+        },
+        {
+          "path": "目标圈数汇总.csv",
+          "size": 962,
+          "sha256": "697d40b71d28fab5d9cde088fe7233ee0954faa950094edbae5ad249f08d4180"
+        },
+        {
+          "path": "结果摘要.json",
+          "size": 781,
+          "sha256": "2aa6e78b622dff3af7014e2e7408fe9ff4edae3733e49d1a71eccc4ce3601252"
+        },
+        {
+          "path": "运行配置.json",
+          "size": 458,
+          "sha256": "d3dd3c87c3abef2b4e5f8f71680720a6eeb3255d3d0b1c91ffea6cc0a8a18260"
+        }
+      ]
+    },
+    {
+      "run_id": "20260731_final_fixed_params_dcr600",
+      "source": "BatteryProject/output/runs/mic_lifecycle_calibration/20260731_final_fixed_params_dcr600",
+      "published_at": "2026-07-31T16:00:59",
+      "mode": "full",
+      "files": [
+        {
+          "path": "MIC_25C容量_DCR参数标定结果.xlsx",
+          "size": 7170,
+          "sha256": "62972f97a270c5d51a89273836914f4bbadf264606c7d6d9a8cc535793006b7b"
+        },
+        {
+          "path": "候选参数汇总.csv",
+          "size": 262,
+          "sha256": "904dc393fbedb0b6a8c89d325a0f1b42109141cf6ed65b36e53c34cd625a1166"
+        },
+        {
+          "path": "候选参数汇总_进行中.csv",
+          "size": 262,
+          "sha256": "904dc393fbedb0b6a8c89d325a0f1b42109141cf6ed65b36e53c34cd625a1166"
+        },
+        {
+          "path": "容量_DCR逐点对比.csv",
+          "size": 546,
+          "sha256": "368d206b9310b2787edfdc5b0b0ff9546e947626ea4f302ded80ef2de1e4c9fb"
+        },
+        {
+          "path": "最佳参数_容量_DCR对比.png",
+          "size": 153929,
+          "sha256": "b9f879024ab0c52d195dde9f000bb8cb0c8c864a84840c3cc3e9ce883250ea5b"
+        },
+        {
+          "path": "运行配置.json",
+          "size": 766,
+          "sha256": "7f1e0ebf205bbda8e3da630e57bf895ad8ede4b9d2d76ab07ac00bb2afdbab1c"
+        }
+      ]
+    }
+  ]
+}

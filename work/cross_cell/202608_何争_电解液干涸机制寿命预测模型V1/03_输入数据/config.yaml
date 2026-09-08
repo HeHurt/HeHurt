@@ -1,0 +1,3 @@
+cell: cross_cell
+task: 电解液干涸机制寿命预测模型
+run_mode: smoke

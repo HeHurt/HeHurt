@@ -1,0 +1,10 @@
+cell: AI_virtual_cell
+task: PyBaMM工作流与Codex记忆跨电脑迁移
+version: 1
+source_codex_home: C:\Users\hez\.codex
+source_workspace_real_path: C:\HithiumSSD\hithium
+source_workspace_alias: D:\Users\hez\Desktop\hithium
+include_long_term_memories: true
+include_historical_sessions_as_evidence: true
+exclude_credentials: true
+validation: sha256_and_zip_test

@@ -1,0 +1,9 @@
+{
+  "created_at": "2026-08-28T14:56:09",
+  "template": "BatteryProject/examples/欧盟电池法.ipynb",
+  "git": {
+    "commit": "3b1d7fb5f38c99fb98eef6fe0e7dcefaa6bdb6d8",
+    "branch": "codex/performance-checkpoint-20260717",
+    "dirty": true
+  }
+}

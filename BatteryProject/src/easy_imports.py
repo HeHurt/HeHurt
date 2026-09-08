@@ -81,6 +81,7 @@ from . import (  # noqa: E402
     psd_workflow,
     simulation,
     utils,
+    workflows,
 )
 
 # --- 配置常量与参数获取（高频引用） -----------------------------------
@@ -239,6 +240,7 @@ __all__ = [
     "psd_workflow",
     "simulation",
     "utils",
+    "workflows",
     # 配置常量
     "ACCELERATION_FACTOR",
     "DATA_DIR",

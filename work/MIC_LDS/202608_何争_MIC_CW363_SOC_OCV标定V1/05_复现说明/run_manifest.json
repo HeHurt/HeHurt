@@ -1,0 +1,415 @@
+{
+  "published_runs": [
+    {
+      "run_id": "20260825_151228_calibrated_v1",
+      "source": "BatteryProject/output/runs/cw363_soc_ocv/20260825_151228_calibrated_v1",
+      "published_at": "2026-08-25T15:16:12",
+      "mode": "full",
+      "files": [
+        {
+          "path": "calibration_metrics.json",
+          "size": 694,
+          "sha256": "b95bf0a1c9010abdf4bc7472bb6609ce8b8a359d085b84a28f943ba311313c0e"
+        },
+        {
+          "path": "LFP_CW363_discharge_calibrated.csv",
+          "size": 38830,
+          "sha256": "596d5d24ce51459db469df1bd686db0c1a8ea4bcd8184ca7a3837e9eabc70d1d"
+        },
+        {
+          "path": "measured_comparison.csv",
+          "size": 1038,
+          "sha256": "cb2a63b97c608e9a127191c6342d5449ec06dfd4b158fff263778b5c22b0e9e3"
+        },
+        {
+          "path": "soc_ocv_calibration.png",
+          "size": 106964,
+          "sha256": "eadde2fa9bd65bd9baad20e803849f5fc7d34b38673fac3e9f2d77ab1a34f5d6"
+        },
+        {
+          "path": "soc_ocv_curves.csv",
+          "size": 9334,
+          "sha256": "d72e1a21af20434385e58901fca77f061831ea6173175eabd8f107f9f933ec2a"
+        }
+      ]
+    },
+    {
+      "run_id": "20260827_134554_protocol_100soc",
+      "source": "BatteryProject/output/runs/cw363_soc_ocv/20260827_134554_protocol_100soc",
+      "published_at": "2026-08-27T13:46:34",
+      "mode": "full",
+      "files": [
+        {
+          "path": "charge_rest_voltage.png",
+          "size": 100409,
+          "sha256": "adc9aca6aa9c8221c2c791ce00285aca4755ec63eeecd36b0d70251487a95ef6"
+        },
+        {
+          "path": "protocol_metrics.csv",
+          "size": 1169,
+          "sha256": "c00d9d6b9ddbffa67669d6be5145cc0e01c49c901afc77fd89d2b23127c08122"
+        },
+        {
+          "path": "protocol_timeseries.csv",
+          "size": 29624,
+          "sha256": "07df90a477703ac0cc320fab09865318f44399ad09e506446425915f33ad9750"
+        },
+        {
+          "path": "run_manifest.json",
+          "size": 2020,
+          "sha256": "dd85e3d7713a682ddcc6b0f8a9c5b1b4703479377410f741f035eb3d297d715a"
+        }
+      ]
+    },
+    {
+      "run_id": "20260827_135519_temperature_specific",
+      "source": "BatteryProject/output/runs/cw363_soc_ocv/20260827_135519_temperature_specific",
+      "published_at": "2026-08-27T13:56:01",
+      "mode": "full",
+      "files": [
+        {
+          "path": "endpoint_protocol_timeseries.csv",
+          "size": 60483,
+          "sha256": "4b488d3dae3bcd00fe0373fad061d2e034fba7d86de5370187c9ae8f8e320518"
+        },
+        {
+          "path": "LFP_CW363_discharge_calibrated_25C.csv",
+          "size": 38814,
+          "sha256": "e731d728f5d03f2ec3ea8c1e4069d9e2f3b82abc6798045915f01ca77a07f75c"
+        },
+        {
+          "path": "LFP_CW363_discharge_calibrated_45C.csv",
+          "size": 38809,
+          "sha256": "17316b24cd396cb2fd5c9b690896358501aa7b5e3fbde0c4b551093e5a2d3fec"
+        },
+        {
+          "path": "measured_comparison.csv",
+          "size": 1318,
+          "sha256": "8af621beea576b3c5532ba8f3f8096e163509a9a5ee6c642f221a072be0355ff"
+        },
+        {
+          "path": "protocol_endpoint_stoichiometry.csv",
+          "size": 650,
+          "sha256": "f486ac4b3ea6e299df2329abcfd791a2745056088be8518e8ae95ef80cdf1b9f"
+        },
+        {
+          "path": "run_manifest.json",
+          "size": 377,
+          "sha256": "811af0a0b9fc68064df8629968abf49d3d30dec8da322f8bb221b10b8026c49b"
+        },
+        {
+          "path": "temperature_specific_ocv_comparison.png",
+          "size": 257024,
+          "sha256": "89df56397d68d0bce69aa2671e09424b3a3612e4bf0c5889a9bbeb6eede4489d"
+        },
+        {
+          "path": "temperature_specific_soc_ocv.csv",
+          "size": 26317,
+          "sha256": "9c7d74636db8a196a175c7fd200bd162c70c77d1126c2afa7abdbdcde493b1d2"
+        }
+      ]
+    },
+    {
+      "run_id": "20260827_140159_temperature_specific",
+      "source": "BatteryProject/output/runs/cw363_soc_ocv/20260827_140159_temperature_specific",
+      "published_at": "2026-08-27T14:05:20",
+      "mode": "full",
+      "files": [
+        {
+          "path": "endpoint_protocol_timeseries.csv",
+          "size": 59383,
+          "sha256": "c16f60c13f4a6bfdf12694943b4c07e83b66f1535692cabfcfe327341ea7faff"
+        },
+        {
+          "path": "LFP_CW363_discharge_calibrated_25C.csv",
+          "size": 38829,
+          "sha256": "409241b34542f6f3d4c80030c2092fe3062a904d0860c982bf5c179c29d7594f"
+        },
+        {
+          "path": "LFP_CW363_discharge_calibrated_45C.csv",
+          "size": 38806,
+          "sha256": "6d946ae3307d3851f23a16b13c475f815e41251791d5e63351c302ed2b9cd300"
+        },
+        {
+          "path": "measured_comparison.csv",
+          "size": 1679,
+          "sha256": "432a416942d76f2e0f2bf94037a5d2ca6a704a3a27bce19b2dc10ad890f4fb47"
+        },
+        {
+          "path": "protocol_endpoint_stoichiometry.csv",
+          "size": 649,
+          "sha256": "5ee18f9c717330508425a74492820df88f4c8843bff78a152a98e19c0911c3af"
+        },
+        {
+          "path": "run_manifest.json",
+          "size": 2155,
+          "sha256": "966b2735e42aa6f9acb3556e3311b09473b6549f48001e693fd9c58f4d300ec0"
+        },
+        {
+          "path": "temperature_specific_ocv_comparison.png",
+          "size": 256015,
+          "sha256": "d3c937152c416b6201f04a98535b2f46463fbb34a0b056d7394699aef2fb932d"
+        },
+        {
+          "path": "temperature_specific_soc_ocv.csv",
+          "size": 30013,
+          "sha256": "6301819cbe8bfc43634afbd8d46c993e65fb3082c44ddbd157d26aca52e41eff"
+        }
+      ]
+    },
+    {
+      "run_id": "20260901_143404_full_charge_discharge",
+      "source": "BatteryProject/output/runs/cw363_soc_ocv/20260901_143404_full_charge_discharge",
+      "published_at": "2026-09-01T14:44:10",
+      "mode": "full",
+      "files": [
+        {
+          "path": "all_temperature_measured_ocv.png",
+          "size": 171658,
+          "sha256": "d5834f0e63a4fbc87457fcea02b1aef426e587c9582183ba4c1fb2d09b966218"
+        },
+        {
+          "path": "charge_discharge_measured_comparison.csv",
+          "size": 14358,
+          "sha256": "ae6c3f5189dbe4d89ad77b93bac86b935e1915570f33f4adde09e2d87b58b09e"
+        },
+        {
+          "path": "charge_discharge_metrics.csv",
+          "size": 357,
+          "sha256": "807b12ed23adfff4bdd14c247d0177948bafe74595dbb46c68c2a254340ad1b6"
+        },
+        {
+          "path": "charge_discharge_ocv_comparison.png",
+          "size": 199272,
+          "sha256": "93eb241bd00c02e28977d08f8816d0d88de3220d16180daa1f617d8c73ed5fdb"
+        },
+        {
+          "path": "charge_discharge_soc_ocv_1pct.csv",
+          "size": 51144,
+          "sha256": "9461590e0375658f027825854a14dbd9fc925544399548f200dc51de865e6111"
+        },
+        {
+          "path": "CW363_完整SOC_OCV充放电对标_20260901.xlsx",
+          "size": 80296,
+          "sha256": "cd6f6af3888d6f5a9a18e6c921446e433cdf27e36fae5fa7951d7ab79af2e6bb"
+        },
+        {
+          "path": "endpoint_protocol_timeseries.csv",
+          "size": 61260,
+          "sha256": "41fdf17eda631df5087c85b72967a8f5c8f4044f028c461d65aadcba520d9ae2"
+        },
+        {
+          "path": "LFP_CW363_charge_calibrated_25C.csv",
+          "size": 27400,
+          "sha256": "c1c03f8f032e5b7131f908e95d86f57e2d1cc7fd0ec26f13f3e0ea64368ddd87"
+        },
+        {
+          "path": "LFP_CW363_charge_calibrated_45C.csv",
+          "size": 27384,
+          "sha256": "4e5b3b7068c5ed7abcd1494d9365fca42295d14497930af67f2830fe6149a781"
+        },
+        {
+          "path": "LFP_CW363_discharge_calibrated_25C.csv",
+          "size": 27410,
+          "sha256": "e91d8e6032a95a15c920eb1aacc185f30c89fb47a4aa026fcb4cbadd53428494"
+        },
+        {
+          "path": "LFP_CW363_discharge_calibrated_45C.csv",
+          "size": 27363,
+          "sha256": "79cf96ec515beeaa47bab63df49b3ee0d1148e34de297f6c8428747a268f4c16"
+        },
+        {
+          "path": "measured_hysteresis_gap.csv",
+          "size": 2113,
+          "sha256": "08c825ee596f33506f026a779093cab914239bdec2b3602b06cbe98f0ae8b667"
+        },
+        {
+          "path": "measured_rate_sensitivity_25C.csv",
+          "size": 2282,
+          "sha256": "10dec5fd6797e5bba6b8fc9eda5d06199bc3a76c9a6d486bf0b89c70d054d0e8"
+        },
+        {
+          "path": "prior_discharge_full_soc_validation.png",
+          "size": 271775,
+          "sha256": "b286c8dc93563cc8f826eaf540218a5e5064d1ebf5501960bcc397bbafdeb420"
+        },
+        {
+          "path": "prior_discharge_metrics.csv",
+          "size": 193,
+          "sha256": "4782fe79df1716ee5f1bd586a4091cc03a3e72bcd981eb39d2d406e8f26fb79b"
+        },
+        {
+          "path": "prior_discharge_validation.csv",
+          "size": 4556,
+          "sha256": "c350aae8b414ac20099a8d5ab8edf29691076dc47075993e2e184f022c754f78"
+        },
+        {
+          "path": "protocol_endpoint_stoichiometry.csv",
+          "size": 497,
+          "sha256": "c4ba6e4a06f5db16b0ea23b64b6264f9dde69e9f8224d0088d006c43a094e255"
+        },
+        {
+          "path": "README_summary.md",
+          "size": 1535,
+          "sha256": "87e5d3119445f6d32ef125e08db826d3f60df2c7ea1f2c8ffd18073c051e24de"
+        },
+        {
+          "path": "run_manifest.json",
+          "size": 4287,
+          "sha256": "10602b7846f764efd02eac4e28e8a3b324e6455282561a739b4cdfa21056c811"
+        },
+        {
+          "path": "source_measurements_average.csv",
+          "size": 13834,
+          "sha256": "e2a27cff8db244f7f56eaae20ae62cb8d64bc90f752bf22a61ab183a6b375483"
+        },
+        {
+          "path": "source_measurements_long.csv",
+          "size": 18112,
+          "sha256": "a15ce3843337eb37e94c7c8c65fb0ac0ba26c62b36bb25ca27167775e0395e62"
+        }
+      ]
+    },
+    {
+      "run_id": "20260904_101136_smooth_residual",
+      "source": "BatteryProject/output/runs/cw363_soc_ocv/20260904_101136_smooth_residual",
+      "published_at": "2026-09-04T14:34:02",
+      "mode": "full",
+      "files": [
+        {
+          "path": "CW363_SOC_OCV平滑模型正则化_20260904.xlsx",
+          "size": 98345,
+          "sha256": "bc72016261fe3be67c93b081473feb53079738241344318241c421270acf7bc7"
+        },
+        {
+          "path": "CW363_SOC_OCV平滑模型正则化_20260904.xlsx.inspect.ndjson",
+          "size": 3349505,
+          "sha256": "976a82ebabd93e898112f6a45dce06c076bba45aa7cb3544facc9171ceedb1da"
+        },
+        {
+          "path": "protocol_endpoint_stoichiometry.csv",
+          "size": 497,
+          "sha256": "7443f78623ccd4d34799ace9aad3c68f7dba1c6be8ee75993c87107a3feb7091"
+        },
+        {
+          "path": "run_manifest.json",
+          "size": 2611,
+          "sha256": "409fbe3d272e6679a5a6e762be8cab7f72facdbe3906093b875967c3cbde5f6e"
+        },
+        {
+          "path": "smoothing_cross_validation.csv",
+          "size": 2262,
+          "sha256": "f6d38d371c8fd3dd3529327189c5c769a00e80fe408cbed2376e5e17a0f47646"
+        },
+        {
+          "path": "smooth_correction_diagnostics.png",
+          "size": 416855,
+          "sha256": "f0467c638ca7d6aa0b4af1eaa50271ffa5d1300862fdf4723203b5596a70a80a"
+        },
+        {
+          "path": "smooth_soc_ocv_1pct.csv",
+          "size": 58241,
+          "sha256": "911de159fad978880c6e824d3723e7cc9141cf4659917e2bc9152c78249edcd8"
+        },
+        {
+          "path": "smooth_validation_metrics.csv",
+          "size": 815,
+          "sha256": "2afa438d35df68b7f64ed92f24de8ddd3ab2418b16c0add7a733bad5ec5f6a80"
+        },
+        {
+          "path": "smooth_validation_points.csv",
+          "size": 6824,
+          "sha256": "64adb6845f0de1162a70dedc9f6eea68c2ecc1ecfad8f5921a0a68c88728d612"
+        },
+        {
+          "path": "smooth_vs_pchip_comparison.png",
+          "size": 349042,
+          "sha256": "faf6aa01d2ccc6a4cda26e9f0452297c6c84b3d6169e89725cc5ad8d96692d3c"
+        }
+      ]
+    },
+    {
+      "run_id": "20260907_151752_final_ocv_smooth",
+      "source": "BatteryProject/output/runs/cw363_soc_ocv/20260907_151752_final_ocv_smooth",
+      "published_at": "2026-09-07T15:26:28",
+      "mode": "full",
+      "files": [
+        {
+          "path": "CW363_SOC_OCV最终曲线平滑标定_20260907.xlsx",
+          "size": 55243,
+          "sha256": "742e80abc3f528c8ad6eb6d6fa2dea20b3e8b1dc6313868746f825c0b287a3a6"
+        },
+        {
+          "path": "CW363_SOC_OCV最终曲线平滑标定_20260907.xlsx.inspect.ndjson",
+          "size": 2109144,
+          "sha256": "096eadb5a48e398148d43664819bbed4db78cabf4b79df66aacd8c83bb85849b"
+        },
+        {
+          "path": "protocol_endpoint_stoichiometry.csv",
+          "size": 497,
+          "sha256": "7443f78623ccd4d34799ace9aad3c68f7dba1c6be8ee75993c87107a3feb7091"
+        },
+        {
+          "path": "run_manifest.json",
+          "size": 2690,
+          "sha256": "93281f3c1ba5b2aa82494a43a0a91375cd7cffd31158405e49227cd3ca8d33ca"
+        },
+        {
+          "path": "smoothing_cross_validation.csv",
+          "size": 2151,
+          "sha256": "da51f9df44e5724724aed599e675788615c47d5705ae3791c1e4c965eb48751b"
+        },
+        {
+          "path": "smooth_correction_diagnostics.png",
+          "size": 445588,
+          "sha256": "d5d3f5e8f6e113a1a9a7582351147d01dfd15f07a4c93e3baf921c323255eb1a"
+        },
+        {
+          "path": "smooth_soc_ocv_1pct.csv",
+          "size": 58335,
+          "sha256": "5884922e6d605b13cd54e815d0de94779f37bfcb4a24588cb9e4e6c0eee49c5b"
+        },
+        {
+          "path": "smooth_validation_metrics.csv",
+          "size": 846,
+          "sha256": "ae35404a75f0bf317c4220a8b668d12f3efd74a514ab2a32d7c155c0018a3bf9"
+        },
+        {
+          "path": "smooth_validation_points.csv",
+          "size": 7169,
+          "sha256": "c9488ac6b62d7af5db52e347a24814b3ee4193fa3b7fdee2da52eb6d1c9c87c1"
+        },
+        {
+          "path": "smooth_vs_pchip_comparison.png",
+          "size": 351539,
+          "sha256": "ac94c395aa73390d147e8c21771decf747f4a78077ef480d0df6532dd07fc61e"
+        },
+        {
+          "path": "高清图/CW363_SOC_OCV_25C_charge_highres.png",
+          "size": 542030,
+          "sha256": "0b7a212964d02597a4115b890f8db09dddefee75696799e12dea8127f925120a"
+        },
+        {
+          "path": "高清图/CW363_SOC_OCV_25C_discharge_highres.png",
+          "size": 555273,
+          "sha256": "7c641991e29e97aef65eeb2bafaebccaa6fb258c4f56a5d4c0ee64d522868e41"
+        },
+        {
+          "path": "高清图/CW363_SOC_OCV_45C_charge_highres.png",
+          "size": 545311,
+          "sha256": "06a6a3b414eba66e43b96e190ebd909075e6afef6b7cc77f96f965092740c7a9"
+        },
+        {
+          "path": "高清图/CW363_SOC_OCV_45C_discharge_highres.png",
+          "size": 566427,
+          "sha256": "b40546a5fdd989fba28455aa50ec8c5d2dbd875fa6a072f5bc7d215fb88e67fe"
+        },
+        {
+          "path": "高清图/CW363_SOC_OCV_final_smooth_25C_45C_highres.png",
+          "size": 1429114,
+          "sha256": "efe152b3e618be50ea2bda02aa2cd681338537eca61e13b10310d543c9e83f14"
+        }
+      ]
+    }
+  ]
+}

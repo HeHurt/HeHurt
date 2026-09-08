@@ -41,7 +41,10 @@ LFP_entropic = common_lfp_entropic
 graphite_entropic = common_graphite_entropic
 
 LFP_ocp_charge = build_ocp_function("LFP.csv", name="Pos_OCP", offset=0.02)
-LFP_ocp_discharge = build_ocp_function("LFP.csv", name="Pos_OCP", offset=-0.02)
+LFP_ocp_discharge = build_ocp_function(
+    "LFP_CW363_discharge_calibrated.csv",
+    name="Pos_OCP_CW363_discharge",
+)
 graphite_ocp_charge = build_ocp_function("Gr_charge.csv", name="Neg_OCP")
 graphite_ocp_discharge = build_ocp_function("Gr_discharge.csv", name="Neg_OCP")
 
@@ -83,6 +86,8 @@ def get_hithium_params(t_factor=1,temperature=298.15):
 
         # 电池容量参数（取自设计参数表）
         "Nominal cell capacity [A.h]": 1199.4680548035492,      # 表中「设计容量」；若"1300"为目标标称请改此处
+        "Open-circuit voltage at 0% SOC [V]": 2.687,            # 25°C、0.25P放至2.5V后的静置OCV
+        "Open-circuit voltage at 100% SOC [V]": 3.388,          # 25°C、0.25P充至3.65V后的静置OCV
         "Maximum concentration in negative electrode [mol.m-3]": 29094,
         "Maximum concentration in positive electrode [mol.m-3]": 20042,
 

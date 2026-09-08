@@ -1,0 +1,196 @@
+{
+  "published_runs": [
+    {
+      "run_id": "20260828_587eu_baseline_peak_aligned",
+      "source": "BatteryProject/output/runs/eu_battery_regulation/20260828_587eu_baseline_peak_aligned",
+      "published_at": "2026-08-28T15:28:12",
+      "mode": "full",
+      "files": [
+        {
+          "path": "capacity_comparison.csv",
+          "size": 2446,
+          "sha256": "037c3d77f2ab7d40b151d519578f0caac7104ebd9a004bef561b99b6c731e24d"
+        },
+        {
+          "path": "config.json",
+          "size": 505,
+          "sha256": "4551e21f65f9495a601f23155a3d67431e70627a48c3db79a7999de315d4bfcb"
+        },
+        {
+          "path": "dcr_comparison.csv",
+          "size": 1639,
+          "sha256": "7604ec6012885424fe6028dfcad8351558d2755aca043fa8da8833e1d53e5f11"
+        },
+        {
+          "path": "model_checkpoints.csv",
+          "size": 3096,
+          "sha256": "b3a6a3cd9be70328487d44eeb0bba77e33a5548e4e7631af151a2021240136f3"
+        },
+        {
+          "path": "validation_summary.json",
+          "size": 893,
+          "sha256": "2485ff9031e246934df931d7aade681ad365bf0f8683f21f2ac0bfc3d4e9c701"
+        },
+        {
+          "path": "plots/capacity_sim_vs_exp.png",
+          "size": 112195,
+          "sha256": "d1bfecebf0b5e85961659122be7b8e5e7c55392f84b3b41682fc78a09b7da818"
+        },
+        {
+          "path": "plots/dcr_sim_vs_exp.png",
+          "size": 125220,
+          "sha256": "d25d7b3f107fb79ed9d85464e10fffaea41a937f6d47598309bad2071e2816bb"
+        },
+        {
+          "path": "plots/retention_sim_vs_exp.png",
+          "size": 111348,
+          "sha256": "22d16c4c6c483d21d5aea9b21df939a00b7055ea2884c406fbc03482011b6eb3"
+        }
+      ]
+    },
+    {
+      "run_id": "20260828_587eu_baseline_13000_projection",
+      "source": "BatteryProject/output/runs/eu_battery_regulation/20260828_587eu_baseline_13000_projection",
+      "published_at": "2026-08-28T15:28:13",
+      "mode": "full",
+      "files": [
+        {
+          "path": "capacity_comparison.csv",
+          "size": 395,
+          "sha256": "b31aec72e915d7f392cfe50f728f121a305e12476e28778a0b3fecfa365151c2"
+        },
+        {
+          "path": "config.json",
+          "size": 584,
+          "sha256": "9850666f8c6c750f19e3a6b1a1bfaa90af47d3e402966feffbd33d521d4acdba"
+        },
+        {
+          "path": "dcr_comparison.csv",
+          "size": 1638,
+          "sha256": "0fae57c1af7af40191baff999bc48ab260fd159fe9e8d5cf09a55d8cf482bb62"
+        },
+        {
+          "path": "model_checkpoints.csv",
+          "size": 2310,
+          "sha256": "e58003b0221c62e9b1609aea2d971bdcea7da07825228cde5c8667093e806c8a"
+        },
+        {
+          "path": "validation_summary.json",
+          "size": 974,
+          "sha256": "5f13061110ff470a05e450ec11695a6ef256f9831f98badd5283f9e19c48484a"
+        },
+        {
+          "path": "plots/capacity_sim_vs_exp.png",
+          "size": 94779,
+          "sha256": "006f22d87b78c0f86225cdfafebc645c68f0257e1c58fdd39d2db8c96aa688b7"
+        },
+        {
+          "path": "plots/dcr_sim_vs_exp.png",
+          "size": 128315,
+          "sha256": "b49bce1435acf2df996e68179b92c30515ecadef9d97dfbab3a8bf90bfe125fe"
+        },
+        {
+          "path": "plots/retention_sim_vs_exp.png",
+          "size": 90292,
+          "sha256": "8310edbd247a2c78cf6a6e1c93bb53e1bfa0b4b659ef2d05f97f32d3bb35941c"
+        }
+      ]
+    },
+    {
+      "run_id": "20260831_587eu_final_sched_3_1p3_1p2_1800",
+      "source": "BatteryProject/output/runs/eu_battery_regulation/20260831_587eu_final_sched_3_1p3_1p2_1800",
+      "published_at": "2026-08-31T09:09:04",
+      "mode": "full",
+      "files": [
+        {
+          "path": "capacity_comparison.csv",
+          "size": 2472,
+          "sha256": "b46a5ebd171b83e99a14da272cd56321164ae6963e96937720c944c0a63731c7"
+        },
+        {
+          "path": "config.json",
+          "size": 718,
+          "sha256": "2721d0bca6c8031d510cd8f318cec292c2abd6bab33cf8cdfe826e87881e3a48"
+        },
+        {
+          "path": "dcr_comparison.csv",
+          "size": 1635,
+          "sha256": "63f93f46e276d0507276b8e09efa5339f4c2fca4c972beaeef5be08afd6698b1"
+        },
+        {
+          "path": "model_checkpoints.csv",
+          "size": 3103,
+          "sha256": "732fa010ed33af4d9f6da678eec2b165ef93ab9e057dd9f1bee23b746ba3bb98"
+        },
+        {
+          "path": "validation_summary.json",
+          "size": 1262,
+          "sha256": "f3a8fcf2de0830430294ab1a9c99951a98bde9f6b13dbedda9ecba7a0ac8f6bf"
+        },
+        {
+          "path": "plots/capacity_sim_vs_exp.png",
+          "size": 112835,
+          "sha256": "2e8dbfd37dd7f4dce6acca48b37c6dd92c94295343731d2864ee884b1c04d08e"
+        },
+        {
+          "path": "plots/dcr_sim_vs_exp.png",
+          "size": 124884,
+          "sha256": "d8afcf9d498e89f811c93d5c21e0f4e90960a0a790cff2c991e2e1c028b20fce"
+        },
+        {
+          "path": "plots/retention_sim_vs_exp.png",
+          "size": 105446,
+          "sha256": "7aa5f9c5838a1f166d140a605a0d3bb4b331bff9bc87d464951bee4c2b75b91e"
+        }
+      ]
+    },
+    {
+      "run_id": "20260831_587eu_final_sched_3_1p3_1p2_13000",
+      "source": "BatteryProject/output/runs/eu_battery_regulation/20260831_587eu_final_sched_3_1p3_1p2_13000",
+      "published_at": "2026-08-31T09:24:33",
+      "mode": "full",
+      "files": [
+        {
+          "path": "capacity_comparison.csv",
+          "size": 2472,
+          "sha256": "b46a5ebd171b83e99a14da272cd56321164ae6963e96937720c944c0a63731c7"
+        },
+        {
+          "path": "config.json",
+          "size": 722,
+          "sha256": "2d6fbeff9033fd540860eef312629f83e178c13d84c8330c2299b9b3ae31d975"
+        },
+        {
+          "path": "dcr_comparison.csv",
+          "size": 1635,
+          "sha256": "63f93f46e276d0507276b8e09efa5339f4c2fca4c972beaeef5be08afd6698b1"
+        },
+        {
+          "path": "model_checkpoints.csv",
+          "size": 20563,
+          "sha256": "263f2ac3a0abb7374f25420acbe718960e16e22b8721adb798e0dde33f43c899"
+        },
+        {
+          "path": "validation_summary.json",
+          "size": 1266,
+          "sha256": "83a782165677ee26fbaa84a665d83ed0119998751f8270569bf67117d63a37a5"
+        },
+        {
+          "path": "plots/capacity_sim_vs_exp.png",
+          "size": 91596,
+          "sha256": "dd763a191b51ded897d98af51a8e53a85070c3796f584cd32f7007f1fcdf12f5"
+        },
+        {
+          "path": "plots/dcr_sim_vs_exp.png",
+          "size": 124884,
+          "sha256": "d8afcf9d498e89f811c93d5c21e0f4e90960a0a790cff2c991e2e1c028b20fce"
+        },
+        {
+          "path": "plots/retention_sim_vs_exp.png",
+          "size": 83544,
+          "sha256": "2a6464c49daa19c91dd0892384e751d856ef83fd7c988ac61b554040c318b791"
+        }
+      ]
+    }
+  ]
+}

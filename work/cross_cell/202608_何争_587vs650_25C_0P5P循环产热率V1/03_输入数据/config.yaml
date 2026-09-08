@@ -1,0 +1,17 @@
+cell: cross_cell
+task: 587vs650_25C_0P5P循环产热率
+run_mode: study
+temperature_c: 25
+p_rate: 0.5
+power_w:
+  587: 939.2   # 587Ah × 3.2V × 0.5P
+  650: 1040.0  # 650Ah × 3.2V × 0.5P
+rest_minutes: 10
+aging_t_factor: 50
+cycles_per_block: 20
+capacity_check_interval_cycles: 1000
+total_real_cycles: 16000
+target_soh_pct: 65
+soh_step_pct: 5
+entropy_reference: "314Ah SOH95% 全电芯充放电支路 dU/dT（587/650 共用临时先验）"
+contact_resistance_ohm: 0.061291e-3

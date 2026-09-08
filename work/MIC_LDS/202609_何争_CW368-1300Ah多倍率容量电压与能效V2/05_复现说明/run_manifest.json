@@ -1,0 +1,120 @@
+{
+  "published_runs": [
+    {
+      "run_id": "20260904_151641_CW368_1300Ah_temperature_map",
+      "source": "BatteryProject/output/runs/cw368_1300_temperature_map/20260904_151641_CW368_1300Ah_temperature_map",
+      "published_at": "2026-09-04T15:26:09",
+      "mode": "selected",
+      "files": [
+        {
+          "path": "baseline_comparison.csv",
+          "size": 968,
+          "sha256": "579b972bd6fc5ee176f862e3a1805aebbcb40dc1c7099e4f4cda34e22e410e49"
+        },
+        {
+          "path": "case_summary.csv",
+          "size": 1684,
+          "sha256": "a18114b33dc3add744572a0deba701f69f2b0aa982a47f0da4c201bd4e46fee5"
+        },
+        {
+          "path": "config.json",
+          "size": 971,
+          "sha256": "c9079564beee78eeee8fc642f760c612090a922392d2fec2871d73ba276b9861"
+        },
+        {
+          "path": "curves.csv",
+          "size": 667569,
+          "sha256": "c65b0fc00e3d09b010114c158acf9283e17b7ecee84c364efd1d8da43869264f"
+        },
+        {
+          "path": "efficiency_summary.csv",
+          "size": 791,
+          "sha256": "db2a9a976cae023517e5cb11f6323436d7077ea001f22cacbee8fb34a46f82ab"
+        },
+        {
+          "path": "run.log",
+          "size": 873,
+          "sha256": "5254decb2564a6f581f94a9274652cafd92344379f54444d567514504c706192"
+        },
+        {
+          "path": "结果汇总.xlsx",
+          "size": 296783,
+          "sha256": "548ce4eb2a3a55d0a85709c9464b7863e6e99e593731c7108d7bbe32acda81ec"
+        },
+        {
+          "path": "audit/acceptance.json",
+          "size": 758,
+          "sha256": "d16dfec98bfbe4ee31380034326fc3b1687546ceb7f94c802eccd7ebddb9dcd9"
+        },
+        {
+          "path": "plots/CW368-1300Ah_temperature_corrected_charge.png",
+          "size": 183548,
+          "sha256": "8c34216cb4ee6a7d43b848319320a4133c93a1efb8dceecf49cabf96cb359d73"
+        },
+        {
+          "path": "plots/CW368-1300Ah_temperature_corrected_discharge.png",
+          "size": 207414,
+          "sha256": "b0e681270842d28ebaa56a2483e195307b35937bc8403a37ca2470c1d7afdad5"
+        },
+        {
+          "path": "plots/CW368-1300Ah_temperature_corrected_efficiency.png",
+          "size": 113994,
+          "sha256": "ffd0c37cf6d1df707c9aa7ed7cb294939f96145ffd6015f9d4567e8a0b6b2dbb"
+        }
+      ]
+    },
+    {
+      "run_id": "20260904_CW368_1300Ah_EU_DCR_25C",
+      "source": "BatteryProject/output/runs/cw368_1300_eu_dcr/20260904_CW368_1300Ah_EU_DCR_25C",
+      "published_at": "2026-09-04T16:02:19",
+      "mode": "selected",
+      "files": [
+        {
+          "path": "config.json",
+          "size": 462,
+          "sha256": "4642039485e595e500a7d71676b2268c7bdddf32d168df9377a7ea591fe49589"
+        },
+        {
+          "path": "CW368-1300Ah_25C_1C30s_DCR.xlsx",
+          "size": 24158,
+          "sha256": "a7d78c145e5afe71a7c96b5f28b84b0afe9f5dfec5ff854c24bb3058527e9903"
+        },
+        {
+          "path": "dcr_summary.csv",
+          "size": 647,
+          "sha256": "5098d46ca5e388238eee9af6b6e62483a1da3bceb6fcd41369cf103e31e28739"
+        },
+        {
+          "path": "pulse_curves.csv",
+          "size": 26352,
+          "sha256": "c8e6f25c0490efbf28efa6ecf0219eee3ef24f9a229bf03f97ac22ea01e7f432"
+        },
+        {
+          "path": "audit/acceptance.json",
+          "size": 241,
+          "sha256": "887d8add502a2a99a94579da274db70044f53617d9abbbebd6b32299d7e097c8"
+        },
+        {
+          "path": "audit/DCR结果_preview.png",
+          "size": 132594,
+          "sha256": "5ec3e1445d8d02d2aefae7c331cd7cb189f0f0a2e36af531944e369b92fefb1c"
+        },
+        {
+          "path": "audit/脉冲曲线_preview.png",
+          "size": 143230,
+          "sha256": "20035c00e3217f3d61deb1a636f3ff2cbaa7696064d3ae2f4f3ca48cd529545c"
+        },
+        {
+          "path": "plots/CW368-1300Ah_25C_1C30s_DCR.png",
+          "size": 113695,
+          "sha256": "b42dd2642118ee5614e4112cfac3843dc31540f8784d2721cfb0fc91a4ea599a"
+        },
+        {
+          "path": "plots/CW368-1300Ah_25C_1C30s_pulse_voltage.png",
+          "size": 97350,
+          "sha256": "dd16ea57a7baf7fa7303b44c7a0f27bbded8861c63fe918e4634432aef5918bb"
+        }
+      ]
+    }
+  ]
+}

@@ -441,6 +441,10 @@ def _run_single_pulse_lifecycle_scenario(
         reverse=True,
     )
     diagnostic_p_rates = tuple(float(value) for value in runtime_config.get("diagnostic_p_rates", []))
+    diagnostic_temperatures_k = tuple(
+        float(value)
+        for value in runtime_config.get("diagnostic_temperatures_k", [temperature_k])
+    )
     return_partial_on_error = bool(runtime_config.get("return_partial_on_error", False))
     stop_at_lowest_diagnostic_soh = bool(runtime_config.get("stop_at_lowest_diagnostic_soh", False))
     adapt_pulse_windows_to_capacity = bool(runtime_config.get("adapt_pulse_windows_to_capacity", False))
@@ -457,8 +461,12 @@ def _run_single_pulse_lifecycle_scenario(
         raise ValueError("diagnostic_soh_targets_pct values must be within (0, 100]")
     if diagnostic_soh_targets_pct and not diagnostic_p_rates:
         raise ValueError("diagnostic_p_rates is required when SOH diagnostics are enabled")
+    if diagnostic_soh_targets_pct and not diagnostic_temperatures_k:
+        raise ValueError("diagnostic_temperatures_k cannot be empty when SOH diagnostics are enabled")
     if any(rate <= 0 for rate in diagnostic_p_rates):
         raise ValueError("diagnostic_p_rates values must be positive")
+    if any(temperature <= 0 for temperature in diagnostic_temperatures_k):
+        raise ValueError("diagnostic_temperatures_k values must be positive")
     if diagnostic_soh_targets_pct and not use_block_acceleration:
         raise ValueError("SOH-triggered diagnostics require use_block_acceleration=True")
     if (not use_block_acceleration) and capacity_check_interval_cycles is not None:
@@ -593,57 +601,60 @@ def _run_single_pulse_lifecycle_scenario(
 
         degradation_snapshot = snapshot_degradation_variables(source_solution)
         for target_soh_pct in crossed_targets:
-            for diagnostic_p_rate in diagnostic_p_rates:
-                metadata = {
-                    "target_soh_pct": float(target_soh_pct),
-                    "actual_soh_pct": float(last_valid_soh_pct),
-                    "real_cycle": float(real_cycle),
-                    "diagnostic_p_rate": float(diagnostic_p_rate),
-                }
-                try:
-                    check_solution, check_summary = _run_capacity_check(
-                        model,
-                        solver,
-                        starting_solution=starting_solution,
-                        initial_soc=initial_soc,
-                        temperature_k=temperature_k,
-                        var_pts=var_pts,
-                        get_hithium_params=get_hithium_params,
-                        nominal_capacity_ah=nominal_capacity_ah,
-                        check_p_rate=diagnostic_p_rate,
-                        nominal_voltage_v=nominal_voltage_v,
-                        charge_cutoff_v=charge_cutoff_v,
-                        discharge_cutoff_v=discharge_cutoff_v,
-                        rest_minutes=rest_minutes,
-                        period_minutes=period_minutes,
-                        showprogress=showprogress,
-                    )
-                except Exception as exc:
-                    if not return_partial_on_error:
-                        raise
-                    row = dict(metadata)
-                    row.update(degradation_snapshot)
-                    row["diagnostic_status"] = "failed"
-                    row["diagnostic_error"] = f"{type(exc).__name__}: {exc}"
-                    diagnostic_records.append(row)
-                    continue
+            for diagnostic_temperature_k in diagnostic_temperatures_k:
+                for diagnostic_p_rate in diagnostic_p_rates:
+                    metadata = {
+                        "target_soh_pct": float(target_soh_pct),
+                        "actual_soh_pct": float(last_valid_soh_pct),
+                        "real_cycle": float(real_cycle),
+                        "diagnostic_p_rate": float(diagnostic_p_rate),
+                        "diagnostic_temperature_k": float(diagnostic_temperature_k),
+                        "diagnostic_temperature_c": float(diagnostic_temperature_k - 273.15),
+                    }
+                    try:
+                        check_solution, check_summary = _run_capacity_check(
+                            model,
+                            solver,
+                            starting_solution=starting_solution,
+                            initial_soc=initial_soc,
+                            temperature_k=diagnostic_temperature_k,
+                            var_pts=var_pts,
+                            get_hithium_params=get_hithium_params,
+                            nominal_capacity_ah=nominal_capacity_ah,
+                            check_p_rate=diagnostic_p_rate,
+                            nominal_voltage_v=nominal_voltage_v,
+                            charge_cutoff_v=charge_cutoff_v,
+                            discharge_cutoff_v=discharge_cutoff_v,
+                            rest_minutes=rest_minutes,
+                            period_minutes=period_minutes,
+                            showprogress=showprogress,
+                        )
+                    except Exception as exc:
+                        if not return_partial_on_error:
+                            raise
+                        row = dict(metadata)
+                        row.update(degradation_snapshot)
+                        row["diagnostic_status"] = "failed"
+                        row["diagnostic_error"] = f"{type(exc).__name__}: {exc}"
+                        diagnostic_records.append(row)
+                        continue
 
-                row = _capacity_check_summary_to_row(check_summary)
-                row.update(degradation_snapshot)
-                row.update(metadata)
-                row["diagnostic_status"] = "simulated"
-                row["diagnostic_error"] = ""
-                diagnostic_records.append(row)
-                if return_solutions:
-                    diagnostic_solutions.append(
-                        {
-                            **metadata,
-                            "solution": _prepare_solution_for_storage(
-                                check_solution,
-                                keep_only_last_capacity_check_solution,
-                            ),
-                        }
-                    )
+                    row = _capacity_check_summary_to_row(check_summary)
+                    row.update(degradation_snapshot)
+                    row.update(metadata)
+                    row["diagnostic_status"] = "simulated"
+                    row["diagnostic_error"] = ""
+                    diagnostic_records.append(row)
+                    if return_solutions:
+                        diagnostic_solutions.append(
+                            {
+                                **metadata,
+                                "solution": _prepare_solution_for_storage(
+                                    check_solution,
+                                    keep_only_last_capacity_check_solution,
+                                ),
+                            }
+                        )
             pending_diagnostic_targets.remove(target_soh_pct)
 
     if capacity_check_at_start:

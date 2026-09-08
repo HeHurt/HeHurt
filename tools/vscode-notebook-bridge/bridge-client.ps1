@@ -1,5 +1,5 @@
 param(
-    [ValidateSet("status", "active-notebook", "replace-cell", "apply-edits")]
+    [ValidateSet("status", "active-notebook", "replace-cell", "insert-cell", "apply-edits")]
     [string]$Action = "status",
 
     [string]$ConnectionFile,
@@ -14,6 +14,11 @@ param(
     [string]$TextFile,
 
     [string]$EditsFile,
+
+    [ValidateSet("code", "markdown")]
+    [string]$Kind = "code",
+
+    [string]$LanguageId,
 
     [switch]$Save
 )
@@ -241,6 +246,39 @@ if ($Action -eq "replace-cell") {
     }
 
     $Result = Invoke-JsonPost $Bridge "replace-cell" $Body
+    Write-JsonResult $Result 20
+    return
+}
+
+if ($Action -eq "insert-cell") {
+    if ($Index -lt -1) {
+        throw "-Index must be omitted to append, or set from 0 through the current cell count."
+    }
+    if ($TextFile) {
+        $Text = [System.IO.File]::ReadAllText($TextFile, [System.Text.Encoding]::UTF8)
+    }
+    elseif (-not $PSBoundParameters.ContainsKey("Text")) {
+        $Text = ""
+    }
+
+    $Body = @{
+        kind = $Kind
+        text = $Text
+    }
+    if ($Index -ge 0) {
+        $Body.index = $Index
+    }
+    if ($LanguageId) {
+        $Body.languageId = $LanguageId
+    }
+    if ($Save.IsPresent) {
+        $Body.save = $true
+    }
+    if ($Uri) {
+        $Body.uri = $Uri
+    }
+
+    $Result = Invoke-JsonPost $Bridge "insert-cell" $Body
     Write-JsonResult $Result 20
     return
 }

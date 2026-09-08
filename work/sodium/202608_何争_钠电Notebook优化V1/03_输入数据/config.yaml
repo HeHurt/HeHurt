@@ -1,0 +1,18 @@
+cell: sodium
+task: 钠电Notebook优化
+owner: 何争
+data_root: work/sodium/202608_何争_钠电Notebook优化V1/03_输入数据/04-钠电电芯数据_csv
+workflow: sodium_rate_benchmark
+expected_charge_cases: 42
+expected_discharge_cases: 12
+charge_cutoff_v: 3.3
+discharge_cutoff_v: 1.5
+charge_initial_soc: 0.0
+discharge_initial_soc: 1.0
+period_minutes: 0.5
+var_pts:
+  x_n: 5
+  x_s: 5
+  x_p: 5
+  r_n: 20
+  r_p: 20

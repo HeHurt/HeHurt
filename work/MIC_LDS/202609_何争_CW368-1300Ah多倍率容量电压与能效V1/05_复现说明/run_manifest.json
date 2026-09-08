@@ -1,0 +1,62 @@
+{
+  "published_runs": [
+    {
+      "run_id": "20260904_144254_CW368_1300Ah_25C_multirate",
+      "source": "BatteryProject/output/runs/cw368_1300_multirate/20260904_144254_CW368_1300Ah_25C_multirate",
+      "published_at": "2026-09-04T14:50:45",
+      "mode": "selected",
+      "files": [
+        {
+          "path": "case_summary.csv",
+          "size": 1689,
+          "sha256": "90f869d2e040370b80238dcbef7f900c81a8a8c650144acfc2cca2236fd754a3"
+        },
+        {
+          "path": "config.json",
+          "size": 804,
+          "sha256": "eb50918c4389ea8458956a52ad61daabc3eee4bb19f50b1aa3f30b12d87db211"
+        },
+        {
+          "path": "curves.csv",
+          "size": 666887,
+          "sha256": "b62d2f5cf655d9b914b596cd8bb46bd7b2b858a9c99e9a363d9c93e7a0911dca"
+        },
+        {
+          "path": "efficiency_summary.csv",
+          "size": 792,
+          "sha256": "14fa6fc6b93272fc23e55d04a58e6a9a7a5ddfa76fd07bf3652885393fd1d3f2"
+        },
+        {
+          "path": "run.log",
+          "size": 785,
+          "sha256": "8a234e84f7e581c2ba6e5a844e6bbfb2b79563cda28d62411eb5a146d3cff87f"
+        },
+        {
+          "path": "结果汇总.xlsx",
+          "size": 276598,
+          "sha256": "f7c489bc5fd0aa255c2f9461353a7309f519c191f564f24dde088ff6abc23161"
+        },
+        {
+          "path": "audit/acceptance_checks.json",
+          "size": 1068,
+          "sha256": "077e761a1e16600c542d4f3a952f1e897b612e274d50fede2173aafc496112b4"
+        },
+        {
+          "path": "plots/CW368-1300Ah_25C_charge_capacity_voltage.png",
+          "size": 172758,
+          "sha256": "385a7f52da965dd78c0784e7c54ed7c793a03766cc102a1bbe41da31352bed4e"
+        },
+        {
+          "path": "plots/CW368-1300Ah_25C_discharge_capacity_voltage.png",
+          "size": 197800,
+          "sha256": "132acf730ba8fb20d9de4535fbc4498b42c69dc73c85c5fa8546f07dc52a9d03"
+        },
+        {
+          "path": "plots/CW368-1300Ah_25C_energy_efficiency.png",
+          "size": 114529,
+          "sha256": "a3254c385b47a0ab10854489dc071a17f885f0d619c3631a5d9f7255fc3080d9"
+        }
+      ]
+    }
+  ]
+}

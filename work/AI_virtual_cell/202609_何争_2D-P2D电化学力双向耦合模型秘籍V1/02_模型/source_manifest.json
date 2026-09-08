@@ -1,0 +1,9 @@
+{
+  "created_at": "2026-09-07T09:22:14",
+  "template": null,
+  "git": {
+    "commit": "3b1d7fb5f38c99fb98eef6fe0e7dcefaa6bdb6d8",
+    "branch": "codex/performance-checkpoint-20260717",
+    "dirty": true
+  }
+}

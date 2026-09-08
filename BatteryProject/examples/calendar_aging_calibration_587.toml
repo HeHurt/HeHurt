@@ -1,0 +1,63 @@
+case_name = "587Ah_50SOC_activated_calendar_aging"
+experiment_csv = "work/587Ah/202607_何争_无活化14个月多温度日历老化V1/03_输入数据/calendar_aging_50soc_activated_exp.csv"
+activated_runner = "work/587Ah/202607_何争_无活化14个月多温度日历老化V1/02_模型/calendar_aging_587_activated_calibration.py"
+accepted_results_dir = "work/587Ah/202607_何争_无活化14个月多温度日历老化V1/04_输出结果/20260727_587_calendar_activated_calibration"
+temperatures_c = [25, 45]
+checkpoint_days = [30, 60, 90, 120, 150, 180, 210, 240, 270, 300]
+training_max_days = 180
+
+[protocol]
+storage_soc_pct = 50
+aging_mode = "activated"
+diagnostic_rate_p = 0.5
+test_temperature_c = 25
+relaxation_hours = 1
+aging_t_factor = 1
+
+[decision_rules]
+sensitivity_threshold = 0.001
+response_correlation_threshold = 0.95
+max_selected_parameters = 3
+
+[optimizer]
+method = "BO"
+init_points = 4
+n_iter = 12
+random_state = 1
+kappa = 2.5
+utility_kind = "ucb"
+
+[[parameters]]
+name = "sei_kinetic_scale"
+baseline = 1.0
+low = 0.3
+high = 1.5
+scale = "log"
+
+[[parameters]]
+name = "ec_diffusivity_scale"
+baseline = 1.0
+low = 0.1
+high = 1.0
+scale = "log"
+
+[[parameters]]
+name = "sei_activation_energy_j_mol"
+baseline = 50000.0
+low = 40000.0
+high = 60000.0
+scale = "line"
+
+[[parameters]]
+name = "initial_sei_thickness_m"
+baseline = 5e-9
+low = 2e-9
+high = 8e-9
+scale = "log"
+
+[[parameters]]
+name = "cracking_rate_scale"
+baseline = 1.0
+low = 0.1
+high = 10.0
+scale = "log"

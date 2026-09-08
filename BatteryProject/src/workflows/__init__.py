@@ -57,6 +57,17 @@ from .regional_coupled_aging import (
     build_region_configs,
     run_regional_coupled_aging_workflow,
 )
+from .sodium_rate_benchmark import (
+    SodiumBenchmarkSpec,
+    SodiumCaseResult,
+    SodiumRateCase,
+    discover_sodium_rate_cases,
+    load_sodium_rate_curve,
+    run_sodium_rate_benchmark,
+    run_sodium_rate_case,
+    sodium_curve_frame,
+    sodium_metrics_frame,
+)
 
 __all__ = [
     "ContactResistanceCase",
@@ -80,6 +91,9 @@ __all__ = [
     "ReducedNetworkSpec",
     "RegionalCoupledAgingWorkflowSpec",
     "RegionalDFNCase",
+    "SodiumBenchmarkSpec",
+    "SodiumCaseResult",
+    "SodiumRateCase",
     "TransientDFNSpec",
     "build_adjusted_capacity_table",
     "build_comsol_histogram_frame",
@@ -87,6 +101,8 @@ __all__ = [
     "build_region_configs",
     "comsol_histogram_to_java",
     "fit_dv_to_comsol_histogram",
+    "discover_sodium_rate_cases",
+    "load_sodium_rate_curve",
     "load_psd_materials_from_registry",
     "prepare_cycle_experiment",
     "prepare_eis_experiment",
@@ -101,5 +117,9 @@ __all__ = [
     "run_pulse_workflow",
     "run_quick_eis_sections",
     "run_regional_coupled_aging_workflow",
+    "run_sodium_rate_benchmark",
+    "run_sodium_rate_case",
+    "sodium_curve_frame",
+    "sodium_metrics_frame",
     "summarize_quick_components",
 ]

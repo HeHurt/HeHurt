@@ -37,6 +37,7 @@ Authorization: Bearer <token>
 GET  /status
 GET  /active-notebook
 POST /replace-cell
+POST /insert-cell
 POST /apply-edits
 ```
 
@@ -55,8 +56,13 @@ Or use the helper:
 .\tools\vscode-notebook-bridge\bridge-client.ps1 -Action active-notebook
 .\tools\vscode-notebook-bridge\bridge-client.ps1 -Action active-notebook -Uri C:\path\notebook.ipynb
 .\tools\vscode-notebook-bridge\bridge-client.ps1 -Action replace-cell -Uri C:\path\notebook.ipynb -Index 0 -Text "print('hello')" -Save
+.\tools\vscode-notebook-bridge\bridge-client.ps1 -Action insert-cell -Uri C:\path\notebook.ipynb -Kind code -LanguageId python -Text "print('new cell')" -Save
+.\tools\vscode-notebook-bridge\bridge-client.ps1 -Action insert-cell -Uri C:\path\notebook.ipynb -Kind markdown -Text "## New section" -Save
 .\tools\vscode-notebook-bridge\bridge-client.ps1 -Action apply-edits -Uri C:\path\notebook.ipynb -EditsFile .codex_scratch\notebook-edits.json -Save
 ```
+
+`insert-cell` appends by default. Pass `-Index 0` through the current cell count
+to insert at a specific position.
 
 Replace one cell:
 

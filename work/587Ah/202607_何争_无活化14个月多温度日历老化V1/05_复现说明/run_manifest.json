@@ -1,3 +1,88 @@
 {
-  "published_runs": []
+  "published_runs": [
+    {
+      "run_id": "20260727_587calander_50SOC_full_v1",
+      "source": "BatteryProject/output/runs/calendar_aging_matrix/20260727_587calander_50SOC_full_v1",
+      "published_at": "2026-08-06",
+      "mode": "selected",
+      "description": "587Ah 无活化14个月多温度日历老化(25/45°C 活化标定后 SEI 主导参数)",
+      "files": [
+        {
+          "path": "config.json",
+          "size": 784,
+          "sha256": "d9068716a312574047cb8218e7bb794a990afe5fed2dfbb9caf97c955602d3b1"
+        },
+        {
+          "path": "run_console.log",
+          "size": 12228,
+          "sha256": "482d69942ebbb2e1b4b07bfd0e8e3014eec7ab2fa76a6be7cace0897cdfbb9bd"
+        },
+        {
+          "path": "run_error.log",
+          "size": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "artifacts/587Ah_0to50C_50SOC_calendar_aging_14months.xlsx",
+          "size": 47616,
+          "sha256": "608b1343e2ebe05e5a684b7f8b8f0a391e0129a557d7fd11c1de5d9ad4f5d5e0"
+        },
+        {
+          "path": "artifacts/587Ah_0to50C_50SOC_calendar_aging_14months_对比版.xlsx",
+          "size": 50848,
+          "sha256": "77ee21fd951fa444a560ee489550525022a43c0f506122187a83f33504652823"
+        },
+        {
+          "path": "artifacts/calendar_aging_587Ah_50SOC_matrix.csv",
+          "size": 44792,
+          "sha256": "479c0e69ca2941e510e69b948b0e7d35269289edd09dc06eb74b014cf2d515c4"
+        },
+        {
+          "path": "artifacts/summary_month_14.csv",
+          "size": 3581,
+          "sha256": "0bba6a242253aa59e5171db628d9940f00dc2ecf7e7d2c0673cf749b958b84e5"
+        },
+        {
+          "path": "artifacts/baseline_25C_C0.csv",
+          "size": 185,
+          "sha256": "cdb9295a69003c8684a78aa3b7e9a40e8392392dc69051d6f0975fcbd0ba26ee"
+        },
+        {
+          "path": "artifacts/run_status.csv",
+          "size": 9473,
+          "sha256": "e995c0539614c7626f037799e482d0effb11fb79d68ad46b55881f56eccb3898"
+        },
+        {
+          "path": "artifacts/calibrated_vs_original_comparison.csv",
+          "size": 55757,
+          "sha256": "d912254f00604fce86b706cb799f740670dae34eea29c5f1b96c883e2fe70b18"
+        },
+        {
+          "path": "artifacts/validation_summary.json",
+          "size": 812,
+          "sha256": "b0ba965a84d11e0ee714976c15a8c246a2118ed41ea8d874a786a319e2d89b26"
+        },
+        {
+          "path": "plots/irreversible_loss_heatmap.png",
+          "size": 59988,
+          "sha256": "4500f5b282a69520b803d315f43420a036a7937c52062dce3cd94974ec661a63"
+        },
+        {
+          "path": "plots/recovery_heatmap.png",
+          "size": 60808,
+          "sha256": "06de3abb1f85cb18c65e2d60ca4dc45468147e8505f655f933680907a37cd68b"
+        },
+        {
+          "path": "plots/retention_heatmap.png",
+          "size": 67896,
+          "sha256": "c4489612a7d8f1bc0f9ab9f01a1ae31bd05a787eaf79d87d19c1a398731b50c6"
+        },
+        {
+          "path": "plots/retention_recovery_vs_month.png",
+          "size": 291698,
+          "sha256": "3176ec7b3adac241007075956e19262d8ec2eb34afffaed7875bb687d7be9035"
+        }
+      ]
+    }
+  ]
 }

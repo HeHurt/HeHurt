@@ -1,0 +1,42 @@
+{
+  "published_runs": [
+    {
+      "run_id": "20260728_170855_587Ah_override_MIC_contact_on_20C_98SOC_10s_charge_peak_power",
+      "source": "BatteryProject/output/runs/peak_power/20260728_170855_587Ah_override_MIC_contact_on_20C_98SOC_10s_charge_peak_power",
+      "published_at": "2026-07-28T17:11:12",
+      "mode": "selected",
+      "files": [
+        {
+          "path": "config.json",
+          "size": 973,
+          "sha256": "09ee683719a64d59bc23a387d50b3feac28870b2b5a8b6b6c4a204bb43c38f35"
+        },
+        {
+          "path": "metrics.csv",
+          "size": 822,
+          "sha256": "d8d1448f93374847c91b04170f2b4a9d0bd2f45d7f5b320559f22752d7d149e4"
+        },
+        {
+          "path": "metrics.xlsx",
+          "size": 6030,
+          "sha256": "54c16ace07887ce48efa01b56c35a014c48d4ed39ff847d308f766e03dfd16a8"
+        },
+        {
+          "path": "run.log",
+          "size": 1992,
+          "sha256": "07b828bc9633ddb85fcc8ac5c75b7cc0c768401a76a9b3f94a49c0f4c34dba2c"
+        },
+        {
+          "path": "summary.json",
+          "size": 1738,
+          "sha256": "b093d5e957a6ef551ea7a8d95057675936a4dcb1cb423f8335bfbfb87dd21fa3"
+        },
+        {
+          "path": "plots/charge_peak_power_comparison.png",
+          "size": 119479,
+          "sha256": "be2b9f0912f73ec574450d9f68588788a9b4e4cdcd1a1fa17094888c81dc46c5"
+        }
+      ]
+    }
+  ]
+}

@@ -60,7 +60,7 @@ Before editing code:
 
 ### Step 2: Check environment
 
-Run or create `scripts/check_env.m`.
+In the Hithium workspace, run or create `COMSOL/scripts/check_env.m`.
 
 The script should check:
 
@@ -143,7 +143,7 @@ end
 Every run must create a timestamped folder:
 
 ```text
-runs/YYYYMMDD_HHMMSS_case_name/
+COMSOL/runs/YYYYMMDD_HHMMSS_case_name/
 ├─ config.json
 ├─ run.log
 ├─ error_report.txt
@@ -194,7 +194,7 @@ After every failed run, classify the failure as one of:
 After every failure and repair, append to:
 
 ```text
-logs/lessons_learned.md
+COMSOL/logs/lessons_learned.md
 ```
 
 Use this format:
@@ -213,7 +213,7 @@ Use this format:
 - Prevention rule:
 ```
 
-Before starting a new task, always read `logs/lessons_learned.md` to avoid repeating past mistakes.
+Before starting a new task in the Hithium workspace, always read `COMSOL/logs/lessons_learned.md` to avoid repeating past mistakes.
 
 ### Step 9: COMSOL API safety rules
 

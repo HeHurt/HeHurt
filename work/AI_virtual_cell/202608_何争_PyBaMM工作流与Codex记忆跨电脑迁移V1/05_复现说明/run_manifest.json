@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "status": "export_verified",
+  "target_validation": "pending",
+  "memory_export": {
+    "command": "python 02_模型/export_codex_memory.py --output 04_输出结果 --include-sessions",
+    "memory_file_count": 180,
+    "memory_total_bytes": 1434485,
+    "memory_archive": {
+      "file": "Codex_long_term_memories_complete.zip",
+      "size": 926287,
+      "sha256": "ae5c1ce07788d42c0b7ff77d4dc7be181c601f93fc4a03ad9d837e3c268c624b"
+    },
+    "session_evidence_archive": {
+      "file": "Codex_historical_sessions_evidence.zip",
+      "size": 581381573,
+      "sha256": "1ec978a3781a239a773cfe17f8561f562e74d8a5f762259436910f4f7db39b71"
+    },
+    "zip_integrity": "passed",
+    "memory_mirror_hash_mismatches": 0,
+    "forbidden_state_files_found": 0
+  },
+  "pybamm_core_export": {
+    "command": "python 02_模型/package_pybamm_core_workspace.py --workspace D:\\Users\\hez\\Desktop\\hithium --output 04_输出结果/Hithium_PyBaMM_Core_Code_and_Workflows.zip",
+    "archive": {
+      "file": "Hithium_PyBaMM_Core_Code_and_Workflows.zip",
+      "size": 3572178,
+      "sha256": "fdc3117641b748a56d74e32d39a6a01fa0d46f70363bb529ef4166616e4ea6c4"
+    },
+    "included_file_count": 803,
+    "source_bytes": 329749783,
+    "packed_uncompressed_bytes": 11565835,
+    "notebooks_stripped": 70,
+    "code_exe_bridge_files": 83,
+    "skipped": [
+      {
+        "path": "work/314Ah/notebooks/diff_temperature/不同温度循环/自动提取数据.ipynb",
+        "reason": "source notebook is zero bytes"
+      }
+    ],
+    "zip_integrity": "passed",
+    "tsd_members": 0,
+    "invalid_notebooks": 0,
+    "notebook_output_cells": 0,
+    "core_python_syntax_errors": 0
+  }
+}

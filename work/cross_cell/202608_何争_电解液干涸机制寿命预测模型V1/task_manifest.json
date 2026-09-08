@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "task_id": "202608_何争_电解液干涸机制寿命预测模型V1",
+  "cell": "cross_cell",
+  "task_name": "电解液干涸机制寿命预测模型",
+  "owner": "何争",
+  "month": "202608",
+  "version": "V1",
+  "status": "created",
+  "created_at": "2026-08-03T17:10:03",
+  "template": null,
+  "task_notebook": null
+}

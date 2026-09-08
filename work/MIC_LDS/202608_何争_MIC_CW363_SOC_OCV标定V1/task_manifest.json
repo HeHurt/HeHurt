@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "task_id": "202608_何争_MIC_CW363_SOC_OCV标定V1",
+  "cell": "MIC_LDS",
+  "task_name": "MIC_CW363_SOC_OCV标定",
+  "owner": "何争",
+  "month": "202608",
+  "version": "V1",
+  "status": "published",
+  "created_at": "2026-08-25T15:02:04",
+  "template": "BatteryProject/examples/参数敏感性与实测对标.ipynb",
+  "task_notebook": "CW363_SOC_OCV标定.ipynb",
+  "latest_run_id": "20260907_151752_final_ocv_smooth"
+}

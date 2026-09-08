@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "task_id": "202608_何争_587欧盟电池法循环DCR实测复核V1",
+  "cell": "587Ah",
+  "task_name": "587欧盟电池法循环DCR实测复核",
+  "owner": "何争",
+  "month": "202608",
+  "version": "V1",
+  "status": "published",
+  "created_at": "2026-08-28T14:56:09",
+  "template": "BatteryProject/examples/欧盟电池法.ipynb",
+  "task_notebook": "587Ah_欧盟电池法循环DCR实测复核.ipynb",
+  "latest_run_id": "20260831_587eu_final_sched_3_1p3_1p2_13000"
+}

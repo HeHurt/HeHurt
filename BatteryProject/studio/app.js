@@ -294,6 +294,7 @@ function syncAgingControls() {
     const element = document.querySelector(selector);
     if (element) element.disabled = !enabled;
   });
+  updateAccelNote();
 }
 
 // 路由 → 视图：多个导航项可共享一个视图
@@ -308,18 +309,78 @@ const ROUTE_VIEWS = {
   "data-browser": "data",
   "data-clean": "data",
   "data-analysis": "data",
+  tasks: "tasks",
+  bench: "bench",
 };
 
 // 尚未实现的模块：显示占位页
 const PLACEHOLDER_ROUTES = {
-  identify: "参数识别",
-  sensitivity: "敏感性分析",
-  optimize: "优化设计",
-  equivalent: "等效电路模型",
-  material: "材料参数库",
-  database: "电芯数据库",
-  report: "报告导出",
+  identify: {
+    name: "参数识别",
+    desc: "基于实验数据自动标定模型参数（BO/GA 优化器），展示参数边界、后验不确定性与相关性。依赖 Sim–Exp 对标工作台。",
+  },
+  sensitivity: {
+    name: "敏感性分析",
+    desc: "扫描关键参数对容量衰减 / 内阻 / 峰值功率的影响，定位高杠杆参数，评估外推风险。",
+  },
+  optimize: {
+    name: "优化设计",
+    desc: "面向目标（能量密度 / 倍率 / 寿命）的多参数设计空间探索与 Pareto 权衡。",
+  },
+  equivalent: {
+    name: "等效电路模型",
+    desc: "Thevenin / DP 等等效电路参数提取与辨识，用于 BMS 标定与状态估计。",
+  },
+  material: {
+    name: "材料参数库",
+    desc: "材料级参数（OCP / 扩散系数 / 电导率）的统一管理、版本化与复用。",
+  },
+  database: {
+    name: "电芯数据库",
+    desc: "Hithium 各电芯型号参数（params/*.py）的统一浏览与对比。",
+  },
+  report: {
+    name: "报告导出",
+    desc: "一键生成仿真报告（PDF），包含图表、参数版本与结果血缘信息。",
+  },
 };
+
+// P0 信任修复：占位模块统一标注「规划中」，纯视觉控件禁用（承诺 <= 能力）
+const PROJECT_PARAMETER_SETS = new Set(["hithium280", "hithium314", "hithium587", "mic1175"]);
+
+function decoratePlaceholders() {
+  document.querySelectorAll(".nav-item, .module-tabs a").forEach((item) => {
+    const route = item.getAttribute("href")?.replace("#", "");
+    if (route && PLACEHOLDER_ROUTES[route]) {
+      const badge = document.createElement("span");
+      badge.className = "badge-planning";
+      badge.textContent = "规划中";
+      item.appendChild(badge);
+    }
+  });
+  const markDead = (button, title) => {
+    if (!button || button.disabled) return;
+    button.disabled = true;
+    button.title = title;
+    button.setAttribute("aria-disabled", "true");
+    button.insertAdjacentHTML("beforeend", '<em class="badge-planning">规划中</em>');
+  };
+  const textButtons = [...document.querySelectorAll(".top-actions .text-button")];
+  markDead(textButtons.find((b) => b.textContent.includes("帮助文档")), "帮助文档 · 规划中");
+  markDead(document.querySelector('.top-actions button[aria-label="通知"]'), "通知中心 · 规划中");
+  markDead(document.querySelector(".top-actions .avatar"), "用户中心 · 规划中");
+  markDead([...document.querySelectorAll(".export-strip .btn")].find((b) => b.textContent.includes("生成报告")), "报告导出 · 规划中");
+  markDead([...document.querySelectorAll(".model-panel .btn")].find((b) => b.textContent.includes("参数编辑器")), "参数编辑器 · 规划中");
+}
+
+// 项目参数加速口径（1 仿真圈 = 50 等效圈）：仅 project 参数集 + 老化启用时提示
+function updateAccelNote() {
+  const note = document.getElementById("accelNote");
+  if (!note) return;
+  const parameterSet = document.getElementById("parameterSet")?.value || "chen2020";
+  const agingEnabled = document.getElementById("agingEnabled")?.checked ?? true;
+  note.hidden = !(PROJECT_PARAMETER_SETS.has(parameterSet) && agingEnabled);
+}
 
 function setRoute(route) {
   state.route = route || "simulation";
@@ -328,7 +389,10 @@ function setRoute(route) {
     node.hidden = node.dataset.view !== view;
   });
   if (view === "placeholder") {
-    document.getElementById("placeholderTitle").textContent = `${PLACEHOLDER_ROUTES[state.route]} · 建设中`;
+    const routeMeta = PLACEHOLDER_ROUTES[state.route] || {};
+    document.getElementById("placeholderTitle").textContent = `${routeMeta.name || "功能"} · 规划中`;
+    const desc = document.getElementById("placeholderDesc");
+    if (desc) desc.textContent = routeMeta.desc || "";
   }
   document.querySelector(".app-shell").dataset.route = state.route;
   document.querySelectorAll(".nav-item, .module-tabs a").forEach((item) => {
@@ -336,7 +400,9 @@ function setRoute(route) {
     item.classList.toggle("active", target === state.route || (state.route === "simulation" && target === "simulation"));
   });
   if (view === "projects") loadProjectsView();
-  if (view === "data") loadDatasetsView();
+  if (view === "data") loadDataView();
+  if (view === "tasks") loadTaskCenter();
+  if (view === "bench") loadBenchView();
 }
 
 function createPreviewRows(rows = null) {
@@ -571,6 +637,7 @@ function updateCurrentPreview() {
       ? `当前参数集标称容量 ${capacity} Ah，1P 基准 ${NOMINAL_VOLTAGE_V} V，${chargeRate}P/${dischargeRate}P 对应 ${currentInput?.value} W。`
       : `当前参数集标称容量 ${capacity} Ah，${chargeRate}C/${dischargeRate}C 对应 ${currentInput?.value} A。`;
   }
+  updateAccelNote();
   return { capacity, chargeRate, dischargeRate, current: value };
 }
 
@@ -835,6 +902,10 @@ function renderJobsRows(jobs) {
   body.innerHTML = jobs
     .map((job) => {
       const jobId = escapeHtml(job.job_id);
+      const name = job.name ? escapeHtml(job.name) : "";
+      const idCell = name
+        ? `<div class="job-id-cell"><code>${jobId}</code><button class="icon-button ghost" type="button" data-action="rename-job" data-job-id="${jobId}" title="重命名"><span class="icon" data-icon="edit"></span></button></div>`
+        : `<div class="job-id-cell"><code>${jobId}</code><button class="icon-button ghost" type="button" data-action="rename-job" data-job-id="${jobId}" title="重命名"><span class="icon" data-icon="edit"></span></button></div>`;
       const actions = [];
       if (job.status === "completed") {
         actions.push(`<button class="btn outline compact" type="button" data-action="load-job" data-job-id="${jobId}">查看结果</button>`);
@@ -842,8 +913,9 @@ function renderJobsRows(jobs) {
       } else if (job.status === "running" || job.status === "queued") {
         actions.push(`<button class="btn outline compact" type="button" data-action="track-job" data-job-id="${jobId}">跟踪</button>`);
       }
+      actions.push(`<button class="icon-button ghost danger" type="button" data-action="delete-job" data-job-id="${jobId}" title="删除任务" aria-label="删除"><span class="icon" data-icon="close"></span></button>`);
       return `<tr>
-        <td>${jobId}</td>
+        <td>${idCell}${name ? `<div class="job-name">${name}</div>` : ""}</td>
         <td>${escapeHtml(JOB_STATUS_LABELS[job.status] || job.status)}</td>
         <td>${Number(job.progress || 0).toFixed(0)}%</td>
         <td>${escapeHtml(job.current_cycle ?? 0)} / ${escapeHtml(job.total_cycles ?? 0)}</td>
@@ -852,6 +924,37 @@ function renderJobsRows(jobs) {
       </tr>`;
     })
     .join("");
+}
+
+async function renameJobPrompt(jobId) {
+  // 优先用当前 name,无则空(留空=清除)
+  const resp = await apiFetch("/api/jobs");
+  const cur = (resp.jobs || []).find((j) => j.job_id === jobId);
+  const currentName = cur?.name || "";
+  const next = window.prompt("重命名任务(≤80 字符,留空=清除)", currentName);
+  if (next === null) return;
+  await apiFetch(`/api/jobs/${jobId}/rename`, {
+    method: "POST",
+    body: JSON.stringify({ name: next }),
+  });
+  showToast("已重命名");
+  await refreshJobsModal();
+}
+
+async function deleteJobConfirm(jobId) {
+  if (!window.confirm(`确认删除任务 ${jobId.slice(0, 8)}…(含结果与 run 目录)?该操作不可撤销。`)) return;
+  await apiFetch(`/api/jobs/${jobId}`, { method: "DELETE" });
+  showToast("已删除");
+  await refreshJobsModal();
+}
+
+async function refreshJobsModal() {
+  try {
+    const payload = await apiFetch("/api/jobs");
+    renderJobsRows(payload.jobs || []);
+  } catch (error) {
+    showToast(`任务列表刷新失败: ${error.message}`);
+  }
 }
 
 async function openJobsModal() {
@@ -874,6 +977,7 @@ function closeJobsModal() {
 
 async function loadJobResult(jobId) {
   state.currentJobId = jobId;
+  setRoute("simulation");
   const status = await apiFetch(`/api/jobs/${jobId}`);
   applyJobStatus(status);
   state.currentResult = await apiFetch(`/api/jobs/${jobId}/results`);
@@ -941,6 +1045,527 @@ async function switchProject(projectName) {
   }
   await loadProjectsView();
   showToast(`已切换到项目 ${config.project_name || projectName}`);
+}
+
+const benchState = { jobs: [], datasets: [] };
+
+async function loadBenchView() {
+  await Promise.all([loadBenchJobs(), loadBenchDatasets()]);
+  fillBenchRunSelects();
+}
+
+async function loadBenchJobs() {
+  try {
+    const payload = await apiFetch("/api/bench/jobs");
+    benchState.jobs = payload.jobs || [];
+    const fmt = (job) => `${job.job_id.slice(0, 8)} · ${job.job_type} · ${job.updated_at || ""}`;
+    ["benchJob", "benchRunA", "benchRunB"].forEach((id) => {
+      const select = document.getElementById(id);
+      if (!select) return;
+      select.innerHTML = '<option value="">选择任务…</option>' + benchState.jobs.map((job) => `<option value="${escapeHtml(job.job_id)}">${escapeHtml(fmt(job))}</option>`).join("");
+    });
+  } catch (error) {
+    showToast(`任务列表加载失败：${error.message}`);
+  }
+}
+
+async function loadBenchDatasets() {
+  try {
+    const payload = await apiFetch("/api/data");
+    benchState.datasets = payload.datasets || [];
+    const select = document.getElementById("benchDataset");
+    if (!select) return;
+    select.innerHTML = '<option value="">选择数据集…</option>' + benchState.datasets.map((d) => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.file_name)} (${escapeHtml(d.rows)} 行)</option>`).join("");
+  } catch (error) {
+    showToast(`数据集加载失败：${error.message}`);
+  }
+}
+
+function fillBenchRunSelects() {
+  if (!benchState.jobs.length) return;
+  ["benchJob", "benchRunA", "benchRunB"].forEach((id) => {
+    const select = document.getElementById(id);
+    if (select && !select.options.length) {
+      select.innerHTML = '<option value="">选择任务…</option>' + benchState.jobs.map((job) => `<option value="${escapeHtml(job.job_id)}">${escapeHtml(job.job_id.slice(0, 8))} · ${escapeHtml(job.job_type)}</option>`).join("");
+    }
+  });
+}
+
+async function runBench() {
+  const jobId = document.getElementById("benchJob")?.value;
+  const datasetId = document.getElementById("benchDataset")?.value;
+  const threshold = document.getElementById("benchThreshold")?.value || "5";
+  if (!jobId || !datasetId) {
+    showToast("请选择仿真任务与实验数据集");
+    return;
+  }
+  showToast("正在计算对标指标");
+  const payload = await apiFetch(`/api/bench/sim-exp?job_id=${encodeURIComponent(jobId)}&dataset_id=${encodeURIComponent(datasetId)}&threshold=${encodeURIComponent(threshold)}`);
+  renderBenchResult(payload);
+  document.getElementById("benchResultPane").hidden = false;
+}
+
+function renderBenchResult(payload) {
+  const metrics = document.getElementById("benchMetrics");
+  const parts = [];
+  const addMetric = (label, block) => {
+    if (!block) return;
+    parts.push(`<div class="bench-metric"><strong>${label} RRMSE</strong><span>${Number(block.rrmse_pct).toFixed(2)}%</span><small>RMSE ${Number(block.rmse).toFixed(4)}</small></div>`);
+  };
+  addMetric("容量保持率", payload.retention);
+  addMetric("能效", payload.efficiency);
+  const range = payload.sim_cycle_range ? `重叠仿真区间 ${payload.sim_cycle_range[0]}–${payload.sim_cycle_range[1]} 圈` : "";
+  metrics.innerHTML = parts.join("") + (range ? `<div class="bench-metric note">${range}</div>` : "");
+
+  const chart = echartsBox("benchChart");
+  if (chart) {
+    const series = [];
+    const anomalyAreas = [];
+    const addBlock = (block, label, color) => {
+      if (!block) return;
+      series.push({ name: `实测${label}`, type: "scatter", symbolSize: 5, color, data: block.cycle.map((c, i) => [c, block.exp[i]]) });
+      series.push({ name: `仿真${label}`, type: "line", showSymbol: false, color, data: block.sim_full.cycle.map((c, i) => [c, block.sim_full.values[i]]) });
+    };
+    addBlock(payload.retention, "保持率", "#2563eb");
+    addBlock(payload.efficiency, "能效", "#0aa777");
+    (payload.anomalies || []).forEach((w) => {
+      anomalyAreas.push({ xAxis: w.start_cycle, itemStyle: { color: "rgba(239,68,68,0.10)" } });
+      anomalyAreas.push({ xAxis: w.end_cycle, itemStyle: { color: "rgba(239,68,68,0.10)" } });
+    });
+    chart.setOption({
+      ...ECHARTS_BASE,
+      legend: { top: 0 },
+      xAxis: ECHARTS_CYCLE_XAXIS,
+      yAxis: { type: "value", name: "%", scale: true },
+      series,
+      ...(anomalyAreas.length ? { markArea: {} } : {}),
+    }, true);
+    if (anomalyAreas.length) {
+      series.forEach((item) => { item.markArea = { silent: true, itemStyle: { color: "rgba(239,68,68,0.10)" }, data: anomalyAreas }; });
+      chart.setOption({ series }, true);
+    }
+  }
+
+  const anomalyTable = document.getElementById("benchAnomalyTable");
+  const anomalies = payload.anomalies || [];
+  anomalyTable.innerHTML = anomalies.length
+    ? `<div class="table-wrap"><table><thead><tr><th>起始圈</th><th>结束圈</th><th>RMSE</th><th>RRMSE (%)</th><th>级别</th></tr></thead><tbody>` +
+      anomalies.map((w) => `<tr><td>${w.start_cycle}</td><td>${w.end_cycle}</td><td>${w.rmse}</td><td>${w.rrmse_pct}</td><td><span class="status-badge ${w.severity === "高" ? "status-missing" : "status-auto"}">${w.severity}</span></td></tr>`).join("") +
+      `</tbody></table></div>`
+    : '<p class="small-note">重叠区间不足或无异常。</p>';
+
+  const manifest = payload.manifest || {};
+  const manifestRows = [
+    ["workflow_id", manifest.workflow_id],
+    ["job_type", manifest.job_type],
+    ["cell", manifest.cell],
+    ["run_mode", manifest.run_mode],
+    ["PyBaMM 版本", manifest.pybamm_version],
+    ["参数来源", manifest.parameter_source],
+  ].filter(([, v]) => v !== undefined);
+  document.getElementById("benchManifest").innerHTML = manifestRows.length
+    ? `<div class="table-wrap"><table><thead><tr><th>字段</th><th>值</th></tr></thead><tbody>` +
+      manifestRows.map(([k, v]) => `<tr><td>${escapeHtml(k)}</td><td>${escapeHtml(v)}</td></tr>`).join("") + `</tbody></table></div>`
+    : '<p class="small-note">该任务为旧格式(cycle),无 manifest 字段。</p>';
+}
+
+async function runBenchCurves() {
+  const jobA = document.getElementById("benchRunA")?.value;
+  const jobB = document.getElementById("benchRunB")?.value;
+  if (!jobA || !jobB || jobA === jobB) {
+    showToast("请选择两个不同的 Run");
+    return;
+  }
+  showToast("正在对比两个 Run 的曲线");
+  const payload = await apiFetch(`/api/bench/runs-curve?job_a=${encodeURIComponent(jobA)}&job_b=${encodeURIComponent(jobB)}`);
+  const pane = document.getElementById("benchCurvePane");
+  pane.hidden = false;
+
+  const metrics = document.getElementById("benchCurveMetrics");
+  metrics.innerHTML = (payload.pairs || []).length
+    ? (payload.pairs || []).map((pair) =>
+        `<div class="bench-metric"><strong>${escapeHtml(pair.name)}</strong><span>RRMSE ${pair.rrmse_pct}%</span><small>RMSE ${pair.rmse}</small></div>`).join("")
+    : '<div class="bench-metric note">两个 Run 无可比曲线(仅 cycle 类有逐圈指标)。</div>';
+
+  const chart = echartsBox("benchCurveChart");
+  if (chart) {
+    const series = [];
+    (payload.pairs || []).forEach((pair) => {
+      series.push({ name: `Run A · ${pair.name}`, type: "line", showSymbol: false, data: pair.x.map((x, i) => [x, pair.y_a[i]]) });
+      series.push({ name: `Run B · ${pair.name}`, type: "line", showSymbol: false, lineStyle: { type: "dashed" }, data: pair.x.map((x, i) => [x, pair.y_b[i]]) });
+    });
+    chart.setOption({ ...ECHARTS_BASE, legend: { top: 0 }, xAxis: ECHARTS_CYCLE_XAXIS, yAxis: { type: "value", scale: true }, series }, true);
+  }
+
+  const fmtMeta = (meta) => (meta && meta.job_type) ? `${meta.job_type} · ${meta.cell} · ${meta.run_mode} · PyBaMM ${meta.pybamm_version || "--"}` : "旧格式(无 manifest)";
+  document.getElementById("benchCurveMeta").innerHTML =
+    `<div class="bench-metrics"><div class="bench-metric"><strong>Run A</strong><span style="font-size:13px">${escapeHtml(fmtMeta(payload.meta_a))}</span></div>` +
+    `<div class="bench-metric"><strong>Run B</strong><span style="font-size:13px">${escapeHtml(fmtMeta(payload.meta_b))}</span></div></div>`;
+}
+
+async function runBenchRuns() {
+  const jobA = document.getElementById("benchRunA")?.value;
+  const jobB = document.getElementById("benchRunB")?.value;
+  if (!jobA || !jobB) {
+    showToast("请选择两个 Run");
+    return;
+  }
+  if (jobA === jobB) {
+    showToast("请选择两个不同的 Run");
+    return;
+  }
+  const payload = await apiFetch(`/api/bench/runs?job_a=${encodeURIComponent(jobA)}&job_b=${encodeURIComponent(jobB)}`);
+  const pane = document.getElementById("benchDiffPane");
+  const rows = payload.differences || [];
+  pane.innerHTML = `<h4>参数版本差异</h4>` + (rows.length
+    ? `<div class="table-wrap"><table><thead><tr><th>字段</th><th>Run A</th><th>Run B</th></tr></thead><tbody>` +
+      rows.map((row) => `<tr><td>${escapeHtml(row.field)}</td><td>${escapeHtml(row.job_a ?? "--")}</td><td>${escapeHtml(row.job_b ?? "--")}</td></tr>`).join("") +
+      `</tbody></table></div>`
+    : '<p class="small-note">两个 Run 的参数版本完全一致。</p>');
+  pane.hidden = false;
+}
+
+const taskState = {
+  jobTypes: [],
+  selectedType: null,
+  jobId: null,
+  status: null,
+  pollTimer: null,
+};
+
+async function loadTaskCenter() {
+  try {
+    const payload = await apiFetch("/api/job-types");
+    taskState.jobTypes = payload.job_types || [];
+    renderTaskTypeList();
+    if (taskState.selectedType) selectTaskType(taskState.selectedType);
+  } catch (error) {
+    document.getElementById("taskTypeList").innerHTML = `<div class="task-type-item disabled">${escapeHtml(error.message)}</div>`;
+  }
+}
+
+function renderTaskTypeList() {
+  const list = document.getElementById("taskTypeList");
+  if (!list) return;
+  list.innerHTML = taskState.jobTypes
+    .map((item) => {
+      const stateLabel = item.available ? escapeHtml(item.job_type) : "规划中";
+      return `<button type="button" class="task-type-item${item.available ? "" : " disabled"}" data-task-type="${escapeHtml(item.job_type)}" ${item.available ? "" : "disabled"}>
+        <strong>${escapeHtml(item.label)}</strong><small>${stateLabel}</small>
+      </button>`;
+    })
+    .join("");
+}
+
+function selectTaskType(jobType) {
+  const item = taskState.jobTypes.find((t) => t.job_type === jobType);
+  if (!item) return;
+  taskState.selectedType = jobType;
+  document.querySelectorAll(".task-type-item").forEach((button) => {
+    button.classList.toggle("active", button.dataset.taskType === jobType);
+  });
+  document.getElementById("taskTypeTitle").textContent = item.label;
+  document.getElementById("taskTypeDesc").textContent = item.available
+    ? `${jobType} · 已接入 Studio 运行时`
+    : `${jobType} · 后端尚未接入，规划中`;
+  const planned = document.getElementById("taskPlannedNote");
+  if (planned) planned.hidden = item.available;
+  const form = document.getElementById("taskForm");
+  form.innerHTML =
+    item.available && item.schema.length
+      ? item.schema.map((field) => renderTaskField(field)).join("")
+      : '<p class="small-note">该类型暂无可用配置项，等待后端接入。</p>';
+  document.getElementById("taskMonitorPane").hidden = true;
+  if (taskState.pollTimer) {
+    clearInterval(taskState.pollTimer);
+    taskState.pollTimer = null;
+  }
+  taskState.status = null;
+}
+
+function renderTaskField(field) {
+  const id = `taskf_${field.name}`;
+  const unit = field.unit ? `<em>${escapeHtml(field.unit)}</em>` : "";
+  const desc = field.desc ? `<small class="field-desc">${escapeHtml(field.desc)}</small>` : "";
+  if (field.type === "checkbox") {
+    return `<label class="check-row task-check"><input type="checkbox" id="${id}" data-task-field="${escapeHtml(field.name)}" ${field.default ? "checked" : ""}> ${escapeHtml(field.label)}</label>`;
+  }
+  if (field.type === "select") {
+    const options = (field.options || [])
+      .map((opt) => `<option value="${escapeHtml(String(opt))}" ${String(opt) === String(field.default) ? "selected" : ""}>${escapeHtml(String(opt))}</option>`)
+      .join("");
+    return `<label class="field"><span>${escapeHtml(field.label)}</span><select id="${id}" data-task-field="${escapeHtml(field.name)}">${options}</select>${desc}</label>`;
+  }
+  const step = field.step || "any";
+  const min = field.min !== undefined ? ` min="${field.min}"` : "";
+  const max = field.max !== undefined ? ` max="${field.max}"` : "";
+  const inputType = field.type === "number" ? "number" : "text";
+  return `<label class="field"><span>${escapeHtml(field.label)}</span><div class="unit-input"><input id="${id}" type="${inputType}" value="${escapeHtml(String(field.default ?? ""))}" data-task-field="${escapeHtml(field.name)}" step="${step}"${min}${max}>${unit}</div>${desc}</label>`;
+}
+
+function collectTaskRequest() {
+  const item = taskState.jobTypes.find((t) => t.job_type === taskState.selectedType);
+  const request = { job_type: taskState.selectedType };
+  (item?.schema || []).forEach((field) => {
+    const node = document.getElementById(`taskf_${field.name}`);
+    if (!node) return;
+    if (field.type === "checkbox") {
+      request[field.name] = node.checked;
+    } else if (field.type === "number") {
+      request[field.name] = Number(node.value);
+    } else {
+      request[field.name] = node.value;
+    }
+  });
+  return request;
+}
+
+async function runTask() {
+  if (taskState.status === "running" || taskState.status === "queued") {
+    showToast("已有任务在运行");
+    return;
+  }
+  const request = collectTaskRequest();
+  showToast("正在提交任务");
+  const status = await apiFetch("/api/jobs", { method: "POST", body: JSON.stringify(request) });
+  taskState.jobId = status.job_id;
+  applyTaskStatus(status);
+  document.getElementById("taskMonitorPane").hidden = false;
+  if (taskState.pollTimer) clearInterval(taskState.pollTimer);
+  taskState.pollTimer = setInterval(pollTaskStatus, 1500);
+}
+
+async function pollTaskStatus() {
+  if (!taskState.jobId) return;
+  try {
+    const status = await apiFetch(`/api/jobs/${taskState.jobId}`);
+    applyTaskStatus(status);
+    if (["completed", "failed", "canceled"].includes(status.status)) {
+      clearInterval(taskState.pollTimer);
+      taskState.pollTimer = null;
+      if (status.status === "completed") {
+        const result = await apiFetch(`/api/jobs/${taskState.jobId}/results`);
+        renderTaskResult(result);
+        showToast("任务完成，结果已刷新");
+      } else if (status.status === "failed") {
+        showToast(status.error || "任务失败，请查看日志");
+      } else {
+        showToast("任务已停止");
+      }
+    }
+  } catch (error) {
+    clearInterval(taskState.pollTimer);
+    taskState.pollTimer = null;
+    showToast(error.message);
+  }
+}
+
+async function stopTask() {
+  if (!taskState.jobId) return;
+  const status = await apiFetch(`/api/jobs/${taskState.jobId}/stop`, { method: "POST" });
+  clearInterval(taskState.pollTimer);
+  taskState.pollTimer = null;
+  applyTaskStatus(status);
+  showToast("已请求停止任务");
+}
+
+function applyTaskStatus(status) {
+  taskState.status = status.status;
+  const labels = { queued: "排队中", running: "运行中", completed: "已完成", failed: "失败", canceled: "已停止" };
+  document.getElementById("taskRunStatus").textContent = labels[status.status] || status.status;
+  document.getElementById("taskJobId").textContent = status.job_id || "--";
+  document.getElementById("taskProgressText").textContent = `${Number(status.progress || 0).toFixed(0)}%`;
+  document.getElementById("taskElapsed").textContent = fmtClock(Number(status.elapsed_s || 0));
+  document.querySelector('[data-action="task-stop"]').disabled = !(status.status === "running" || status.status === "queued");
+  const rows = status.logs || [];
+  document.getElementById("taskLogRows").innerHTML = (rows.length ? rows : [{ time: "--", level: "INFO", message: "等待任务日志" }])
+    .slice(-6)
+    .map((row) => `<tr><td>${escapeHtml(row.time)}</td><td>${escapeHtml(row.level)}</td><td>${escapeHtml(row.message)}</td></tr>`)
+    .join("");
+}
+
+function renderCalibrationResult(result) {
+  const best = result.best_params || {};
+  const bounds = result.bounds || {};
+  const sensitivity = result.sensitivity || [];
+  const history = result.loss_history || [];
+  const cards = `<div class="bench-metrics">
+    <div class="bench-metric"><strong>优化器</strong><span style="font-size:14px">${escapeHtml(result.method || "--")}</span><small>${escapeHtml(result.message || "")}</small></div>
+    <div class="bench-metric"><strong>最优 fitness</strong><span>${Number(result.best_fitness ?? 0).toExponential(3)}</span><small>1/损失</small></div>
+    <div class="bench-metric"><strong>耗时</strong><span style="font-size:14px">${escapeHtml(result.elapsed_s ?? "--")} s</span><small>t_factor=${escapeHtml(result.t_factor)} · ${escapeHtml(result.cycles)} 圈/评估</small></div>
+  </div>`;
+  let curveHtml = "";
+  if (history.length >= 2) {
+    curveHtml = `<h4>损失收敛曲线</h4><div id="calibLossChart" class="echart-box" style="height: 240px"></div>`;
+  }
+  let tableHtml = "";
+  if (Object.keys(best).length) {
+    tableHtml = `<h4>标定结果与可辨识性</h4><div class="table-wrap"><table>
+      <thead><tr><th>参数</th><th>最优值</th><th>下界</th><th>上界</th><th>±1% 敏感度</th><th>可辨识性</th></tr></thead><tbody>` +
+      Object.keys(best).map((name) => {
+        const b = bounds[name] || {};
+        const s = sensitivity.find((row) => row.param === name);
+        const sens = s ? s.sensitivity : 0;
+        const identifiable = sens > 0.0001 ? "较好" : sens > 1e-6 ? "一般" : "弱(平坦方向)";
+        return `<tr><td class="registry-path" title="${escapeHtml(name)}">${escapeHtml(name)}</td>
+          <td>${escapeHtml(Number(best[name]).toExponential(4))}</td>
+          <td>${escapeHtml(Number(b.low ?? 0).toExponential(3))}</td>
+          <td>${escapeHtml(Number(b.high ?? 0).toExponential(3))}</td>
+          <td>${escapeHtml(Number(sens).toExponential(3))}</td>
+          <td><span class="status-badge ${sens > 0.0001 ? "status-curated" : "status-ignore"}">${identifiable}</span></td></tr>`;
+      }).join("") + `</tbody></table></div>`;
+  }
+  const html = cards + curveHtml + tableHtml;
+  setTimeout(() => {
+    if (history.length >= 2) {
+      const chart = echartsBox("calibLossChart");
+      if (chart) {
+        chart.setOption({
+          ...ECHARTS_BASE,
+          tooltip: { trigger: "axis" },
+          legend: { top: 0 },
+          grid: { left: 60, right: 20, top: 34, bottom: 34 },
+          xAxis: { type: "category", name: "迭代", data: history.map((h) => h.iter) },
+          yAxis: { type: "value", name: "loss", scale: true },
+          series: [{ name: "loss", type: "line", showSymbol: true, symbolSize: 5, data: history.map((h) => h.loss) }],
+        }, true);
+      }
+    }
+    if (sensitivity.length) {
+      const sChart = echartsBox("calibSensChart");
+      if (sChart) {
+        sChart.setOption({
+          ...ECHARTS_BASE,
+          tooltip: { trigger: "axis" },
+          grid: { left: 60, right: 20, top: 20, bottom: 60 },
+          xAxis: { type: "category", name: "参数", data: sensitivity.map((s) => s.param), axisLabel: { rotate: 30, width: 110, overflow: "truncate" } },
+          yAxis: { type: "value", name: "±1% 敏感度", scale: true },
+          series: [{ name: "敏感度", type: "bar", data: sensitivity.map((s) => s.sensitivity) }],
+        }, true);
+      }
+    }
+  }, 30);
+  return html;
+}
+
+function renderTaskResult(result) {
+  const pane = document.getElementById("taskResultPane");
+  const jobType = result.job_type || taskState.selectedType || "";
+  const summary = result.summary || {};
+  let html = "";
+  if (jobType === "peak_current" && Array.isArray(summary.results)) {
+    html = `<div class="table-wrap"><table>
+      <thead><tr><th>方向</th><th>SOC</th><th>峰值电流 (A)</th><th>C-rate</th><th>峰值功率 (kW)</th><th>首点电压 (V)</th></tr></thead><tbody>` +
+      summary.results
+        .map((row) => `<tr><td>${escapeHtml(row.direction)}</td><td>${escapeHtml(row.soc)}</td><td>${escapeHtml(row.peak_current_A ?? "--")}</td><td>${escapeHtml(row.peak_C_rate ?? "--")}</td><td>${escapeHtml(row.peak_power_kW ?? "--")}</td><td>${escapeHtml(row.first_voltage_V ?? "--")}</td></tr>`)
+        .join("") +
+      `</tbody></table></div>`;
+  } else if (jobType === "cycle") {
+    html = `<p class="small-note">循环任务完成：耗时 ${escapeHtml(result.elapsed_s ?? "--")} s。完整曲线请在「结果分析」查看。</p>`;
+  } else if (jobType === "calibration") {
+    html = renderCalibrationResult(result);
+  } else {
+    html = `<p class="small-note">${escapeHtml(jobType || "任务")} 完成。run_dir：<code>${escapeHtml(result.run_dir || "--")}</code></p>`;
+    if (summary.rows !== undefined) html += `<p class="small-note">结果行数：${escapeHtml(summary.rows)}</p>`;
+  }
+  pane.innerHTML = html;
+}
+
+function currentRegistryFilters() {
+  const values = ["regCell", "regTemp", "regRate", "regTest", "regStatus"].map((id) => {
+    const node = document.getElementById(id);
+    return node ? node.value : "";
+  });
+  return {
+    cell: values[0],
+    temp: values[1],
+    rate: values[2],
+    test: values[3],
+    status: values[4],
+  };
+}
+
+async function loadDataView() {
+  const activeTab = document.querySelector(".data-tabs button.active")?.dataset.dataTab || "registry";
+  if (activeTab === "registry") {
+    await Promise.all([loadRegistryFacets(), loadRegistryRows()]);
+  } else {
+    await loadDatasetsView();
+  }
+}
+
+async function loadRegistryFacets() {
+  try {
+    const payload = await apiFetch("/api/registry/facets");
+    const facets = payload.facets || {};
+    const fill = (id, values, prefix) => {
+      const select = document.getElementById(id);
+      if (!select) return;
+      select.innerHTML =
+        `<option value="">${prefix} (全部)</option>` +
+        (values || []).map((value) => `<option value="${escapeHtml(String(value))}">${escapeHtml(String(value))}</option>`).join("");
+    };
+    fill("regCell", facets.cell, "电芯");
+    fill("regTemp", facets.temperature_C, "温度 °C");
+    fill("regRate", facets.rate, "倍率");
+    fill("regTest", facets.test_type, "测试类型");
+    fill("regStatus", facets.status, "质量状态");
+  } catch (error) {
+    showToast(`Registry 维度加载失败：${error.message}`);
+  }
+}
+
+async function loadRegistryRows() {
+  const body = document.getElementById("registryRows");
+  const summary = document.getElementById("registrySummary");
+  if (!body) return;
+  body.innerHTML = '<tr><td colspan="8">加载中…</td></tr>';
+  try {
+    const filters = currentRegistryFilters();
+    const params = new URLSearchParams(
+      Object.entries(filters)
+        .filter(([, value]) => value !== "")
+        .map(([key, value]) => [key, String(value)])
+    );
+    const payload = await apiFetch(`/api/registry?${params.toString()}`);
+    const entries = payload.entries || [];
+    if (summary) {
+      summary.textContent = `datasets.json 共 ${payload.total ?? 0} 条 · 当前筛选命中 ${payload.count ?? entries.length} 条（quality 由人工审核后置为 curated）`;
+    }
+    if (!entries.length) {
+      body.innerHTML =
+        '<tr><td colspan="8">无匹配数据。可调整筛选条件，或在 data_raw/ 下补充实验数据后运行 <code>data_registry.py scan</code> 登记。</td></tr>';
+      return;
+    }
+    const statusLabels = { auto: "自动推断", curated: "人工核实", ignore: "已忽略", missing: "缺失" };
+    body.innerHTML = entries
+      .map((entry) => {
+        const status = entry.status || "auto";
+        const label = statusLabels[status] || status;
+        return `<tr>
+          <td class="registry-path" title="${escapeHtml(entry.path)}">${escapeHtml(entry.path)}</td>
+          <td>${escapeHtml(entry.cell || "--")}</td>
+          <td>${escapeHtml(entry.temperature_C ?? "--")}</td>
+          <td>${escapeHtml(entry.rate || "--")}</td>
+          <td>${escapeHtml(entry.test_type || "--")}</td>
+          <td>${escapeHtml(entry.soh_pct ?? "--")}</td>
+          <td><span class="status-badge status-${escapeHtml(status)}">${label}</span></td>
+          <td>${escapeHtml(entry.format || "--")}</td>
+        </tr>`;
+      })
+      .join("");
+  } catch (error) {
+    body.innerHTML = `<tr><td colspan="8">${escapeHtml(error.message)}</td></tr>`;
+    if (summary) summary.textContent = "";
+  }
+}
+
+function resetRegistryFilters() {
+  ["regCell", "regTemp", "regRate", "regTest", "regStatus"].forEach((id) => {
+    const select = document.getElementById(id);
+    if (select) select.value = "";
+  });
+  loadRegistryRows();
 }
 
 async function loadDatasetsView() {
@@ -1392,6 +2017,17 @@ function renderSimulationResult(result) {
   document.getElementById("summaryLine2").textContent = Number.isFinite(retention)
     ? `容量保持率: ${retention.toFixed(2)}%`
     : "容量保持率: --";
+  const accel = Number(request.acceleration_factor) || 1;
+  let line3 = document.getElementById("summaryLine3");
+  if (!line3) {
+    line3 = document.createElement("p");
+    line3.id = "summaryLine3";
+    line3.className = "small-note";
+    document.getElementById("summaryLine2").insertAdjacentElement("afterend", line3);
+  }
+  line3.textContent = accel > 1
+    ? `口径提示：共仿真 ${Number(request.cycles) || 0} 仿真圈 ≈ ${((Number(request.cycles) || 0) * accel).toLocaleString("zh-CN")} 等效圈（项目参数退化加速 ×${accel}）`
+    : "";
   setResultTab(activeResultTab());
 }
 
@@ -1793,6 +2429,20 @@ function wireInteractions() {
       closeJobsModal();
       await resumeCurrentJob();
     }
+    if (action === "rename-job") {
+      try {
+        await renameJobPrompt(actionNode.dataset.jobId);
+      } catch (error) {
+        showToast(error.message);
+      }
+    }
+    if (action === "delete-job") {
+      try {
+        await deleteJobConfirm(actionNode.dataset.jobId);
+      } catch (error) {
+        showToast(error.message);
+      }
+    }
     if (action === "job-csv") {
       downloadUrl(`/api/jobs/${actionNode.dataset.jobId}/export.csv`);
       showToast("正在下载该任务的 CSV");
@@ -1842,6 +2492,49 @@ function wireInteractions() {
         showToast(error.message);
       }
     }
+    if (action === "registry-reset") {
+      resetRegistryFilters();
+    }
+    if (action === "task-run") {
+      try {
+        await runTask();
+      } catch (error) {
+        showToast(error.message);
+      }
+    }
+    if (action === "task-stop") {
+      try {
+        await stopTask();
+      } catch (error) {
+        showToast(error.message);
+      }
+    }
+    if (action === "bench-run") {
+      try {
+        await runBench();
+      } catch (error) {
+        showToast(error.message);
+      }
+    }
+    if (action === "bench-runs") {
+      try {
+        await runBenchRuns();
+      } catch (error) {
+        showToast(error.message);
+      }
+    }
+    if (action === "bench-curves") {
+      try {
+        await runBenchCurves();
+      } catch (error) {
+        showToast(error.message);
+      }
+    }
+  });
+
+  document.getElementById("taskTypeList")?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-task-type]");
+    if (button && !button.disabled) selectTaskType(button.dataset.taskType);
   });
 
   document.getElementById("jobsModal")?.addEventListener("click", (event) => {
@@ -1857,6 +2550,27 @@ function wireInteractions() {
 
   document.querySelectorAll(".result-tabs button").forEach((button) => {
     button.addEventListener("click", () => setResultTab(button.dataset.resultTab));
+  });
+
+  document.querySelectorAll(".data-tabs button").forEach((button) => {
+    button.addEventListener("click", () => {
+      document.querySelectorAll(".data-tabs button").forEach((item) => item.classList.remove("active"));
+      button.classList.add("active");
+      const tab = button.dataset.dataTab;
+      document.querySelectorAll(".data-tab-pane").forEach((pane) => {
+        pane.hidden = pane.dataset.dataPane !== tab;
+      });
+      if (tab === "registry") {
+        loadRegistryFacets();
+        loadRegistryRows();
+      } else {
+        loadDatasetsView();
+      }
+    });
+  });
+
+  document.querySelectorAll(".registry-select").forEach((select) => {
+    select.addEventListener("change", () => loadRegistryRows());
   });
 
   window.addEventListener("resize", () => {
@@ -1911,6 +2625,8 @@ function boot() {
   createLogRows();
   drawCharts();
   wireInteractions();
+  decoratePlaceholders();
+  updateAccelNote();
   updateCurrentPreview();
   setRoute(window.location.hash.replace("#", "") || "simulation");
   updateRunStatus();

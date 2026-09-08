@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "task_id": "202608_何争_寿命预测模型客户讲解PPTV1",
+  "cell": "cross_cell",
+  "task_name": "寿命预测模型客户讲解PPT",
+  "owner": "何争",
+  "month": "202608",
+  "version": "V1",
+  "status": "created",
+  "created_at": "2026-08-03T09:16:37",
+  "template": null,
+  "task_notebook": null
+}

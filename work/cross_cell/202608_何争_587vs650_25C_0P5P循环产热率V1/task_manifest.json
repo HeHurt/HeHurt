@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "task_id": "202608_何争_587vs650_25C_0P5P循环产热率V1",
+  "cell": "cross_cell",
+  "task_name": "587vs650_25C_0P5P循环产热率",
+  "owner": "何争",
+  "month": "202608",
+  "version": "V1",
+  "status": "published",
+  "created_at": "2026-08-10T14:26:41",
+  "template": null,
+  "task_notebook": "587vs650_25C_0P5P_循环产热率仿真.ipynb",
+  "latest_run_id": "run_study_20260812_164322",
+  "updated_at": "2026-08-12T17:10:00",
+  "description": "双模型 0.5P 老化路径 + 每 5% SOH 点位 0.25P 诊断产热率（587 + 650）"
+}

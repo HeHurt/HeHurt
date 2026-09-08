@@ -109,7 +109,7 @@ def get_hithium_params(t_factor=1,temperature=298.15):
         "Negative electrode conductivity [S.m-1]": 5,
 
         # 其他电参数
-        'Contact resistance [Ohm]': 0.056276e-3,
+        'Contact resistance [Ohm]': 0.061291e-3,
         
         # "Positive electrode initial crack width [m]": 0,
         "Ratio of lithium moles to SEI moles":1.5,

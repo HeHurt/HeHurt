@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "task_id": "202607_何争_当天PDF临时文件归档V1",
+  "cell": "AI_virtual_cell",
+  "task_name": "当天PDF临时文件归档",
+  "owner": "何争",
+  "month": "202607",
+  "version": "V1",
+  "status": "created",
+  "created_at": "2026-07-30T20:13:35",
+  "template": null,
+  "task_notebook": null
+}

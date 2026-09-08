@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "task_id": "202609_何争_COMSOL智能仿真工具链V1",
+  "cell": "AI_virtual_cell",
+  "task_name": "COMSOL智能仿真工具链",
+  "owner": "何争",
+  "month": "202609",
+  "version": "V1",
+  "status": "created",
+  "created_at": "2026-09-01T20:03:16",
+  "template": null,
+  "task_notebook": null
+}

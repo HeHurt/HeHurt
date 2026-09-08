@@ -84,7 +84,15 @@ print(f"容量: {p['Nominal cell capacity [A.h]']} Ah")
 | `paramsCW511_pouch.py` | CW511 软包 | 3.96 | 2.5~3.65 | ✓ |
 | `paramsMIC.py` | MIC | 1175 | 2.5~3.65 | ✓ |
 | `paramsMICCW500.py` | MIC CW500 | 1300 | 2.5~3.65 | ✓ |
+| `params1300CW363.py` | CW363（1300 系列） | 1199.5 | 2.5~3.65 | ✓ |
+| `paramsLDSCW368.py` | LDS CW368 | 1362.4 | 2.5~3.65 | ✓ |
+| `paramsLDSCW501.py` | LDS CW501 | 1361.9 | 2.5~3.65 | ✓ |
 | `paramsNa.py` | 钠电 | 162 | 2.0~3.65 | ✗ |
+
+> ⚠️ `paramsCW428_pouch.py`、`paramsCW495_pouch.py`、`paramsCW511_pouch.py`、`paramsMICCW500.py`
+> **磁盘上不存在**（历史上从未创建）。`params/__init__.py` 的 registry 已移除这 4 条引用；
+> 需要时按上表规格新建，并同步登记到 registry —— `tests/test_params_registry.py` 会自动校验
+> 「registry 引用必须存在」与「磁盘参数模块必须已登记」两个方向。
 
 ## 禁止事项
 - 不得在参数函数内 import `matplotlib` — 参数函数应是纯计算
