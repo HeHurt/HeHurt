@@ -1,6 +1,6 @@
 {
  "version": 1,
- "updated": "2026-07-30 20:03",
+ "updated": "2026-09-08 11:17",
  "entries": [
   {
    "id": "43597345f7",
@@ -13,14 +13,14 @@
    "group": "CW391_CW511_25C_0p25P",
    "temperature_C": 25.0,
    "rate": "0.25P",
-   "test_type": null,
+   "test_type": "倍率",
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "CW391_CW511_25C_0p25P",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "b3fb928581",
@@ -57,10 +57,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "CW391_CW511_25C_0p25P",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "b275733acc",
@@ -3177,10 +3177,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "aeeef620ff",
@@ -3197,10 +3197,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "c267ba6220",
@@ -3217,10 +3217,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "5808903934",
@@ -3237,10 +3237,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "0a6f50cd22",
@@ -3257,10 +3257,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "22d8191333",
@@ -3277,10 +3277,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "595d3dcc75",
@@ -3297,10 +3297,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "fe758cec83",
@@ -3317,10 +3317,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "90eec79df4",
@@ -3337,10 +3337,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "5851e0144f",
@@ -3357,10 +3357,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "503b82c193",
@@ -3377,10 +3377,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "a6418534b8",
@@ -3397,10 +3397,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "e2cd0c9b99",
@@ -3417,10 +3417,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "ce1199e641",
@@ -3437,10 +3437,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "34c3fedb8d",
@@ -3457,10 +3457,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "edfd52a32f",
@@ -3477,10 +3477,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "f9314473d0",
@@ -3497,10 +3497,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "0a57524b65",
@@ -3517,10 +3517,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "0e76dd8d33",
@@ -3537,10 +3537,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "7883e44e10",
@@ -3557,10 +3557,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "2925583b5b",
@@ -3577,10 +3577,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "5e2e065b13",
@@ -3597,10 +3597,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "03a0d6452b",
@@ -3617,10 +3617,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "54a30a09e4",
@@ -3637,10 +3637,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "8831c2c365",
@@ -3657,10 +3657,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "fcbd959534",
@@ -3677,10 +3677,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "a7b3482a73",
@@ -3697,10 +3697,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "a327d9c2ab",
@@ -3717,10 +3717,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "77ccb0c51a",
@@ -3737,10 +3737,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "a23f10f625",
@@ -3757,10 +3757,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "44af3a56cb",
@@ -3777,10 +3777,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "4aa468f0dc",
@@ -3797,10 +3797,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "ec8ef17dfa",
@@ -3817,10 +3817,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "c518592405",
@@ -3837,10 +3837,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "65c97de472",
@@ -3857,10 +3857,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "569034df89",
@@ -3877,10 +3877,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "d4bd2c0a37",
@@ -3897,10 +3897,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "bbd89eb63b",
@@ -3917,10 +3917,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "c9338d785e",
@@ -3937,10 +3937,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "2597442417",
@@ -3957,10 +3957,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "cc3100d8df",
@@ -3977,10 +3977,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "ea2d3e62a7",
@@ -3997,10 +3997,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "93cd37c857",
@@ -4017,10 +4017,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "508a92f0fc",
@@ -4037,10 +4037,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "d1a9c33b6d",
@@ -4057,10 +4057,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "cfc1496ede",
@@ -4077,10 +4077,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "61da902a3c",
@@ -4097,10 +4097,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "4015db7785",
@@ -4117,10 +4117,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "41e3ed648b",
@@ -4137,10 +4137,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "9dd02e0a85",
@@ -4157,10 +4157,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "a930288084",
@@ -4177,10 +4177,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "f3340a031c",
@@ -4197,10 +4197,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "ddfce78602",
@@ -4217,10 +4217,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "4e4670ee20",
@@ -4237,10 +4237,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "3521dfa883",
@@ -4257,10 +4257,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "fbeefc867a",
@@ -4277,10 +4277,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "0df2598729",
@@ -4297,10 +4297,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "9c7c44e4b9",
@@ -4317,10 +4317,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "02906a9b25",
@@ -4337,10 +4337,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "f825a662ad",
@@ -4357,10 +4357,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "74c9b00823",
@@ -4377,10 +4377,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "79b0873b4c",
@@ -4397,10 +4397,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "5f4e0eb0ea",
@@ -4417,10 +4417,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "0523222d05",
@@ -4437,10 +4437,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "69a926b432",
@@ -4457,10 +4457,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "51dc023ef7",
@@ -4477,10 +4477,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "53302d3411",
@@ -4497,10 +4497,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "a0b11b2228",
@@ -4517,10 +4517,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "19990ce48f",
@@ -4537,10 +4537,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "34578856e7",
@@ -4557,10 +4557,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "cdac1d53d3",
@@ -4577,10 +4577,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "7c1771df89",
@@ -4597,10 +4597,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "d91fb9af07",
@@ -4617,10 +4617,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "f5e24d00eb",
@@ -4637,10 +4637,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "a30242180f",
@@ -4657,10 +4657,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "f3ef16aad7",
@@ -4677,10 +4677,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "241ddfb155",
@@ -4697,10 +4697,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "49fccb8033",
@@ -4717,10 +4717,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "b1dad92672",
@@ -4737,10 +4737,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "6293c2dd22",
@@ -4757,10 +4757,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "a74d151c08",
@@ -4777,10 +4777,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "6bc7e406e6",
@@ -4797,10 +4797,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "f6f0faad59",
@@ -4817,10 +4817,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "088e7385b6",
@@ -4837,10 +4837,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "b469f4007c",
@@ -4857,10 +4857,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "98028d27da",
@@ -4877,10 +4877,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "d8fefbbf1b",
@@ -4897,10 +4897,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "6dc3c3d600",
@@ -4917,10 +4917,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "ad99a3c2c8",
@@ -4937,10 +4937,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "566c7a2a9e",
@@ -4957,10 +4957,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "57cf34a338",
@@ -4977,10 +4977,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "c8232f4eb1",
@@ -4997,10 +4997,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "c7ec76b817",
@@ -5017,10 +5017,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "5f95c2eee0",
@@ -5037,10 +5037,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "b2c080226f",
@@ -5057,10 +5057,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "62814063fa",
@@ -5077,10 +5077,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "00d8e45e41",
@@ -5097,10 +5097,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "06cb71751f",
@@ -5117,10 +5117,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "9db219d436",
@@ -5137,10 +5137,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "0012cedaa4",
@@ -5157,10 +5157,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "9eeaf72a66",
@@ -5177,10 +5177,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "729fb10db9",
@@ -5197,10 +5197,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "f2b63b5422",
@@ -5217,10 +5217,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "cbfbc5f2a1",
@@ -5237,10 +5237,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "9f0cdb6852",
@@ -5257,10 +5257,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "e529c12914",
@@ -5277,10 +5277,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "632e9c8ae9",
@@ -5297,10 +5297,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "05e3da2259",
@@ -5317,10 +5317,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "187e86d1a7",
@@ -5337,10 +5337,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "af3dfc346d",
@@ -5357,10 +5357,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "079f351fbb",
@@ -5377,10 +5377,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "ca5270bab2",
@@ -5397,10 +5397,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "a754fcc4d4",
@@ -5417,10 +5417,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "a1280931f6",
@@ -5437,10 +5437,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "53df57dd3f",
@@ -5457,10 +5457,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "16a9e1f62a",
@@ -5477,10 +5477,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "70b7f60113",
@@ -5497,10 +5497,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "917329770b",
@@ -5517,10 +5517,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "cd77919401",
@@ -5537,10 +5537,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "381613fb82",
@@ -5557,10 +5557,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "c02a5d825b",
@@ -5577,10 +5577,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "c3b05bfb48",
@@ -5597,10 +5597,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "cbda5dc02d",
@@ -5617,10 +5617,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "c2773aa45f",
@@ -5637,10 +5637,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "1f3ba88bb1",
@@ -5657,10 +5657,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "cf577184bd",
@@ -5677,10 +5677,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "11a0a4b8db",
@@ -5697,10 +5697,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "4846653be7",
@@ -5717,10 +5717,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "2e405e0192",
@@ -5737,10 +5737,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "77c744f6e4",
@@ -5757,10 +5757,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "26b57e0520",
@@ -5777,10 +5777,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "3d38c9f3dc",
@@ -5797,10 +5797,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "91d011444c",
@@ -5817,10 +5817,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "a459734d63",
@@ -5837,10 +5837,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "d1c49dc45e",
@@ -5857,10 +5857,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "d0111dfb68",
@@ -5877,10 +5877,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "0801836af8",
@@ -5897,10 +5897,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "ade22c2413",
@@ -5917,10 +5917,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "535c9df76f",
@@ -5937,10 +5937,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "d47e8904d8",
@@ -5957,10 +5957,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "5d235b46b0",
@@ -5977,10 +5977,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "6f93d8fb08",
@@ -5997,10 +5997,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "d2462ef3f1",
@@ -6017,10 +6017,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "cc11782666",
@@ -6037,10 +6037,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "c2cf88dad7",
@@ -6057,10 +6057,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "0cb8943b67",
@@ -6077,10 +6077,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "27a433aace",
@@ -6097,10 +6097,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "3e73b0c7fc",
@@ -6117,10 +6117,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "eee2d467a6",
@@ -6137,10 +6137,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "48276c7034",
@@ -6157,10 +6157,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "62e92776c4",
@@ -6177,10 +6177,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "75d7b67648",
@@ -6197,10 +6197,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "e65917f108",
@@ -6217,10 +6217,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "88a0e26a60",
@@ -6237,10 +6237,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "978d9d887d",
@@ -6257,10 +6257,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "b083c5b7a6",
@@ -6277,10 +6277,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "205a33c709",
@@ -6297,10 +6297,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "72bd8fee1d",
@@ -6317,10 +6317,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "5dc22c4fd7",
@@ -6337,10 +6337,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "65a0725ec6",
@@ -6357,10 +6357,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "ead2b5f049",
@@ -6377,10 +6377,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "5c1ad227b4",
@@ -6397,10 +6397,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "e94a500ad6",
@@ -6417,10 +6417,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "8478c0643b",
@@ -6437,10 +6437,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "6daf0bcaaa",
@@ -6457,10 +6457,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "48644fe0e5",
@@ -6477,10 +6477,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "31fb1f3a7f",
@@ -6497,10 +6497,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "3ea7870c3b",
@@ -6517,10 +6517,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "463d96f936",
@@ -6537,10 +6537,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "5685ca870d",
@@ -6557,10 +6557,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "9871f722fb",
@@ -6577,10 +6577,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "937e7a52d8",
@@ -6597,10 +6597,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "ed3381fa94",
@@ -6617,10 +6617,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "2763559820",
@@ -6637,10 +6637,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/20260309_A2样提取数据",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "4ef58a26c4",
@@ -7297,10 +7297,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/CW391+CW511-仿真支持数据 to 何争",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "75ad05d264",
@@ -7317,10 +7317,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/CW391+CW511-仿真支持数据 to 何争",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "e88bbd23a6",
@@ -7537,10 +7537,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/WE1-84循环老化-仿真支持数据 to何争-260408",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "3e819ac188",
@@ -7557,10 +7557,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp/WE1-84循环老化-仿真支持数据 to何争-260408",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "fd2a9ee7dd",
@@ -7597,10 +7597,10 @@
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
-   "source": null,
+   "source": "Exp",
    "quality": null,
-   "notes": null,
-   "status": "auto"
+   "notes": "三要素(温度/倍率/类型)由路径自动推断，置信度高，批量转 curated",
+   "status": "curated"
   },
   {
    "id": "67ed97156a",
@@ -7613,7 +7613,7 @@
    "group": "Rate",
    "temperature_C": null,
    "rate": null,
-   "test_type": null,
+   "test_type": "倍率",
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
@@ -7633,7 +7633,7 @@
    "group": "Rate",
    "temperature_C": null,
    "rate": null,
-   "test_type": null,
+   "test_type": "倍率",
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
@@ -7653,7 +7653,7 @@
    "group": "Rate",
    "temperature_C": null,
    "rate": null,
-   "test_type": null,
+   "test_type": "倍率",
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
@@ -7673,7 +7673,7 @@
    "group": "Rate",
    "temperature_C": null,
    "rate": null,
-   "test_type": null,
+   "test_type": "倍率",
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
@@ -7693,7 +7693,7 @@
    "group": "Rate",
    "temperature_C": null,
    "rate": null,
-   "test_type": null,
+   "test_type": "倍率",
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
@@ -7713,7 +7713,7 @@
    "group": "Rate",
    "temperature_C": null,
    "rate": null,
-   "test_type": null,
+   "test_type": "倍率",
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
@@ -7733,7 +7733,7 @@
    "group": "Rate",
    "temperature_C": null,
    "rate": null,
-   "test_type": null,
+   "test_type": "倍率",
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
@@ -7753,7 +7753,7 @@
    "group": "Rate",
    "temperature_C": null,
    "rate": null,
-   "test_type": null,
+   "test_type": "倍率",
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
@@ -7773,7 +7773,7 @@
    "group": "Rate",
    "temperature_C": null,
    "rate": null,
-   "test_type": null,
+   "test_type": "倍率",
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
@@ -7793,7 +7793,7 @@
    "group": "Rate",
    "temperature_C": null,
    "rate": null,
-   "test_type": null,
+   "test_type": "倍率",
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
@@ -7813,7 +7813,7 @@
    "group": "Rate",
    "temperature_C": null,
    "rate": null,
-   "test_type": null,
+   "test_type": "倍率",
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
@@ -7833,7 +7833,7 @@
    "group": "Rate",
    "temperature_C": null,
    "rate": null,
-   "test_type": null,
+   "test_type": "倍率",
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
@@ -7853,7 +7853,7 @@
    "group": "Rate",
    "temperature_C": null,
    "rate": null,
-   "test_type": null,
+   "test_type": "倍率",
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
@@ -7873,7 +7873,7 @@
    "group": "Rate",
    "temperature_C": null,
    "rate": null,
-   "test_type": null,
+   "test_type": "倍率",
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
@@ -7893,7 +7893,7 @@
    "group": "Rate",
    "temperature_C": null,
    "rate": null,
-   "test_type": null,
+   "test_type": "倍率",
    "soh_pct": null,
    "sample_id": null,
    "signals": [],
@@ -8433,7 +8433,7 @@
    "group": "Exp/核容",
    "temperature_C": 25.0,
    "rate": null,
-   "test_type": null,
+   "test_type": "容量",
    "soh_pct": 100.0,
    "sample_id": "No1#",
    "signals": [],
@@ -8453,7 +8453,7 @@
    "group": "Exp/核容",
    "temperature_C": 25.0,
    "rate": null,
-   "test_type": null,
+   "test_type": "容量",
    "soh_pct": 100.0,
    "sample_id": "No2#",
    "signals": [],
@@ -11893,7 +11893,7 @@
    "group": "03-1175Ah电芯数据/工况放电/-10℃",
    "temperature_C": -10.0,
    "rate": null,
-   "test_type": null,
+   "test_type": "工况",
    "soh_pct": 100.0,
    "sample_id": "No3#",
    "signals": [],
@@ -11913,7 +11913,7 @@
    "group": "03-1175Ah电芯数据/工况放电/-10℃",
    "temperature_C": -10.0,
    "rate": null,
-   "test_type": null,
+   "test_type": "工况",
    "soh_pct": 100.0,
    "sample_id": "No4#",
    "signals": [],
@@ -11933,7 +11933,7 @@
    "group": "03-1175Ah电芯数据/工况放电/-20℃",
    "temperature_C": -20.0,
    "rate": null,
-   "test_type": null,
+   "test_type": "工况",
    "soh_pct": 100.0,
    "sample_id": "No3#",
    "signals": [],
@@ -11953,7 +11953,7 @@
    "group": "03-1175Ah电芯数据/工况放电/-20℃",
    "temperature_C": -20.0,
    "rate": null,
-   "test_type": null,
+   "test_type": "工况",
    "soh_pct": 100.0,
    "sample_id": "No4#",
    "signals": [],
@@ -11973,7 +11973,7 @@
    "group": "03-1175Ah电芯数据/工况放电/0℃",
    "temperature_C": 0.0,
    "rate": null,
-   "test_type": null,
+   "test_type": "工况",
    "soh_pct": 100.0,
    "sample_id": "No3#",
    "signals": [],
@@ -11993,7 +11993,7 @@
    "group": "03-1175Ah电芯数据/工况放电/0℃",
    "temperature_C": 0.0,
    "rate": null,
-   "test_type": null,
+   "test_type": "工况",
    "soh_pct": 100.0,
    "sample_id": "No4#",
    "signals": [],
@@ -12013,7 +12013,7 @@
    "group": "03-1175Ah电芯数据/工况放电/10℃",
    "temperature_C": 10.0,
    "rate": null,
-   "test_type": null,
+   "test_type": "工况",
    "soh_pct": 100.0,
    "sample_id": "No3#",
    "signals": [],
@@ -12033,7 +12033,7 @@
    "group": "03-1175Ah电芯数据/工况放电/10℃",
    "temperature_C": 10.0,
    "rate": null,
-   "test_type": null,
+   "test_type": "工况",
    "soh_pct": 100.0,
    "sample_id": "No4#",
    "signals": [],
@@ -12053,7 +12053,7 @@
    "group": "03-1175Ah电芯数据/工况放电/15℃",
    "temperature_C": 15.0,
    "rate": null,
-   "test_type": null,
+   "test_type": "工况",
    "soh_pct": 100.0,
    "sample_id": "No3#",
    "signals": [],
@@ -12073,7 +12073,7 @@
    "group": "03-1175Ah电芯数据/工况放电/15℃",
    "temperature_C": 15.0,
    "rate": null,
-   "test_type": null,
+   "test_type": "工况",
    "soh_pct": 100.0,
    "sample_id": "No4#",
    "signals": [],
@@ -12093,7 +12093,7 @@
    "group": "03-1175Ah电芯数据/工况放电/25℃",
    "temperature_C": 25.0,
    "rate": null,
-   "test_type": null,
+   "test_type": "工况",
    "soh_pct": 100.0,
    "sample_id": "No3#",
    "signals": [],
@@ -12113,7 +12113,7 @@
    "group": "03-1175Ah电芯数据/工况放电/25℃",
    "temperature_C": 25.0,
    "rate": null,
-   "test_type": null,
+   "test_type": "工况",
    "soh_pct": 100.0,
    "sample_id": "No4#",
    "signals": [],
@@ -12133,7 +12133,7 @@
    "group": "03-1175Ah电芯数据/工况放电/45℃",
    "temperature_C": 45.0,
    "rate": null,
-   "test_type": null,
+   "test_type": "工况",
    "soh_pct": 100.0,
    "sample_id": "No3#",
    "signals": [],
@@ -12153,7 +12153,7 @@
    "group": "03-1175Ah电芯数据/工况放电/45℃",
    "temperature_C": 45.0,
    "rate": null,
-   "test_type": null,
+   "test_type": "工况",
    "soh_pct": 100.0,
    "sample_id": "No4#",
    "signals": [],
@@ -12173,7 +12173,7 @@
    "group": "03-1175Ah电芯数据/核容",
    "temperature_C": 25.0,
    "rate": null,
-   "test_type": null,
+   "test_type": "容量",
    "soh_pct": 100.0,
    "sample_id": "No2#",
    "signals": [],
@@ -12193,7 +12193,7 @@
    "group": "03-1175Ah电芯数据/核容",
    "temperature_C": 25.0,
    "rate": null,
-   "test_type": null,
+   "test_type": "容量",
    "soh_pct": 100.0,
    "sample_id": "No1#",
    "signals": [],
@@ -12213,7 +12213,7 @@
    "group": "03-1175Ah电芯数据/核容",
    "temperature_C": 25.0,
    "rate": null,
-   "test_type": null,
+   "test_type": "容量",
    "soh_pct": 100.0,
    "sample_id": "No6#",
    "signals": [],
@@ -12233,7 +12233,7 @@
    "group": "03-1175Ah电芯数据/核容",
    "temperature_C": 25.0,
    "rate": null,
-   "test_type": null,
+   "test_type": "容量",
    "soh_pct": 100.0,
    "sample_id": "No5#",
    "signals": [],
@@ -12253,7 +12253,7 @@
    "group": "03-1175Ah电芯数据/核容",
    "temperature_C": 25.0,
    "rate": null,
-   "test_type": null,
+   "test_type": "容量",
    "soh_pct": 100.0,
    "sample_id": "No3#",
    "signals": [],
@@ -12273,7 +12273,7 @@
    "group": "03-1175Ah电芯数据/核容",
    "temperature_C": 25.0,
    "rate": null,
-   "test_type": null,
+   "test_type": "容量",
    "soh_pct": 100.0,
    "sample_id": "No4#",
    "signals": [],

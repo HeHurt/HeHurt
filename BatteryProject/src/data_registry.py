@@ -38,6 +38,10 @@ MANUAL_FIELDS = ("signals", "source", "quality", "notes")
 
 # 测试类型关键词（顺序即优先级；对 relpath 全文小写匹配）
 TEST_TYPE_KEYWORDS: list[tuple[str, str]] = [
+    ("/rate/", "倍率"),
+    ("benchmark", "倍率"),
+    ("核容", "容量"),
+    ("工况", "工况"),
     ("倍率充电", "倍率充电"),
     ("倍率放电", "倍率放电"),
     ("cycle life", "循环"),
